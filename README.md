@@ -25,23 +25,4 @@ These rust-nanogen bindings were initiated using an automated bindings
 
 Status:
 
-  in development. Currently the test client program, nanocli.rs
-  will not compile. Why not?  I suspect I'm not using rust ffi
-  correctly, but it could also be a compiler bug.
-
-  Scenario:
-```
-    $rust run nanocli.rs
-    nanocli.rs:34:21: 34:59 error: mismatched types: expected `i32` but found `()` (expected i32 but found ())
-    nanocli.rs:34     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
-                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-```
-
-when the declaration of nn_socket (in nanomsg.rs) clearly states 
-that it returns a c_int:
-
-```
-pub fn nn_socket(domain: c_int, protocol: c_int) -> c_int;
-```
-So the mystery/question is: why does rustc think that nn_socket returns void ()?
-
+  in development. 
