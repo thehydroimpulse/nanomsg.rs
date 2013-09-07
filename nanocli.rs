@@ -28,11 +28,9 @@ fn main ()
   c_int opt;
   size_t sz;
   char msg[256];
-
-  // client, running on windows
 */
 
-    let sc = unsafe { nn_socket (AF_SP, NN_PAIR); };
+    let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
     printfln!("nn_socket returned: %?", sc);
 /*
   errno_assert (sc >= 0);
