@@ -31,8 +31,9 @@ fn main ()
   char msg[256];
 */
 
-    let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
+    let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR) };
     printfln!("nn_socket returned: %?", sc);
+
 /*
   errno_assert (sc >= 0);
 
