@@ -32,9 +32,9 @@ Status:
   Scenario:
 ```
     $rust run nanocli.rs
-    nanocli.rs:33:13: 33:18 error: use of undeclared type name `c_int`
-    nanocli.rs:33     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
-                               ^~~~~
+    nanocli.rs:34:21: 34:59 error: mismatched types: expected `i32` but found `()` (expected i32 but found ())
+    nanocli.rs:34     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
+                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
 when the declaration of nn_socket (in nanomsg.rs) clearly states 

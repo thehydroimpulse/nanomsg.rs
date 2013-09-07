@@ -9,6 +9,7 @@
 //     mod foo { /* content of foo.rs */ }
 //
 
+use std::libc::*;
 use nanomsg::*;
 mod nanomsg;
 
