@@ -114,8 +114,7 @@ extern "C" {
 
     pub fn nn_freemsg(msg: *mut c_void) -> c_int;
 
-    pub fn nn_socket(domain: c_int, 
-                     protocol: c_int) -> c_int;
+    pub fn nn_socket(domain: c_int, protocol: c_int) -> c_int;
 
     pub fn nn_close(s: c_int) -> c_int;
 

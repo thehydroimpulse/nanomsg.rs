@@ -21,3 +21,27 @@ These rust-nanogen bindings were initiated using an automated bindings
  include necessary pub static constants extracted manually. The
  later process involved using the cpp -dD flag to extract #defines,
  and rewriting them as "pub static MYCONST: int = 1;" statements.
+
+
+Status:
+
+  in development. Currently the test client program, nanocli.rs
+  will not compile. Why not?  I suspect I'm not using rust ffi
+  correctly, but it could also be a compiler bug.
+
+  Scenario:
+```
+    $rust run nanocli.rs
+    nanocli.rs:33:13: 33:18 error: use of undeclared type name `c_int`
+    nanocli.rs:33     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR); };
+                               ^~~~~
+```
+
+when the declaration of nn_socket (in nanomsg.rs) clearly states 
+that it returns a c_int:
+
+```
+pub fn nn_socket(domain: c_int, protocol: c_int) -> c_int;
+```
+
+
