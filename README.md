@@ -43,5 +43,5 @@ that it returns a c_int:
 ```
 pub fn nn_socket(domain: c_int, protocol: c_int) -> c_int;
 ```
-
+So the mystery/question is: why does rustc think that nn_socket returns an int?
 
