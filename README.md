@@ -42,6 +42,11 @@ These rust-nanogen bindings were initiated using an automated bindings
  and rewriting them as "pub static MYCONST: int = 1;" statements.
 
 
-Status:  in development, creating nn_sockets, sending and receiving
-	 messages across the wire works.
+Status:  The binding appears to work just fine, although do note
+	 that both rust and nanomsg are in active development.
+	 The test programs (nanoserv.rs, nanocli.rs) demonstrate
+	 the bindings in action; they create an nn_socket and send
+	 and receive messages over the wire.
 
+Other protocols beyond nn_socket: they work in the C side,
+         rust examples/contributions welcome.
