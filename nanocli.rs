@@ -19,6 +19,12 @@ fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
     std::rt::start_on_main_thread(argc, argv, crate_map, main)
 }
 
+// TODO: figure out how to make a safe interface that
+//       wraps all these unsafe calls.
+
+// TODO: figure out why valgrind is reporting both nanocli.rs
+//       and nanoserv.rs leak.
+
 #[fixed_stack_segment]
 fn main ()
 {
@@ -44,16 +50,12 @@ fn main ()
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
 
-    // get a buffer for receive
+    // get a pointer, v, that will point to
+    // the buffer that receive fills in for us.
 
-    // discussed alternatives for the v definition: let mut v = 0 as *mut u8;
-    // There is also a std::ptr call to do this I'm told. I
-    //  could not get it to compile however. When:
-    //  I tried:     let mut v: *mut u8 = std::ptr::null();
-    //  I got:       error: mismatched types: expected `*mut u8` but found `*<V67>` (values differ in mutability)
+    let mut v: *mut u8 = std::ptr::mut_null();
+    //    let mut v = 0 as *mut u8;    // this also works to get v started.
 
-    // this works:
-    let mut v = 0 as *mut u8;
     let x: *mut *mut u8 = &mut v;
 
     // receive
