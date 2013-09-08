@@ -1,3 +1,10 @@
+// ======================================
+// nanomsg.rs : nanomsg bindings for rust
+//
+// This aims to be a rust version of the 
+// full public API of nanomsg.
+// ======================================
+
 use std::libc::*;
 
 pub static AF_SP: c_int = 1;
