@@ -69,7 +69,7 @@ fn main ()
 
     // this to_str() call will only work for utf8, but for now that's enough
     // to let us verify we have the connection going.
-    printfln!("client: I received a %d byte long msg: '%s'\n", recv_msg_size as int, msg.to_str());
+    printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, msg.to_str());
 
     // dealloc
     let rc = unsafe { nn_freemsg(v as *mut std::libc::types::common::c95::c_void) };

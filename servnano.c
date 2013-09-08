@@ -37,6 +37,7 @@ int main ()
   errno_assert (rc > 0);
 
   // receive
+  bzero(buf, 4);
   rc = nn_recv(sb, buf, sizeof(buf), 0);
   errno_assert(rc >= 0);
   nn_assert(rc == 3);
