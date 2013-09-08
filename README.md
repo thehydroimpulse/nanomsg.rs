@@ -3,12 +3,8 @@ rust-nanomsg
 
 Summary: nanomsg bindings for rust
 
-rust: http://www.rust-lang.org/
-      https://github.com/mozilla/rust
-
-nanomsg: http://nanomsg.org/
-         https://github.com/nanomsg/nanomsg
-
+rust
+----- 
 Rust is a modern langauge from Mozilla Research. It has  support for 
  writing embedded applications that are memory safe and simultaneously
  do not suffer garbage-collection pauses. license: dual MIT / Apache 2.
@@ -17,6 +13,12 @@ Rust is a modern langauge from Mozilla Research. It has  support for
  and up to date. The project has strong velocity, so it is evolving
  quickly.
 
+
+- http://www.rust-lang.org/
+- https://github.com/mozilla/rust
+
+nanomsg
+-------
 nanomsg is a modern messaging library that is the 
  successor to ZeroMQ, written in C by Martin Sustrik and colleagues.
  The nanomsg library is licensed under MIT/X11 license. "nanomsg" 
@@ -26,7 +28,11 @@ nanomsg is a modern messaging library that is the
 
  branch for nanomsg.
 
+- http://nanomsg.org/
+- https://github.com/nanomsg/nanomsg
 
+rust-nanomsg bindings
+---------------------
 
 These rust-nanogen bindings were initiated using an automated bindings
  generator called rust-bindgen from Jyun-Yan You (repository:
@@ -36,4 +42,4 @@ These rust-nanogen bindings were initiated using an automated bindings
  and rewriting them as "pub static MYCONST: int = 1;" statements.
 
 
-Status:  in development. 
+Status:  in development, creating nn_sockets, but not much more (yet).
