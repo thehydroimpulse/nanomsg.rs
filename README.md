@@ -52,7 +52,7 @@ The client and server sample code (in nanocli.rs and nanoserv.rs) use lots of un
 
 In Rust, like C++, the usual practice is to provide a 'safe' interface to an unsafe library, where the constructor, reference getting, and destructor patterns create memory and resource safety. The result of a safe interface is that clients need not use unsafe{} blocks.
 
-Nonetheless I'm publishing this as it stands a) as a starting point; and b) to get feedback; and c) because the nanomsg.rs binding itself may be quite useful to others, as an example of how wrapping and rust-bingen work. (It wasn't obvious to me at all when starting.)
+Nonetheless I'm publishing this as it stands a) as a starting point; and b) to get feedback; and c) because the nanomsg.rs binding itself may be quite useful to others, as an example of how wrapping and rust-bindgen work. (It wasn't obvious to me at all when starting.)
 
 Status:  
 -------
