@@ -11,8 +11,9 @@ Rust is a modern langauge from Mozilla Research. It has  support for
 
  You'll want the github MASTER branch of rust to do anything useful
  and up to date. The project has strong velocity, so it is evolving
- quickly.
+ quickly. The rust version used here was:
 
+       rustc 0.8-pre (124eb21 2013-09-06 23:35:57 -0700)
 
 - http://www.rust-lang.org/
 - https://github.com/mozilla/rust
