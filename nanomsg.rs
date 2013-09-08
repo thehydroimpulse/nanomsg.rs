@@ -156,3 +156,5 @@ extern "C" {
     pub fn nn_device(s1: c_int, 
                      s2: c_int) -> c_int;
 }
+
+
