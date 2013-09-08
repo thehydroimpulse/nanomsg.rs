@@ -47,7 +47,7 @@ WARNING!
 While the api file in nanomsg.rs is all that you really need to link in an unsafe way, 
 the examples are not code to be emulated!
 
-The client and server sample code in nanocli.rs and nanoserv.rs uses lots of unsafe calls directly in to the C code.  This is just my learning the rust language. Be aware (and beware) that this interface is *not* what a client API to a foreign library should provide in rust.  In other words, it doesn't wrap the C library in a safe API.  
+The client and server sample code (in nanocli.rs and nanoserv.rs) use lots of unsafe calls directly in to the C code.  This is just my learning the rust language. Be aware (and beware) that this interface is *not* what a client API to a foreign library should provide in rust.  In other words, it doesn't wrap the C library in a safe API.  
 
 In Rust, like C++, the usual practice is to provide a 'safe' interface to an unsafe library, where the constructor, reference getting, and destructor patterns create memory and resource safety. The result of a safe interface is that clients need not use unsafe{} blocks.
 
