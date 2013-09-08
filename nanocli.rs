@@ -3,7 +3,12 @@ use std::c_str::*;
 use nanomsg::*;
 mod nanomsg;
 
-
+#[start]
+#[fixed_stack_segment]
+fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
+    // Run on the main thread
+    std::rt::start_on_main_thread(argc, argv, crate_map, main)
+}
 
 #[fixed_stack_segment]
 fn main ()
@@ -31,15 +36,16 @@ fn main ()
     assert!(rc == 3); // nn_assert
 
     // get a buffer for receive
-    let v : *mut c_void = unsafe { nn_allocmsg(16, 0) as *mut c_void }; // ok
+    // there is also a std::ptr call to do this I'm told.
+    let mut v = 0 as *mut u8;
+    //let mut v: *mut u8 = std::ptr::null();
+    let x: *mut *mut u8 = &mut v;
 
     // receive
+    let rc = unsafe { nn_recv (sc, x as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
 
-    // ??????????????????????????????????
-    // the following nn_recv is returning EAGAIN... why??
-    // ??????????????????????????????????
-    let rc = unsafe { nn_recv (sc, v as *mut c_void, NN_MSG, 0) };
-
+    // doesn't work:
+    // let rc = unsafe { nn_recv (sc, &mut v as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
 
     if (rc != 0) {
 
@@ -57,7 +63,7 @@ fn main ()
     printfln!("client: I received: '%s'\n", msg.to_str());
 
     // dealloc
-    let rc = unsafe { nn_freemsg(v) };
+    let rc = unsafe { nn_freemsg(v as *mut std::libc::types::common::c95::c_void) };
     assert! (rc == 0);
     
     // close
