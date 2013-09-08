@@ -3,6 +3,15 @@ use std::c_str::*;
 use nanomsg::*;
 mod nanomsg;
 
+// useful examples of code from bjz (thanks!):
+/*
+ https://github.com/bjz/glfw-rs#example-code
+ https://github.com/bjz/glfw-rs/blob/master/src/glfw/lib.rs#L645
+ https://github.com/bjz/glfw-rs/blob/master/src/glfw/lib.rs#L1069
+*/
+
+// if you want to be sure you are running on the main thread,
+// do this:
 #[start]
 #[fixed_stack_segment]
 fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
@@ -36,31 +45,31 @@ fn main ()
     assert!(rc == 3); // nn_assert
 
     // get a buffer for receive
-    // there is also a std::ptr call to do this I'm told.
+
+    // discussed alternatives for the v definition: let mut v = 0 as *mut u8;
+    // There is also a std::ptr call to do this I'm told. I
+    //  could not get it to compile however. When:
+    //  I tried:     let mut v: *mut u8 = std::ptr::null();
+    //  I got:       error: mismatched types: expected `*mut u8` but found `*<V67>` (values differ in mutability)
+
+    // this works:
     let mut v = 0 as *mut u8;
-    //let mut v: *mut u8 = std::ptr::null();
     let x: *mut *mut u8 = &mut v;
 
     // receive
-    let rc = unsafe { nn_recv (sc, x as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
+    let recv_msg_size = unsafe { nn_recv (sc, x as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
 
-    // doesn't work:
-    // let rc = unsafe { nn_recv (sc, &mut v as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
-
-    if (rc != 0) {
-
-        if (rc == 11) {
-            printfln!("nn_recv failed with EAGAIN, errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-        } else {
-            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-        }
+    if (rc < 0) {
+        printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
     }
 
     assert! (rc >= 0); // errno_assert
-    assert! (rc == 3); // nn_assert
 
-    let msg = unsafe { std::str::raw::from_buf_len(v as *u8, 3) };
-    printfln!("client: I received: '%s'\n", msg.to_str());
+    let msg = unsafe { std::str::raw::from_buf_len(v as *u8, recv_msg_size as uint) };
+
+    // this to_str() call will only work for utf8, but for now that's enough
+    // to let us verify we have the connection going.
+    printfln!("client: I received a %d byte long msg: '%s'\n", recv_msg_size as int, msg.to_str());
 
     // dealloc
     let rc = unsafe { nn_freemsg(v as *mut std::libc::types::common::c95::c_void) };
@@ -71,8 +80,3 @@ fn main ()
     assert!(rc == 0); // errno_assert
 
 }
-
-//    let rc = unsafe { nn_recv (sc, v as *mut c_void, 3, 0) }; // ok
-
-//     let v : *mut c_void = 0 as *mut c_void;
-//    let rc = unsafe { nn_recv (sc, v as *mut c_void, NN_MSG, 0) }; // nn_recv failed with errno: 14 '~"Bad address"' if v is NULL.
