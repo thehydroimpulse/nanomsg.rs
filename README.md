@@ -42,6 +42,6 @@ These rust-nanogen bindings were initiated using an automated bindings
  and rewriting them as "pub static MYCONST: int = 1;" statements.
 
 
-Status:  in development, creating nn_sockets, sending messages across
-           the wire works.
+Status:  in development, creating nn_sockets, sending and receiving
+	 messages across the wire works.
 
