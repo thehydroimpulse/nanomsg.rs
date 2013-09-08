@@ -52,7 +52,7 @@ pub static NN_VERSION_CURRENT: c_int = 0;
 pub static NN_VERSION_REVISION: c_int = 0;
 
 pub static NN_BUS: c_int = (NN_PROTO_BUS * 16 + 0);
-pub static NN_MSG: c_int = -1;
+pub static NN_MSG: u64 = -1;
 pub static NN_PAIR: c_int = (NN_PROTO_PAIR * 16 + 0);
 pub static NN_PUSH: c_int = (NN_PROTO_PIPELINE * 16 + 0);
 pub static NN_PULL: c_int = (NN_PROTO_PIPELINE * 16 + 1);
