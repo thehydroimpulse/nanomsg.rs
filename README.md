@@ -55,26 +55,26 @@ Nonetheless I'm publishing this as it stands a) as a starting point; and b) to g
 
 Status:  
 -------
-         The binding appears to work just fine, although do note
-	 that both rust and nanomsg are in active development.
-	 The test programs (nanoserv.rs, nanocli.rs) demonstrate
-	 the bindings in action; they create an nn_socket and send
-	 and receive messages over the wire. 
+The binding appears to work just fine, although do note
+that both rust and nanomsg are in active development.
+The test programs (nanoserv.rs, nanocli.rs) demonstrate
+the bindings in action; they create an nn_socket and send
+and receive messages over the wire. 
 
 Valgrind status:
 ---------------
 
-         Valgrind reports
-	 that the rust client (nanocli.rs) and server (nanoserv.rs)
-         leak 40 bytes each, which is of concern. We only transfered
-         4 bytes between client and server.  The same patterns in C code 
-         (included in this repo as clinano.c and servnano.c) do not leak 
-         at all under valgrind, so the leak has to be due to either my mis-use
-         of rust, or a leak in the rust-generated code or runtime.
+Valgrind reports
+that the rust client (nanocli.rs) and server (nanoserv.rs)
+leak 40 bytes each, which is of concern. We only transfered
+4 bytes between client and server!  The same patterns in C code 
+(included in this repo as clinano.c and servnano.c) do not leak 
+at all under valgrind, so the leak has to be due to either my mis-use
+of rust, or a leak in the rust-generated code or runtime.
 
 Other protocols beyond nn_socket: 
 ---------------------------------
 
 The other scalability protocols implemented in nanomsg work in the C side,
-         so rust ports/examples/contributions are welcome. Please feel free to fork 
-         this repo and send me pull requests with improvements. 
+so rust ports/examples/contributions are welcome. Please feel free to fork 
+this repo and send me pull requests with improvements. 
