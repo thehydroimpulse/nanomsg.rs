@@ -46,7 +46,9 @@ Status:  The binding appears to work just fine, although do note
 	 that both rust and nanomsg are in active development.
 	 The test programs (nanoserv.rs, nanocli.rs) demonstrate
 	 the bindings in action; they create an nn_socket and send
-	 and receive messages over the wire.
+	 and receive messages over the wire. Valgrind reports
+	 that the rust versions leak 40 bytes each, which is
+	 of concern.
 
 Other protocols beyond nn_socket: they work in the C side,
          rust examples/contributions welcome.
