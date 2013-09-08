@@ -22,16 +22,6 @@ fn main ()
 {
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
     printfln!("client binding to '%?'", SOCKET_ADDRESS);
-/*
-  c_int rc;
-  c_int sb;
-  c_int sc;
-  c_int i;
-  char buf [4];
-  c_int opt;
-  size_t sz;
-  char msg[256];
-*/
 
     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR) };
     printfln!("nn_socket returned: %?", sc);
@@ -52,7 +42,7 @@ fn main ()
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
 
-    let v : *mut i8 = unsafe { nn_allocmsg(10, 0) as *mut i8 };
+    let v : *mut c_void = unsafe { nn_allocmsg(16, 0) as *mut c_void };
 
     // receive???
 
@@ -62,9 +52,8 @@ fn main ()
     assert! (rc >= 0); // errno_assert
     assert! (rc == 3); // nn_assert
 
-//    let msg : &'static str = v.to_str();
-    let msg = "placeholder";
-    printfln!("client: I received: '%s'\n", msg);
+    let msg = unsafe { std::str::raw::from_buf_len(v as *u8, 3) };
+    printfln!("client: I received: '%s'\n", msg.to_str());
     
     // close
     let rc = unsafe { nn_close (sc) };
