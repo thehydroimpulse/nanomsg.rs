@@ -1,15 +1,3 @@
-
-// The mod statement creates a module. You can define it inline or 
-// load it from file:
-//
-//     mod foo;
-//
-// is equivalent to
-//
-//     mod foo { /* content of foo.rs */ }
-//
-
-
 use std::libc::*;
 use std::c_str::*;
 use nanomsg::*;
@@ -42,12 +30,10 @@ fn main ()
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
 
+    // get a buffer for recevie
     let v : *mut c_void = unsafe { nn_allocmsg(16, 0) as *mut c_void };
 
-    // receive???
-
-//??    std:tr::raw::from_cstr
-
+    // receive
     let rc = unsafe { nn_recv (sc, v as *mut c_void, 3, 0) };
     assert! (rc >= 0); // errno_assert
     assert! (rc == 3); // nn_assert
