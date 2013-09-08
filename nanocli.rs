@@ -51,20 +51,24 @@ fn main ()
     
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
-    
-    /*
-    
-    
-    // receive
-    rc = nn_recv (sc, buf, sizeof (buf), 0);
-    errno_assert (rc >= 0);
-    nn_assert (rc == 3);
-    
-    printfln!("client: I received: '%s'\n", buf);
+
+    let v : *mut i8 = unsafe { nn_allocmsg(10, 0) as *mut i8 };
+
+    // receive???
+
+//??    std:tr::raw::from_cstr
+
+    let rc = unsafe { nn_recv (sc, v as *mut c_void, 3, 0) };
+    assert! (rc >= 0); // errno_assert
+    assert! (rc == 3); // nn_assert
+
+//    let msg : &'static str = v.to_str();
+    let msg = "placeholder";
+    printfln!("client: I received: '%s'\n", msg);
     
     // close
-    rc = nn_close (sc);
-    errno_assert (rc == 0);
-    */
+    let rc = unsafe { nn_close (sc) };
+    assert!(rc == 0); // errno_assert
 
 }
+
