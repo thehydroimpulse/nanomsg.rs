@@ -1,5 +1,4 @@
 use std::libc::*;
-use std::cast;
 use std::c_str::*;
 use std::ptr;
 use std::unstable::intrinsics;
@@ -57,16 +56,13 @@ impl NanoMsg {
         self.size
     }
 
-    // let msg = unsafe { std::str::raw::from_buf_len(v as *u8, recv_msg_size as uint) };
-
-    // the 'r lifetime results in the same semantics as `&*x` with ~T
-    pub fn borrow<'r>(&'r self) -> &'r str {
-        unsafe { cast::copy_lifetime(self, &std::str::raw::from_buf_len(self.buf as *u8, self.size as uint)  ) }
+    pub fn copy_to_string(&self) -> ~str {
+        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) }
     }
 
     // the 'r lifetime results in the same semantics as `&mut *x` with ~T
-    pub fn borrow_mut<'r>(&'r mut self) -> &'r mut &str {
-        unsafe { cast::copy_mut_lifetime(self, &mut *self.buf) }
+    pub fn borrow_mut<'r>(&'r mut self) -> ~str {
+        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) }
     }
 
 
@@ -216,11 +212,11 @@ fn cli2() {
 
     assert! (rc >= 0); // errno_assert
 
-    let m = msg.borrow();
+    let m = msg.copy_to_string();
 
     // this to_str() call will only work for utf8, but for now that's enough
     // to let us verify we have the connection going.
-    printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, msg.to_str());
+    printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, m);
 
     
     // close
