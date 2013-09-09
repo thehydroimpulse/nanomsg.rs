@@ -7,11 +7,17 @@ use std::cast::transmute;
 use nanomsg::*;
 mod nanomsg;
 
+enum HowToCleanup {
+  Free,
+  Call_nn_freemsg,
+  DoNothing
+}
+
 // a wrapper around the message returned by nn_recv
 pub struct NanoMsg {
     buf: *mut u8,
     size: u64,
-    priv owns_buffer_: bool,
+    priv cleanup: HowToCleanup,
 }
 
 
@@ -19,7 +25,7 @@ impl NanoMsg {
 
     pub fn new() -> NanoMsg {
         let buf : *mut u8 = 0 as *mut u8;
-        NanoMsg{buf: buf, size: 0, owns_buffer_: false }
+        NanoMsg{buf: buf, size: 0, cleanup: DoNothing }
     }
 
     pub fn len(&self) -> u64 {
@@ -27,14 +33,16 @@ impl NanoMsg {
     }
 
     pub fn printbuf(&self) {
-        printfln!("NanoMsg contains: '%?'", self.buf);
+        printfln!("NanoMsg contains message of length %?: '%s'", self.size, self.copy_to_string());
     }
 
     /// Unwraps the NanoMsg.
     /// Any ownership of the message pointed to by buf is forgotten.
     pub unsafe fn unwrap(self) -> *mut u8 {
+        printfln!("we should never get here!!!!");
+        assert!(false);
         let mut msg = self;
-        msg.owns_buffer_ = false;
+        msg.cleanup = DoNothing;
         msg.buf
     }
 
@@ -48,31 +56,36 @@ impl NanoMsg {
         self.size
     }
 
-    // truncates any part of the message over len
-    pub fn recv_fixed_size(&mut self, sock: c_int, len: u64, flags: c_int) -> u64 {
+    // truncates any part of the message over maxlen
+    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> u64 {
         #[fixed_stack_segment];
         #[inline(never)];
 
-        self.size = unsafe { 
-            nn_recv (sock, 
-                     transmute(&mut self.buf),
-                     len, 
-                     flags) as u64
+        unsafe { 
+            self.cleanup = Free;
+            let ptr = malloc(maxlen as size_t) as *mut u8;
+            assert!(!ptr::is_null(ptr));
+
+            self.buf = ptr;
+            self.size = nn_recv (sock, 
+                                 transmute(self.buf),
+                                 maxlen, 
+                                 flags) as u64;
+
+            if (self.size < 0) {
+                printfln!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+                assert!(false);
+            }
+
         };
         self.size
     }
 
     pub fn copy_to_string(&self) -> ~str {
-        let s = unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) };
-        printfln!("copy_to_string sees this string: '%s' of len %ud", s, s.len());
-        s
-    }
-
-    // the 'r lifetime results in the same semantics as `&mut *x` with ~T
-    pub fn borrow_mut<'r>(&'r mut self) -> ~str {
+        printfln!("copy to string sees size: '%?'", self.size);
+        printfln!("copy to string sees buf : '%?'", self.buf as *u8);
         unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) }
     }
-
 
 }
 
@@ -83,111 +96,41 @@ impl Drop for NanoMsg {
         #[inline(never)];
         printfln!("starting Drop for NanoMsg");
 
-        if (!std::ptr::is_null(self.buf)) {
-            unsafe {
-                let x = intrinsics::init(); // dummy value to swap in
-                // moving the object out is needed to call the destructor
-                ptr::replace_ptr(self.buf, x);
+        if (std::ptr::is_null(self.buf)) { return; }
 
-                let rc = nn_freemsg(self.buf as *mut c_void);
-                assert! (rc == 0);
+        match self.cleanup {
+            DoNothing => (),
+            Free => {
+                unsafe {
+                    // see example code: http://static.rust-lang.org/doc/tutorial-ffi.html
+
+                    let x = intrinsics::init(); // dummy value to swap in
+                    // moving the object out is needed to call the destructor
+                    ptr::replace_ptr(self.buf, x);
+                    free(self.buf as *c_void)
+                }
+            },
+
+            Call_nn_freemsg => {
+                unsafe {
+                    let x = intrinsics::init(); // dummy value to swap in
+                    // moving the object out is needed to call the destructor
+                    ptr::replace_ptr(self.buf, x);
+                    
+                    let rc = nn_freemsg(self.buf as *mut c_void);
+                    assert! (rc == 0);
+                }
             }
+            
         }
     }
 }
 
 
 
-
-// useful examples of code from bjz (thanks!):
-/*
- https://github.com/bjz/glfw-rs#example-code
- https://github.com/bjz/glfw-rs/blob/master/src/glfw/lib.rs#L645
- https://github.com/bjz/glfw-rs/blob/master/src/glfw/lib.rs#L1069
-*/
-
-// if you want to be sure you are running on the main thread,
-// do this:
-#[start]
-#[fixed_stack_segment]
-fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
-    // Run on the main thread
-    std::rt::start_on_main_thread(argc, argv, crate_map, main)
-}
-
-// TODO: figure out how to make a safe interface that
-//       wraps all these unsafe calls.
-
-
 #[fixed_stack_segment]
 fn main ()
 {
-    cli2();
-}
-
-#[fixed_stack_segment]
-fn cli1() {
-
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    printfln!("client binding to '%?'", SOCKET_ADDRESS);
-
-    let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR) };
-    printfln!("nn_socket returned: %?", sc);
-
-    assert!(sc >= 0);
-    
-    // connect
-    let addr = SOCKET_ADDRESS.to_c_str();
-    let rc : c_int = addr.with_ref(|a| unsafe { nn_connect (sc, a) });
-    assert!(rc > 0);
-    
-    // send
-    let b = "WHY";
-    let buf = b.to_c_str();
-    let rc : c_int = buf.with_ref(|b| unsafe { nn_send (sc, b as *std::libc::c_void, 3, 0) });
-    printfln!("client: I sent '%s'", b);
-    
-    assert!(rc >= 0); // errno_assert
-    assert!(rc == 3); // nn_assert
-
-    // get a pointer, v, that will point to
-    // the buffer that receive fills in for us.
-
-    let mut v: *mut u8 = std::ptr::mut_null();
-    //    let mut v = 0 as *mut u8;    // this also works to get v started.
-
-    let x: *mut *mut u8 = &mut v;
-
-    // receive
-    let recv_msg_size = unsafe { nn_recv (sc, x as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
-
-   
-    if (rc < 0) {
-        printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-    }
-
-    assert! (rc >= 0); // errno_assert
-
-    let msg = unsafe { std::str::raw::from_buf_len(v as *u8, recv_msg_size as uint) };
-
-    // this to_str() call will only work for utf8, but for now that's enough
-    // to let us verify we have the connection going.
-    printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, msg.to_str());
-
-    // dealloc
-    let rc = unsafe { nn_freemsg(v as *mut std::libc::types::common::c95::c_void) };
-    assert! (rc == 0);
-    
-    // close
-    let rc = unsafe { nn_close (sc) };
-    assert!(rc == 0); // errno_assert
-
-}
-
-
-
-#[fixed_stack_segment]
-fn cli2() {
 
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
     printfln!("client binding to '%?'", SOCKET_ADDRESS);
@@ -218,11 +161,14 @@ fn cli2() {
         let mut msg = NanoMsg::new();
         
         // receive
-        let recv_msg_size = msg.recv_any_size(sc, 0);
+        let actual_msg_size = msg.recv_any_size(sc, 0);
+        //let actual_msg_size = msg.recv_no_more_than_maxlen(sc, 2, 0);
         
-        if (recv_msg_size < 0) {
+        if (actual_msg_size < 0) {
             printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            assert!(false);
         }
+        printfln!("actual_msg_size is %?", actual_msg_size);
 
         msg.printbuf();
         
@@ -232,7 +178,7 @@ fn cli2() {
         
         // this to_str() call will only work for utf8, but for now that's enough
         // to let us verify we have the connection going.
-        printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, m);
+        printfln!("client: I received a %d byte long msg: '%s'", actual_msg_size as int, m);
 
     }
     
