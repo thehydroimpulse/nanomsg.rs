@@ -223,6 +223,12 @@ impl NanoMsg {
         #[fixed_stack_segment];
         #[inline(never)];
 
+        match(self.cleanup) {
+            DoNothing => (),
+            Free => self.cleanup(),
+            Call_nn_freemsg => self.cleanup()
+        }
+            
         unsafe { 
             self.bytes_stored_in_buf = nn_recv (sock,  transmute(&mut self.buf), NN_MSG, flags) as u64;
         }
@@ -231,6 +237,7 @@ impl NanoMsg {
             printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
             return None;
         } else {
+            self.cleanup = Call_nn_freemsg;
             return Some(self.bytes_stored_in_buf);
         }
     }
@@ -241,6 +248,11 @@ impl NanoMsg {
         #[fixed_stack_segment];
         #[inline(never)];
 
+        match(self.cleanup) {
+            DoNothing => (),
+            Free => self.cleanup(),
+            Call_nn_freemsg => self.cleanup()
+        }
 
         unsafe { 
             let ptr = malloc(maxlen as size_t) as *mut u8;
@@ -275,14 +287,9 @@ impl NanoMsg {
         unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
     }
 
-}
-
-#[unsafe_destructor]
-impl Drop for NanoMsg {
-    fn drop(&self) {
+    pub fn cleanup(&self) {
         #[fixed_stack_segment];
         #[inline(never)];
-        printfln!("starting Drop for NanoMsg");
 
         if (std::ptr::is_null(self.buf)) { return; }
 
@@ -301,6 +308,8 @@ impl Drop for NanoMsg {
 
             Call_nn_freemsg => {
                 unsafe {
+                    printfln!("*** Call_nn_freemsg Drop running.");
+
                     let x = intrinsics::init(); // dummy value to swap in
                     // moving the object out is needed to call the destructor
                     ptr::replace_ptr(self.buf, x);
@@ -309,8 +318,19 @@ impl Drop for NanoMsg {
                     assert! (rc == 0);
                 }
             }
-            
         }
+        
+    }
+    
+}
+
+#[unsafe_destructor]
+impl Drop for NanoMsg {
+    fn drop(&self) {
+        #[fixed_stack_segment];
+        #[inline(never)];
+        printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
+        self.cleanup();
     }
 }
 

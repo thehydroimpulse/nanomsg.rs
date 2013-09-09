@@ -32,11 +32,8 @@ fn main ()
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
 
-    // get a pointer, v, that will point to
-    // the buffer that receive fills in for us.
-
+    let mut msg = NanoMsg::new();
     {
-        let mut msg = NanoMsg::new();
         
         // receive
         let recd = msg.recv_any_size(sc, 0);
@@ -50,17 +47,17 @@ fn main ()
                 printfln!("actual_msg_size is %?", sz);
                 
                 let m = msg.copy_to_string();
-                
-                // this to_str() call will only work for utf8, but for now that's enough
-                // to let us verify we have the connection going.
                 printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
 
+                // also available for debugging:
                 // msg.printbuf();
                 
             }
         }
 
+    }
 
+    {
         let recd = msg.recv_no_more_than_maxlen(sc, 2, 0);
 
         match(recd) {
@@ -75,12 +72,11 @@ fn main ()
                 
                 printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
 
+                // also available for debugging:
                 // msg.printbuf();
                 
             }
         }
-
-
     }
     
     // close
