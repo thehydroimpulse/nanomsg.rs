@@ -22,8 +22,6 @@ fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
 // TODO: figure out how to make a safe interface that
 //       wraps all these unsafe calls.
 
-// TODO: figure out why valgrind is reporting both nanocli.rs
-//       and nanoserv.rs leak.
 
 #[fixed_stack_segment]
 fn main ()
