@@ -2,6 +2,7 @@ use std::libc::*;
 use std::c_str::*;
 use std::ptr;
 use std::unstable::intrinsics;
+use std::cast::transmute;
 
 use nanomsg::*;
 mod nanomsg;
@@ -10,7 +11,6 @@ mod nanomsg;
 pub struct NanoMsg {
     buf: *mut u8,
     size: u64,
-    priv abuf: *mut *mut u8,
     priv owns_buffer_: bool,
 }
 
@@ -18,9 +18,16 @@ pub struct NanoMsg {
 impl NanoMsg {
 
     pub fn new() -> NanoMsg {
-        let mut buf : *mut u8 = 0 as *mut u8;
-        let abuf = &mut buf;
-        NanoMsg{buf: buf, abuf: abuf, size: 0, owns_buffer_: false }
+        let buf : *mut u8 = 0 as *mut u8;
+        NanoMsg{buf: buf, size: 0, owns_buffer_: false }
+    }
+
+    pub fn len(&self) -> u64 {
+        self.size
+    }
+
+    pub fn printbuf(&self) {
+        printfln!("NanoMsg contains: '%?'", self.buf);
     }
 
     /// Unwraps the NanoMsg.
@@ -31,13 +38,12 @@ impl NanoMsg {
         msg.buf
     }
 
-
-    pub fn recv_NN_MSG(&mut self, sock: c_int, flags: c_int) -> u64 {
+    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> u64 {
         #[fixed_stack_segment];
         #[inline(never)];
 
         unsafe { 
-            self.size = nn_recv (sock,  self.abuf as *mut std::libc::types::common::c95::c_void, NN_MSG, flags) as u64;
+            self.size = nn_recv (sock,  transmute(&mut self.buf), NN_MSG, flags) as u64;
         }
         self.size
     }
@@ -49,7 +55,7 @@ impl NanoMsg {
 
         self.size = unsafe { 
             nn_recv (sock, 
-                     self.abuf as *mut std::libc::types::common::c95::c_void, 
+                     transmute(&mut self.buf),
                      len, 
                      flags) as u64
         };
@@ -57,7 +63,9 @@ impl NanoMsg {
     }
 
     pub fn copy_to_string(&self) -> ~str {
-        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) }
+        let s = unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.size as uint) };
+        printfln!("copy_to_string sees this string: '%s' of len %ud", s, s.len());
+        s
     }
 
     // the 'r lifetime results in the same semantics as `&mut *x` with ~T
@@ -73,13 +81,17 @@ impl Drop for NanoMsg {
     fn drop(&self) {
         #[fixed_stack_segment];
         #[inline(never)];
+        printfln!("starting Drop for NanoMsg");
 
-        unsafe {
-            let x = intrinsics::init(); // dummy value to swap in
-            // moving the object out is needed to call the destructor
-            ptr::replace_ptr(self.buf, x);
-            let rc = nn_freemsg(self.buf as *mut c_void);
-            assert! (rc == 0);
+        if (!std::ptr::is_null(self.buf)) {
+            unsafe {
+                let x = intrinsics::init(); // dummy value to swap in
+                // moving the object out is needed to call the destructor
+                ptr::replace_ptr(self.buf, x);
+
+                let rc = nn_freemsg(self.buf as *mut c_void);
+                assert! (rc == 0);
+            }
         }
     }
 }
@@ -149,6 +161,7 @@ fn cli1() {
     // receive
     let recv_msg_size = unsafe { nn_recv (sc, x as *mut std::libc::types::common::c95::c_void, NN_MSG, 0) };
 
+   
     if (rc < 0) {
         printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
     }
@@ -201,23 +214,27 @@ fn cli2() {
     // get a pointer, v, that will point to
     // the buffer that receive fills in for us.
 
-    let mut msg = NanoMsg::new();
+    {
+        let mut msg = NanoMsg::new();
+        
+        // receive
+        let recv_msg_size = msg.recv_any_size(sc, 0);
+        
+        if (recv_msg_size < 0) {
+            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+        }
 
-    // receive
-    let recv_msg_size = msg.recv_NN_MSG(sc, 0);
+        msg.printbuf();
+        
+        assert! (rc >= 0); // errno_assert
+        
+        let m = msg.copy_to_string();
+        
+        // this to_str() call will only work for utf8, but for now that's enough
+        // to let us verify we have the connection going.
+        printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, m);
 
-    if (recv_msg_size < 0) {
-        printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
     }
-
-    assert! (rc >= 0); // errno_assert
-
-    let m = msg.copy_to_string();
-
-    // this to_str() call will only work for utf8, but for now that's enough
-    // to let us verify we have the connection going.
-    printfln!("client: I received a %d byte long msg: '%s'", recv_msg_size as int, m);
-
     
     // close
     let rc = unsafe { nn_close (sc) };

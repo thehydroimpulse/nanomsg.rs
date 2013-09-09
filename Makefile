@@ -12,8 +12,8 @@ $(NANO_SRC_DIR)/tcp.h
 all: nanocli cnano
 
 nanocli: nanocli.rs
-	rust build nanocli.rs
-	rust build nanoserv.rs
+	rust build -Z debug-info nanocli.rs
+	rust build -Z debug-info nanoserv.rs
 
 run: nanocli.rs
 	rust run nanocli.rs
