@@ -2,10 +2,20 @@
 // nanomsg.rs : nanomsg bindings for rust
 //
 // This aims to be a rust version of the 
-// full public API of nanomsg.
+// full public API of nanomsg. But parts
+// are probably still missing, since the
+// safe API only does nn_send and nn_recv currently.
 // ======================================
 
+extern mod std;
+
 use std::libc::*;
+use std::ptr;
+use std::unstable::intrinsics;
+use std::cast::transmute;
+use std::option::Option;
+use std::num::*;
+use std::os::*;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -164,4 +174,143 @@ extern "C" {
                      s2: c_int) -> c_int;
 }
 
+
+enum HowToCleanup {
+  Free,
+  Call_nn_freemsg,
+  DoNothing
+}
+
+// a wrapper around the message returned by nn_recv
+pub struct NanoMsg {
+    buf: *mut u8,
+    bytes_stored_in_buf: u64,
+    bytes_available: u64,
+    priv cleanup: HowToCleanup,
+}
+
+
+impl NanoMsg {
+
+    pub fn new() -> NanoMsg {
+        let buf : *mut u8 = 0 as *mut u8;
+        NanoMsg{buf: buf, bytes_stored_in_buf: 0, bytes_available: 0, cleanup: DoNothing }
+    }
+
+    pub fn len(&self) -> u64 {
+        self.bytes_stored_in_buf
+    }
+
+    pub fn actual_msg_bytes_avail(&self) -> u64 {
+        self.bytes_available
+    }
+
+    pub fn printbuf(&self) {
+        printfln!("NanoMsg contains message of length %?: '%s'", self.bytes_stored_in_buf, self.copy_to_string());
+    }
+
+    /// Unwraps the NanoMsg.
+    /// Any ownership of the message pointed to by buf is forgotten.
+    pub unsafe fn unwrap(self) -> *mut u8 {
+        printfln!("we should never get here!!!!");
+        assert!(false);
+        let mut msg = self;
+        msg.cleanup = DoNothing;
+        msg.buf
+    }
+
+    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Option<u64> {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        unsafe { 
+            self.bytes_stored_in_buf = nn_recv (sock,  transmute(&mut self.buf), NN_MSG, flags) as u64;
+        }
+
+        if (self.bytes_stored_in_buf < 0) {
+            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            return None;
+        } else {
+            return Some(self.bytes_stored_in_buf);
+        }
+    }
+
+
+    // truncates any part of the message over maxlen
+    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Option<u64> {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+
+        unsafe { 
+            self.cleanup = Free;
+            let ptr = malloc(maxlen as size_t) as *mut u8;
+            assert!(!ptr::is_null(ptr));
+
+            self.buf = ptr;
+            self.bytes_available = nn_recv (sock, 
+                                           transmute(self.buf),
+                                           maxlen, 
+                                           flags) as u64;
+            
+            if (self.bytes_available < 0) {
+                printfln!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+                return None;
+            }
+
+            if (self.bytes_available > maxlen) {
+                let errmsg = fmt!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", self.bytes_available, maxlen);
+                printfln!(errmsg);
+                warn!(errmsg);
+            }
+
+            self.bytes_stored_in_buf = min(maxlen, self.bytes_available);            
+            Some(self.bytes_stored_in_buf)
+        }
+    }
+
+    pub fn copy_to_string(&self) -> ~str {
+        printfln!("copy to string sees size: '%?'", self.bytes_stored_in_buf);
+        printfln!("copy to string sees buf : '%?'", self.buf as *u8);
+        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
+    }
+
+}
+
+#[unsafe_destructor]
+impl Drop for NanoMsg {
+    fn drop(&self) {
+        #[fixed_stack_segment];
+        #[inline(never)];
+        printfln!("starting Drop for NanoMsg");
+
+        if (std::ptr::is_null(self.buf)) { return; }
+
+        match self.cleanup {
+            DoNothing => (),
+            Free => {
+                unsafe {
+                    // see example code: http://static.rust-lang.org/doc/tutorial-ffi.html
+
+                    let x = intrinsics::init(); // dummy value to swap in
+                    // moving the object out is needed to call the destructor
+                    ptr::replace_ptr(self.buf, x);
+                    free(self.buf as *c_void)
+                }
+            },
+
+            Call_nn_freemsg => {
+                unsafe {
+                    let x = intrinsics::init(); // dummy value to swap in
+                    // moving the object out is needed to call the destructor
+                    ptr::replace_ptr(self.buf, x);
+                    
+                    let rc = nn_freemsg(self.buf as *mut c_void);
+                    assert! (rc == 0);
+                }
+            }
+            
+        }
+    }
+}
 

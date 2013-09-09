@@ -52,7 +52,7 @@ fn main ()
     let b = "CAT";
     let buf = b.to_c_str();
     let rc : c_int = buf.with_ref(|b| unsafe { nn_send (sc, b as *std::libc::types::common::c95::c_void, 3, 0) });
-    printfln!("server: I sent '%s'", b);
+    printfln!("server: 2nd send, I sent '%s'", b);
     
     assert!(rc >= 0); // errno_assert
     assert!(rc == 3); // nn_assert
