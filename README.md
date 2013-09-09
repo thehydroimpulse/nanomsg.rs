@@ -62,16 +62,6 @@ The test programs (nanoserv.rs, nanocli.rs) demonstrate
 the bindings in action; they create an nn_socket and send
 and receive messages over the wire. 
 
-Valgrind status:
----------------
-
-Valgrind reports
-that the rust client (nanocli.rs) and server (nanoserv.rs)
-leak 40 bytes each, which is of concern. We only transfered
-4 bytes between client and server!  The same patterns in C code 
-(included in this repo as clinano.c and servnano.c) do not leak 
-at all under valgrind, so the leak has to be due to either my mis-use
-of rust, or a leak in the rust-generated code or runtime.
 
 Other protocols beyond nn_socket: 
 ---------------------------------
