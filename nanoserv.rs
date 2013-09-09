@@ -7,7 +7,7 @@ mod nanomsg;
 fn main ()
 {
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    printfln!("client binding to '%?'", SOCKET_ADDRESS);
+    printfln!("server binding to '%?'", SOCKET_ADDRESS);
 
     let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR) };
     printfln!("nn_socket returned: %?", sc);
@@ -16,7 +16,7 @@ fn main ()
     
     // bind
     let addr = SOCKET_ADDRESS.to_c_str();
-    let rc : c_int = unsafe { nn_bind (sc, addr.unwrap() as *i8) };
+    let rc : c_int = addr.with_ref(|a| unsafe { nn_bind (sc, a) });
     assert!(rc > 0);
 
     // get a buffer for receive
@@ -41,7 +41,7 @@ fn main ()
     // send
     let b = "LUV";
     let buf = b.to_c_str();
-    let rc : c_int = unsafe { nn_send (sc, buf.unwrap() as *std::libc::c_void, 3, 0) };
+    let rc : c_int = buf.with_ref(|b| unsafe { nn_send (sc, b as *std::libc::types::common::c95::c_void, 3, 0) });
     printfln!("server: I sent '%s'", b);
     
     assert!(rc >= 0); // errno_assert

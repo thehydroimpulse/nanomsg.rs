@@ -38,13 +38,13 @@ fn main ()
     
     // connect
     let addr = SOCKET_ADDRESS.to_c_str();
-    let rc : c_int = unsafe { nn_connect (sc, addr.unwrap() as *i8) };
+    let rc : c_int = addr.with_ref(|a| unsafe { nn_connect (sc, a) });
     assert!(rc > 0);
     
     // send
     let b = "WHY";
     let buf = b.to_c_str();
-    let rc : c_int = unsafe { nn_send (sc, buf.unwrap() as *std::libc::c_void, 3, 0) };
+    let rc : c_int = buf.with_ref(|b| unsafe { nn_send (sc, b as *std::libc::c_void, 3, 0) });
     printfln!("client: I sent '%s'", b);
     
     assert!(rc >= 0); // errno_assert
