@@ -3,6 +3,8 @@ use std::c_str::*;
 use std::ptr;
 use std::unstable::intrinsics;
 use std::cast::transmute;
+use std::option::Option;
+use std::num::*;
 
 use nanomsg::*;
 mod nanomsg;
@@ -46,20 +48,28 @@ impl NanoMsg {
         msg.buf
     }
 
-    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> u64 {
+    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Option<u64> {
         #[fixed_stack_segment];
         #[inline(never)];
 
         unsafe { 
             self.size = nn_recv (sock,  transmute(&mut self.buf), NN_MSG, flags) as u64;
         }
-        self.size
+
+        if (self.size < 0) {
+            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            return None;
+        } else {
+            return Some(self.size);
+        }
     }
 
+
     // truncates any part of the message over maxlen
-    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> u64 {
+    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Option<u64> {
         #[fixed_stack_segment];
         #[inline(never)];
+
 
         unsafe { 
             self.cleanup = Free;
@@ -67,18 +77,24 @@ impl NanoMsg {
             assert!(!ptr::is_null(ptr));
 
             self.buf = ptr;
-            self.size = nn_recv (sock, 
+            let actual_sz_of_msg = nn_recv (sock, 
                                  transmute(self.buf),
                                  maxlen, 
                                  flags) as u64;
 
-            if (self.size < 0) {
+            if (actual_sz_of_msg < 0) {
                 printfln!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-                assert!(false);
+                return None;
             }
 
-        };
-        self.size
+            if (actual_sz_of_msg > maxlen) {
+                printfln!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", actual_sz_of_msg, maxlen);
+                warn!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", actual_sz_of_msg, maxlen);
+            }
+
+            self.size = min(maxlen, actual_sz_of_msg);            
+            Some(self.size)
+        }
     }
 
     pub fn copy_to_string(&self) -> ~str {
@@ -161,24 +177,47 @@ fn main ()
         let mut msg = NanoMsg::new();
         
         // receive
-        let actual_msg_size = msg.recv_any_size(sc, 0);
-        //let actual_msg_size = msg.recv_no_more_than_maxlen(sc, 2, 0);
+        let recd = msg.recv_any_size(sc, 0);
         
-        if (actual_msg_size < 0) {
-            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-            assert!(false);
-        }
-        printfln!("actual_msg_size is %?", actual_msg_size);
+        match(recd) {
+            None => {
+                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            },
+            Some(sz) => {
 
-        msg.printbuf();
-        
-        assert! (rc >= 0); // errno_assert
-        
-        let m = msg.copy_to_string();
-        
-        // this to_str() call will only work for utf8, but for now that's enough
-        // to let us verify we have the connection going.
-        printfln!("client: I received a %d byte long msg: '%s'", actual_msg_size as int, m);
+                printfln!("actual_msg_size is %?", sz);
+                
+                let m = msg.copy_to_string();
+                
+                // this to_str() call will only work for utf8, but for now that's enough
+                // to let us verify we have the connection going.
+                printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.len());
+
+                // msg.printbuf();
+                
+            }
+        }
+
+
+        let recd = msg.recv_no_more_than_maxlen(sc, 2, 0);
+
+        match(recd) {
+            None => {
+                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            },
+            Some(sz) => {
+
+                printfln!("actual_msg_size is %?", sz);
+                
+                let m = msg.copy_to_string();
+                
+                printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.len());
+
+                // msg.printbuf();
+                
+            }
+        }
+
 
     }
     
