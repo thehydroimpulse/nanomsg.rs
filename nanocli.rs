@@ -73,7 +73,7 @@ fn main ()
                 
                 let m = msg.copy_to_string();
                 
-                printfln!("client: I received a %? byte long msg: '%?', of which I have '%?' bytes in my buffer.", msg.len(), m, recd.unwrap() as int);
+                printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
 
                 // msg.printbuf();
                 

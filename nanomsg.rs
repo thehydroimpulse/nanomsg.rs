@@ -243,9 +243,9 @@ impl NanoMsg {
 
 
         unsafe { 
-            self.cleanup = Free;
             let ptr = malloc(maxlen as size_t) as *mut u8;
             assert!(!ptr::is_null(ptr));
+            self.cleanup = Free;
 
             self.buf = ptr;
             self.bytes_available = nn_recv (sock, 
