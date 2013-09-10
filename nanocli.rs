@@ -57,6 +57,9 @@ fn main ()
 
     }
 
+    // it is okay to reuse msg (e.g. as below, or in a loop). NanoMsg will free any previous message before
+    //  receiving a new one.
+
     {
         let recd = msg.recv_no_more_than_maxlen(sc, 2, 0);
 

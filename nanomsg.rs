@@ -211,9 +211,8 @@ impl NanoMsg {
 
     /// Unwraps the NanoMsg.
     /// Any ownership of the message pointed to by buf is forgotten.
+    /// Since we take self by value, no further access is possible.
     pub unsafe fn unwrap(self) -> *mut u8 {
-        printfln!("we should never get here!!!!");
-        assert!(false);
         let mut msg = self;
         msg.cleanup = DoNothing;
         msg.buf
@@ -266,7 +265,9 @@ impl NanoMsg {
                                            flags) as u64;
             
             if (self.bytes_available < 0) {
-                printfln!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+                let errmsg = fmt!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+                printfln!(errmsg);
+                warn!(errmsg);
                 return None;
             }
 
@@ -282,8 +283,8 @@ impl NanoMsg {
     }
 
     pub fn copy_to_string(&self) -> ~str {
-        printfln!("copy to string sees size: '%?'", self.bytes_stored_in_buf);
-        printfln!("copy to string sees buf : '%?'", self.buf as *u8);
+        //printfln!("copy_to_string sees size: '%?'", self.bytes_stored_in_buf);
+        //printfln!("copy_to_string sees buf : '%?'", self.buf as *u8);
         unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
     }
 
@@ -308,7 +309,7 @@ impl NanoMsg {
 
             Call_nn_freemsg => {
                 unsafe {
-                    printfln!("*** Call_nn_freemsg Drop running.");
+                    // printfln!("*** Call_nn_freemsg Drop running.");
 
                     let x = intrinsics::init(); // dummy value to swap in
                     // moving the object out is needed to call the destructor
@@ -329,7 +330,7 @@ impl Drop for NanoMsg {
     fn drop(&self) {
         #[fixed_stack_segment];
         #[inline(never)];
-        printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
+        // printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
         self.cleanup();
     }
 }
