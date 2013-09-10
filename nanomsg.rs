@@ -174,8 +174,86 @@ extern "C" {
                      s2: c_int) -> c_int;
 }
 
+// Rust-idiomatic memory safe wrappers for nanomsg objects:
+
+// ======================================================
+// NanoSocket
+// ======================================================
+
+pub struct NanoSocket {
+    sock: c_int,
+    domain: c_int,
+    protocol: c_int,
+}
+
+impl NanoSocket {
+
+    // example: let sock = NanoSocket::new(AF_SP, NN_PAIR);
+    pub fn new(domain: c_int, protocol: c_int) -> NanoSocket {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        let sc : c_int = unsafe { nn_socket (domain, protocol) };
+        assert!(sc >= 0);
+        NanoSocket{sock: sc, domain: domain, protocol: protocol}
+    }
+
+    // connect
+    pub fn connect(&self, addr: &str) {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        let addr_c = addr.to_c_str();
+        let rc : c_int = addr_c.with_ref(|a| unsafe { nn_connect (self.sock, a) });
+        assert!(rc > 0);
+    }
+
+    // send
+    pub fn send(&self, b: &str) {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        let len : i64 = b.len() as i64;
+        if (0 == len) { return; }
+
+        let buf = b.to_c_str();
+        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
+        
+        assert!(rc >= 0); // errno_assert
+        assert!(rc == len); // nn_assert
+    }
+
+}
+
+
+#[unsafe_destructor]
+impl Drop for NanoSocket {
+    fn drop(&self) {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        // close
+        let rc = unsafe { nn_close (self.sock) };
+        if (rc != 0) {
+            let msg = fmt!("nn_close(%?) failed with errno: %? '%?'", self.sock, std::os::errno(), std::os::last_os_error());
+            fail!(msg);
+        }
+    }
+}
+
+
+
+
+// ======================================================
+// NanoMsg 
+// ======================================================
 
 enum HowToCleanup {
+    ///  depending on whether recv_any_size() or recv_no_more_than_maxlen()
+    ///  was used to get the message, the cleanup code is different.
+    ///  If recv_any_size (zero-copy enabled), then we call nn_freemsg().
+    ///  if recv_no_more_than_maxlen(), the we call ::free() to release the malloc.
+    ///  Lastly if we have no message to cleanup, then DoNothing.
   Free,
   Call_nn_freemsg,
   DoNothing
@@ -188,7 +266,6 @@ pub struct NanoMsg {
     bytes_available: u64,
     priv cleanup: HowToCleanup,
 }
-
 
 impl NanoMsg {
 
@@ -218,6 +295,7 @@ impl NanoMsg {
         msg.buf
     }
 
+    /// recv_any_size allows nanomsg to do zero-copy optimizations
     pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Option<u64> {
         #[fixed_stack_segment];
         #[inline(never)];
@@ -242,7 +320,8 @@ impl NanoMsg {
     }
 
 
-    // truncates any part of the message over maxlen
+    /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
+    /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
     pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Option<u64> {
         #[fixed_stack_segment];
         #[inline(never)];

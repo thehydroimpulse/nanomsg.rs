@@ -1,42 +1,30 @@
-use std::libc::*;
-use std::c_str::*;
 
 use nanomsg::*;
 mod nanomsg;
 
 
-
-#[fixed_stack_segment]
 fn main ()
 {
-
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
     printfln!("client binding to '%?'", SOCKET_ADDRESS);
 
-    let sc : c_int = unsafe { nn_socket (AF_SP, NN_PAIR) };
-    printfln!("nn_socket returned: %?", sc);
+    // create and connect
+    let sock = NanoSocket::new(AF_SP, NN_PAIR);
+    sock.connect(SOCKET_ADDRESS);
 
-    assert!(sc >= 0);
-    
-    // connect
-    let addr = SOCKET_ADDRESS.to_c_str();
-    let rc : c_int = addr.with_ref(|a| unsafe { nn_connect (sc, a) });
-    assert!(rc > 0);
-    
     // send
     let b = "WHY";
-    let buf = b.to_c_str();
-    let rc : c_int = buf.with_ref(|b| unsafe { nn_send (sc, b as *std::libc::c_void, 3, 0) });
+    sock.send(b);
     printfln!("client: I sent '%s'", b);
-    
-    assert!(rc >= 0); // errno_assert
-    assert!(rc == 3); // nn_assert
 
+    // make a NanoMsg to old a received message
     let mut msg = NanoMsg::new();
+
+    // demonstrate NanoMsg::recv_any_size()
     {
         
         // receive
-        let recd = msg.recv_any_size(sc, 0);
+        let recd = msg.recv_any_size(sock.sock, 0);
         
         match(recd) {
             None => {
@@ -60,8 +48,9 @@ fn main ()
     // it is okay to reuse msg (e.g. as below, or in a loop). NanoMsg will free any previous message before
     //  receiving a new one.
 
+    // demonstrate NanoMsg::recv_no_more_than_maxlen()
     {
-        let recd = msg.recv_no_more_than_maxlen(sc, 2, 0);
+        let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
 
         match(recd) {
             None => {
@@ -73,7 +62,7 @@ fn main ()
                 
                 let m = msg.copy_to_string();
                 
-                printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
+                printfln!("client: I received a %d byte long msg: '%s', while there were '%?' bytes available from nanomsg.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
 
                 // also available for debugging:
                 // msg.printbuf();
@@ -82,8 +71,4 @@ fn main ()
         }
     }
     
-    // close
-    let rc = unsafe { nn_close (sc) };
-    assert!(rc == 0); // errno_assert
-
 }
