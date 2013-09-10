@@ -247,6 +247,14 @@ impl Drop for NanoSocket {
 
 // ======================================================
 // NanoMsg 
+//
+//  It is not necessary to restrict the lifetime of the 
+//  NanoMsg to be a subset of the lifetime of the 
+//  NanoSocket. But if you wanted to do that, you would
+//  write:
+//     struct Msg<'self> { socket: &'self Socket, ... } 
+//  which would put a borrowed pointer to the socket in 
+//  the msg and restrict the messages' lifetime.
 // ======================================================
 
 enum HowToCleanup {
@@ -260,7 +268,7 @@ enum HowToCleanup {
   DoNothing
 }
 
-// a wrapper around the message returned by nn_recv
+/// a wrapper around the message returned by nn_recv
 pub struct NanoMsg {
     buf: *mut u8,
     bytes_stored_in_buf: u64,
