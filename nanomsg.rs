@@ -236,6 +236,7 @@ impl Drop for NanoSocket {
         let rc = unsafe { nn_close (self.sock) };
         if (rc != 0) {
             let msg = fmt!("nn_close(%?) failed with errno: %? '%?'", self.sock, std::os::errno(), std::os::last_os_error());
+            error!(msg);
             fail!(msg);
         }
     }
