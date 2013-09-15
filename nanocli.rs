@@ -17,7 +17,16 @@ fn main ()
     { // sock lifetime
 
         // create and connect
-        let sock = NanoSocket::new(AF_SP, NN_PAIR);
+        let sockret = NanoSocket::new(AF_SP, NN_PAIR);
+        let sock : NanoSocket;
+        match sockret {
+          Ok(s) => {
+            sock = s;
+          },
+          Err(e) =>{
+            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+          }
+        }
         sock.connect(SOCKET_ADDRESS);
         
         // send

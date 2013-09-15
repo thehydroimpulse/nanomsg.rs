@@ -12,6 +12,7 @@
        uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
 #[crate_type = "lib"];
 
+extern mod std;
 use std::libc::*;
 use std::ptr;
 use std::unstable::intrinsics;
@@ -177,6 +178,11 @@ extern "C" {
                      s2: c_int) -> c_int;
 }
 
+pub struct NanoErr {
+    rc: c_int,
+    errstr: ~str,
+}
+
 // Rust-idiomatic memory safe wrappers for nanomsg objects:
 
 // ======================================================
@@ -192,13 +198,15 @@ pub struct NanoSocket {
 impl NanoSocket {
 
     // example: let sock = NanoSocket::new(AF_SP, NN_PAIR);
-    pub fn new(domain: c_int, protocol: c_int) -> NanoSocket {
+    pub fn new(domain: c_int, protocol: c_int) -> Result<NanoSocket, NanoErr> {
         #[fixed_stack_segment];
         #[inline(never)];
 
         let sc : c_int = unsafe { nn_socket (domain, protocol) };
-        assert!(sc >= 0);
-        NanoSocket{sock: sc, domain: domain, protocol: protocol}
+        if sc < 0 {
+            return Err( NanoErr{rc: sc, errstr: last_os_error() } );
+        }
+        Ok( NanoSocket{sock: sc, domain: domain, protocol: protocol} )
     }
 
     // connect
