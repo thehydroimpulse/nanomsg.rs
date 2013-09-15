@@ -202,36 +202,54 @@ impl NanoSocket {
         #[fixed_stack_segment];
         #[inline(never)];
 
-        let sc : c_int = unsafe { nn_socket (domain, protocol) };
-        if sc < 0 {
-            return Err( NanoErr{rc: sc, errstr: last_os_error() } );
+        let rc : c_int = unsafe { nn_socket (domain, protocol) };
+        if rc < 0 {
+            return Err( NanoErr{rc: rc, errstr: last_os_error() } );
         }
-        Ok( NanoSocket{sock: sc, domain: domain, protocol: protocol} )
+        Ok( NanoSocket{sock: rc, domain: domain, protocol: protocol} )
     }
 
     // connect
-    pub fn connect(&self, addr: &str) {
+    pub fn connect(&self, addr: &str) -> Result<(), NanoErr> {
         #[fixed_stack_segment];
         #[inline(never)];
 
         let addr_c = addr.to_c_str();
         let rc : c_int = addr_c.with_ref(|a| unsafe { nn_connect (self.sock, a) });
-        assert!(rc > 0);
+        if rc < 0 {
+            return Err( NanoErr{rc: rc, errstr: last_os_error() } );
+        }
+        Ok(())
+    }
+
+    pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+         // bind
+        let addr_c = addr.to_c_str();
+        let rc : c_int = addr_c.with_ref(|a| unsafe { nn_bind (self.sock, a) });
+        if rc < 0 {
+            return Err( NanoErr{rc: rc, errstr: last_os_error() } );
+        }
+        Ok(())
     }
 
     // send
-    pub fn send(&self, b: &str) {
+    pub fn send(&self, b: &str) -> Result<(), NanoErr> {
         #[fixed_stack_segment];
         #[inline(never)];
 
         let len : i64 = b.len() as i64;
-        if (0 == len) { return; }
+        if (0 == len) { return Ok(()); }
 
         let buf = b.to_c_str();
         let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
         
-        assert!(rc >= 0); // errno_assert
-        assert!(rc == len); // nn_assert
+        if rc < 0 {
+            return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
+        }
+        Ok(())
     }
 
 }
