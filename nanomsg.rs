@@ -7,7 +7,10 @@
 // safe API only does nn_send and nn_recv currently.
 // ======================================
 
-extern mod std;
+#[link(name = "nanomsg",
+       vers = "0.01",
+       uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
+#[crate_type = "lib"];
 
 use std::libc::*;
 use std::ptr;
