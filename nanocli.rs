@@ -39,15 +39,15 @@ fn main ()
         let recd = msg.recv_any_size(sock.sock, 0);
         
         match(recd) {
-            None => {
-                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            Err(e) => {
+                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
             },
-            Some(sz) => {
+            Ok(sz) => {
 
                 printfln!("actual_msg_size is %?", sz);
                 
                 let m = msg.copy_to_string();
-                printfln!("client: I received a %d byte long msg: '%s', of which I have '%?' bytes in my buffer.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
+                printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
 
                 // also available for debugging:
                 // msg.printbuf();
@@ -63,16 +63,16 @@ fn main ()
        let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
     
        match(recd) {
-           None => {
-               fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+           Err(e) => {
+               fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
            },
-           Some(sz) => {
+           Ok(sz) => {
                
                printfln!("recv_no_more_than_maxlen got back this many bytes: %?", sz);
                
                let m = msg.copy_to_string();
                
-               printfln!("client: I received a %d byte long msg: '%s', while there were '%?' bytes available from nanomsg.", recd.unwrap() as int, m, msg.actual_msg_bytes_avail());
+               printfln!("client: I received a %? byte long msg: '%s', while there were '%?' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
                
                // also available for debugging:
                // msg.printbuf();

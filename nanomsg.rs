@@ -17,7 +17,6 @@ use std::libc::*;
 use std::ptr;
 use std::unstable::intrinsics;
 use std::cast::transmute;
-use std::option::Option;
 use std::num::*;
 use std::os::*;
 
@@ -334,7 +333,7 @@ impl NanoMsg {
     }
 
     /// recv_any_size allows nanomsg to do zero-copy optimizations
-    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Option<u64> {
+    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
         #[fixed_stack_segment];
         #[inline(never)];
 
@@ -347,20 +346,21 @@ impl NanoMsg {
         unsafe { 
             self.bytes_stored_in_buf = nn_recv (sock,  transmute(&mut self.buf), NN_MSG, flags) as u64;
         }
+        self.bytes_available = self.bytes_stored_in_buf;
 
         if (self.bytes_stored_in_buf < 0) {
-            printfln!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-            return None;
-        } else {
-            self.cleanup = Call_nn_freemsg;
-            return Some(self.bytes_stored_in_buf);
+            debug!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
         }
+
+        self.cleanup = Call_nn_freemsg;
+        return Ok(self.bytes_stored_in_buf);
     }
 
 
     /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
     /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
-    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Option<u64> {
+    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
         #[fixed_stack_segment];
         #[inline(never)];
 
@@ -383,19 +383,17 @@ impl NanoMsg {
             
             if (self.bytes_available < 0) {
                 let errmsg = fmt!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-                printfln!(errmsg);
                 warn!(errmsg);
-                return None;
+                return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
             }
 
             if (self.bytes_available > maxlen) {
                 let errmsg = fmt!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", self.bytes_available, maxlen);
-                printfln!(errmsg);
                 warn!(errmsg);
             }
 
             self.bytes_stored_in_buf = min(maxlen, self.bytes_available);            
-            Some(self.bytes_stored_in_buf)
+            Ok(self.bytes_stored_in_buf)
         }
     }
 
