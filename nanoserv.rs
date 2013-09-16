@@ -39,7 +39,7 @@ fn main ()
             printfln!("actual_msg_size is %?", sz);
             
             let m = msg.copy_to_string();
-            printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
+            printfln!("server: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
 
             // also available for debugging:
             // msg.printbuf();
