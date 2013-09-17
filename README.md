@@ -10,7 +10,7 @@ Rust is a modern langauge from Mozilla Research. It has  support for
  do not suffer garbage-collection pauses. license: dual MIT / Apache 2.
 
  You'll want the github MASTER branch of rust to do anything useful
- and up to date. The project has strong velocity, so it is evolving
+ and up-to-date. The project has strong velocity, so it is evolving
  quickly. The rust version used here was:
 
        rustc 0.8-pre (124eb21 2013-09-06 23:35:57 -0700)
@@ -47,7 +47,7 @@ These rust-nanogen bindings were initiated using an automated bindings
 Status:  
 -------
 We have completed the wrapping of the client and server examples
-in nanocli.rs and nanoserv.rs in idiomatic Rust safe API layer.
+in nanocli.rs and nanoserv.rs in an idiomatic-Rust API layer.
 All unsafe blocks are encapsulated within the nanomsg.rs API, and
 consumers of the API should not need to use unsafe blocks at all.
 
