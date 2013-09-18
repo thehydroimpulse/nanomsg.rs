@@ -9,7 +9,7 @@ fn main ()
     let mut msg = NanoMsg::new();
 
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    printfln!("client binding to '%?'", SOCKET_ADDRESS);
+    printfln!("client connecting to '%?'", SOCKET_ADDRESS);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -27,7 +27,13 @@ fn main ()
             fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
           }
         }
-        sock.connect(SOCKET_ADDRESS);
+        let ret = sock.connect(SOCKET_ADDRESS);
+        match ret {
+          Ok(_) => {},
+          Err(e) =>{
+            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+          }
+        }
         
         // send
         let b = "WHY";
