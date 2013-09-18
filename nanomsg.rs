@@ -221,6 +221,19 @@ impl NanoSocket {
         Ok(())
     }
 
+    pub fn subscribe(&self, chan: &str) -> Result<(), NanoErr>{
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        let addr_c = chan.to_c_str();
+        let len : uint = chan.len();
+        let rc : c_int = addr_c.with_ref(|a| unsafe { nn_setsockopt(self.sock, NN_SUB, NN_SUB_SUBSCRIBE, a as *std::libc::c_void, len as u64) });
+        if rc < 0 {
+            return Err( NanoErr{ rc: rc, errstr: last_os_error() });
+        }
+        Ok(())
+    }
+
     pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
         #[fixed_stack_segment];
         #[inline(never)];
@@ -256,7 +269,7 @@ impl NanoSocket {
 
 #[unsafe_destructor]
 impl Drop for NanoSocket {
-    fn drop(&self) {
+    fn drop(&mut self) {
         #[fixed_stack_segment];
         #[inline(never)];
 
@@ -442,7 +455,7 @@ impl NanoMsg {
 
 #[unsafe_destructor]
 impl Drop for NanoMsg {
-    fn drop(&self) {
+    fn drop(&mut self) {
         #[fixed_stack_segment];
         #[inline(never)];
         // printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
