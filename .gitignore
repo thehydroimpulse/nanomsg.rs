@@ -15,3 +15,9 @@
 *.exe
 *.out
 *.app
+
+# debug symbols
+*.dSYM
+
+# OSX ds_store
+.DS_Store
