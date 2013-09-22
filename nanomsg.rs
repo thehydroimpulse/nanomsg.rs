@@ -256,7 +256,7 @@ impl NanoSocket {
 
 #[unsafe_destructor]
 impl Drop for NanoSocket {
-    fn drop(&self) {
+    fn drop(&mut self) {
         #[fixed_stack_segment];
         #[inline(never)];
 
@@ -442,7 +442,7 @@ impl NanoMsg {
 
 #[unsafe_destructor]
 impl Drop for NanoMsg {
-    fn drop(&self) {
+    fn drop(&mut self) {
         #[fixed_stack_segment];
         #[inline(never)];
         // printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
