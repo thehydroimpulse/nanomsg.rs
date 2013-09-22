@@ -1,17 +1,18 @@
-use std::c_str::*;
+extern mod nanomsg;
+use std::str::*;
 use nanomsg::*;
-mod nanomsg;
+use std::rt::io::Writer;
+
 
 #[fixed_stack_segment]
 fn main ()
 {
-    let mut msg = NanoMsg::new();
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
     printfln!("server binding to '%?'", SOCKET_ADDRESS);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
-    let sock : NanoSocket;
+    let mut sock : NanoSocket;
     match sockret {
         Ok(s) => {
             sock = s;
@@ -30,25 +31,22 @@ fn main ()
     }
 
     // receive
-    let recd = msg.recv_any_size(sock.sock, 0);
+    let recd = sock.recv();
     match(recd) {
         Err(e) => {
-            fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+            fail!("sock.recv -> failed with errno: %? '%?'", e.rc, e.errstr);
         },
-        Ok(sz) => {
-            printfln!("actual_msg_size is %?", sz);
+        Ok(v) => {
+            printfln!("actual_msg_size is %?", v.len());
             
-            let m = msg.copy_to_string();
-            printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
-
-            // also available for debugging:
-            // msg.printbuf();
+            let m = from_utf8(v);
+            printfln!("client: I received a %? byte long msg: '%s'", v.len(), m);
         }
     }
 
     // send
     let b = "LUV";
-    let ret = sock.send(b);
+    let ret = sock.send(b.as_bytes());
     match ret {
         Ok(_) => {},
         Err(e) =>{
@@ -57,15 +55,10 @@ fn main ()
     }
     printfln!("server: I sent '%s'", b);
 
-    // send 2
+    // send 2, using Writer interface
     let b = "CAT";
-    let ret = sock.send(b);
-    match ret {
-        Ok(_) => {},
-        Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
-        }
-    }
+    sock.write(b.as_bytes());
+
     printfln!("server: 2nd send, I sent '%s'", b);
 }
 

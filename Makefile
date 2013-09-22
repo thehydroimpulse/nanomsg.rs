@@ -9,19 +9,29 @@ $(NANO_SRC_DIR)/pubsub.h \
 $(NANO_SRC_DIR)/tcp.h
 
 
-all: nanocli cnano
+all: libnanomsg samples
 
-nanocli: nanocli.rs
-	rust build -Z debug-info nanocli.rs
-	rust build -Z debug-info nanoserv.rs
+libnanomsg:
+	rust build -Z debug-info nanomsg.rs
 
-run: nanocli.rs
+samples: rustnano-samp cnano-samp
+
+rustnano-samp: nanocli nanoserv
+
+nanocli: libnanomsg
+	rust build -Z debug-info -L . samples/nanocli.rs
+
+nanoserv: libnanomsg
+	rust build -Z debug-info -L . samples/nanoserv.rs
+
+run:
 	rust run nanocli.rs
 
-clean:
-	rm -f nanocli nanoserv clinano servnano
+clean: clean-samples
 
-cnano:
-	gcc -g -o clinano clinano.c -lnanomsg -I${NANO_SRC_DIR}
-	gcc -g -o servnano servnano.c -lnanomsg -I${NANO_SRC_DIR}
+clean-samples:
+	rm -f samples/nanocli samples/nanoserv samples/clinano samples/servnano
 
+cnano-samp:
+	gcc -g -o clinano samples/clinano.c -lnanomsg -I${NANO_SRC_DIR}
+	gcc -g -o servnano samples/servnano.c -lnanomsg -I${NANO_SRC_DIR}
