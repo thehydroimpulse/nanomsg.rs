@@ -4,11 +4,12 @@
 // This aims to be a rust version of the 
 // full public API of nanomsg. But parts
 // are probably still missing, since the
-// safe API only does nn_send and nn_recv currently.
+// safe API only does nn_send and nn_recv 
+// currently.
 // ======================================
 
 #[link(name = "nanomsg",
-       vers = "0.01",
+       vers = "0.02",
        uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
 #[crate_type = "lib"];
 
@@ -19,6 +20,8 @@ use std::unstable::intrinsics;
 use std::cast::transmute;
 use std::num::*;
 use std::os::*;
+use std::vec;
+//use std::rt::io::*;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -177,6 +180,10 @@ extern "C" {
                      s2: c_int) -> c_int;
 }
 
+
+// ======================================================
+// NanoErr
+// ======================================================
 pub struct NanoErr {
     rc: c_int,
     errstr: ~str,
@@ -190,8 +197,6 @@ pub struct NanoErr {
 
 pub struct NanoSocket {
     sock: c_int,
-    domain: c_int,
-    protocol: c_int,
 }
 
 impl NanoSocket {
@@ -205,7 +210,7 @@ impl NanoSocket {
         if rc < 0 {
             return Err( NanoErr{rc: rc, errstr: last_os_error() } );
         }
-        Ok( NanoSocket{sock: rc, domain: domain, protocol: protocol} )
+        Ok( NanoSocket{sock: rc} )
     }
 
     // connect
@@ -221,19 +226,7 @@ impl NanoSocket {
         Ok(())
     }
 
-    pub fn subscribe(&self, chan: &str) -> Result<(), NanoErr>{
-        #[fixed_stack_segment];
-        #[inline(never)];
-
-        let addr_c = chan.to_c_str();
-        let len : uint = chan.len();
-        let rc : c_int = addr_c.with_ref(|a| unsafe { nn_setsockopt(self.sock, NN_SUB, NN_SUB_SUBSCRIBE, a as *std::libc::c_void, len as u64) });
-        if rc < 0 {
-            return Err( NanoErr{ rc: rc, errstr: last_os_error() });
-        }
-        Ok(())
-    }
-
+    // bind (listen)
     pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
         #[fixed_stack_segment];
         #[inline(never)];
@@ -247,16 +240,37 @@ impl NanoSocket {
         Ok(())
     }
 
-    // send
-    pub fn send(&self, b: &str) -> Result<(), NanoErr> {
+    // subscribe, with prefix-filter
+    pub fn subscribe(&self, prefix: &[u8]) -> Result<(), NanoErr>{
         #[fixed_stack_segment];
         #[inline(never)];
 
-        let len : i64 = b.len() as i64;
+        unsafe { 
+            let rc : c_int = nn_setsockopt(self.sock, 
+                NN_SUB, 
+                NN_SUB_SUBSCRIBE,
+                vec::raw::to_ptr(prefix) as *c_void,
+                prefix.len() as u64);
+            if rc < 0 {
+                return Err( NanoErr{ rc: rc, errstr: last_os_error() });
+            }
+        }
+        Ok(())
+    }
+/*
+    pub fn getFd(&self, FdType) -> Result<fd_t, NanoErr>{ 
+
+    }
+*/
+    // send
+    pub fn send(&self, buf: &[u8]) -> Result<(), NanoErr> {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        let len : i64 = buf.len() as i64;
         if (0 == len) { return Ok(()); }
 
-        let buf = b.to_c_str();
-        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
+        let rc : i64 = unsafe { nn_send (self.sock, vec::raw::to_ptr(buf) as *c_void, len as u64, 0) } as i64;
         
         if rc < 0 {
             return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
@@ -264,6 +278,97 @@ impl NanoSocket {
         Ok(())
     }
 
+    // buffer receive
+    pub fn recv(&self) -> Result<~[u8], NanoErr> {
+        #[fixed_stack_segment];
+        #[inline(never)];
+        
+        unsafe { 
+            let mut mem : *mut u8 = ptr::mut_null();
+            let recvd = nn_recv (self.sock, transmute(&mut mem), NN_MSG, 0) as i64;
+        
+            if recvd < 0 {
+                return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } );
+            }
+
+            let buf = vec::raw::from_buf_raw(mem as *u8, recvd as uint);
+            nn_freemsg(mem as *mut c_void);
+            Ok(buf)
+        }
+    }
+}
+
+
+struct NanoMsgReader {
+    sock : NanoSocket,
+    msg_off : uint,
+    flags : uint
+}
+
+// Current libstd reader / writer
+impl std::io::Reader for NanoSocket {
+    // new rt removes len - to be fixed later.
+    fn read(&self, buf: &mut [u8], len: uint) -> uint {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        match self.recv() {
+            Err(e) => {
+                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
+                return 0;
+            },
+            Ok(b) => {
+                let copylen = min(b.len(), len);
+                vec::bytes::copy_memory(buf, b, copylen);
+                return copylen;
+            }
+        }
+    }
+
+    fn read_byte(&self) -> int {fail!()}
+    fn tell(&self) -> uint {fail!()}
+    fn eof(&self) -> bool{fail!()}
+    fn seek(&self, _position : int, _style : std::io::SeekStyle) {fail!()}
+}
+
+impl std::rt::io::Reader for NanoSocket {
+    fn read(&mut self, buf: &mut [u8]) -> Option<uint> {
+        #[fixed_stack_segment];
+        #[inline(never)];
+
+        match self.recv() {
+            Err(e) => {
+                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
+                return None;
+            },
+            Ok(b) => {
+                let copylen = min(b.len(), buf.len());
+                vec::bytes::copy_memory(buf, b, copylen);
+                return Some(copylen);
+            }
+        }
+    }
+    fn eof(&mut self) -> bool {
+        true // Right now, the reader is unbuffered.  FIXME!
+    }
+}
+
+
+impl std::io::Writer for NanoSocket {
+    fn write(&self, v: &[u8]) { self.send(v); }
+    fn flush(&self) -> int { 0 }
+
+    fn seek(&self, _offset: int, _whence: std::io::SeekStyle) {fail!();}
+    fn tell(&self) -> uint {fail!();}
+    fn get_type(&self) -> std::io::WriterType { std::io::File }
+}
+
+impl std::rt::io::Writer for NanoSocket {
+    fn write(&mut self, buf: &[u8]) {
+        self.send(buf);
+    }
+    fn flush(&mut self) {
+    }
 }
 
 
@@ -282,7 +387,6 @@ impl Drop for NanoSocket {
         }
     }
 }
-
 
 
 
@@ -463,3 +567,38 @@ impl Drop for NanoMsg {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::rt::io::*;
+    use std::rt::test::*;
+
+    #[test]
+    fn smoke_test_readerwriter() {
+        let addr="tcp://127.0.0.1:1234";
+
+        do spawntask {
+            let res = NanoSocket::new(AF_SP, NN_PAIR);
+            let mut sock;
+            match res {
+                Err(_)=>{fail!("asdf");},
+                Ok(s)=>{sock = s;}
+            }
+            sock.bind(addr);
+            let mut buf = [0,0,0,0,0];
+            sock.read(buf);
+            assert!(buf[2] == 3);
+        }
+        do spawntask {
+            let res = NanoSocket::new(AF_SP, NN_PAIR);
+            let mut sock;
+            match res {
+                Err(_)=>{fail!("asdf");},
+                Ok(s)=>{sock = s;}
+            }
+            sock.connect(addr);
+            sock.write([1,2,3,4]);
+        }
+    }
+
+}
