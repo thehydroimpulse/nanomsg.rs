@@ -591,6 +591,7 @@ impl Drop for NanoMsg {
 fn smoke_test_readerwriter() {
     let addr="tcp://127.0.0.1:1234";
 
+    // server end:
     do spawn {
         let res = NanoSocket::new(AF_SP, NN_PAIR);
         let mut sock;
