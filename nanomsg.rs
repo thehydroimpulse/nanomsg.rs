@@ -591,7 +591,7 @@ fn smoke_test_readerwriter() {
     let addr="tcp://127.0.0.1:1234";
 
     // server end:
-    do spawn {
+    spawn(proc() {
         let res = NanoSocket::new(AF_SP, NN_PAIR);
         let mut sock;
         match res {
@@ -603,7 +603,7 @@ fn smoke_test_readerwriter() {
         let len :uint = buf.len();
         sock.read(buf, len);
         assert!(buf[2] == 3);
-    }
+    });
 
 
     // client end:
@@ -782,9 +782,9 @@ fn msgserver_test ()
 #[test]
 fn smoke_test_msg_client_msg_server() {
 
-    do spawn {
+    spawn(proc() {
         msgserver_test();
-    }
+    });
 
     msgclient_test();
 }
