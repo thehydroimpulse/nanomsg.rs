@@ -29,11 +29,11 @@ run: nanocli
 
 clean: clean-samples
 
-clean-samples: build
+clean-samples:
 	rm -f build/nanocli build/nanoserv build/clinano build/servnano
 	rmdir build
 
-cnano-samp:
+cnano-samp: build
 	gcc -g -o build/clinano samples/clinano.c -lnanomsg -I${NANO_SRC_DIR}
 	gcc -g -o build/servnano samples/servnano.c -lnanomsg -I${NANO_SRC_DIR}
 

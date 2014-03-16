@@ -113,7 +113,7 @@ pub struct Struct_nn_cmsghdr {
     cmsg_type: c_int,
 }
 
-#[link_args = "-lnanomsg"]
+#[link(name = "nanomsg")]
 #[fixed_stack_segment]
 extern "C" {
     pub static mut program_invocation_name: *mut c_schar;
