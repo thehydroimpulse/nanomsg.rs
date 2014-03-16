@@ -8,20 +8,31 @@
 // currently.
 // ======================================
 
-#[link(name = "nanomsg",
-       vers = "0.02",
-       uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
+#[crate_id = "nanomsg#0.02"];
 #[crate_type = "lib"];
 
-extern mod std;
-use std::libc::*;
+use std::str;
 use std::ptr;
-use std::unstable::intrinsics;
+use std::ptr::RawPtr;
+use std::libc;
+use std::libc::c_void;
+use std::libc::c_schar;
+use std::libc::c_int;
+use std::libc::c_long;
+use std::libc::c_ulong;
+use std::libc::malloc;
+use std::libc::free;
+use std::intrinsics;
 use std::cast::transmute;
-use std::num::*;
-use std::os::*;
+use std::io;
+use std::io::Reader;
+use std::io::Writer;
+use std::io::IoResult;
+use std::cmp::min;
+use std::os;
+use std::os::last_os_error;
+use std::os::errno;
 use std::vec;
-//use std::rt::io::*;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -114,8 +125,7 @@ pub struct Struct_nn_cmsghdr {
     cmsg_type: c_int,
 }
 
-#[link_args = "-lnanomsg"]
-#[fixed_stack_segment]
+#[link(name = "nanomsg")]
 extern "C" {
     pub static mut program_invocation_name: *mut c_schar;
 
@@ -203,7 +213,6 @@ impl NanoSocket {
 
     // example: let sock = NanoSocket::new(AF_SP, NN_PAIR);
     pub fn new(domain: c_int, protocol: c_int) -> Result<NanoSocket, NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let rc : c_int = unsafe { nn_socket (domain, protocol) };
@@ -215,7 +224,6 @@ impl NanoSocket {
 
     // connect
     pub fn connect(&self, addr: &str) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let addr_c = addr.to_c_str();
@@ -228,7 +236,6 @@ impl NanoSocket {
 
     // bind (listen)
     pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
          // bind
@@ -242,14 +249,13 @@ impl NanoSocket {
 
     // subscribe, with prefix-filter
     pub fn subscribe(&self, prefix: &[u8]) -> Result<(), NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
         unsafe { 
             let rc : c_int = nn_setsockopt(self.sock, 
                 NN_SUB, 
                 NN_SUB_SUBSCRIBE,
-                vec::raw::to_ptr(prefix) as *c_void,
+                prefix.as_ptr() as *c_void,
                 prefix.len() as u64);
             if rc < 0 {
                 return Err( NanoErr{ rc: rc, errstr: last_os_error() });
@@ -264,13 +270,12 @@ impl NanoSocket {
 */
     // send
     pub fn send(&self, buf: &[u8]) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let len : i64 = buf.len() as i64;
-        if (0 == len) { return Ok(()); }
+        if 0 == len { return Ok(()); }
 
-        let rc : i64 = unsafe { nn_send (self.sock, vec::raw::to_ptr(buf) as *c_void, len as u64, 0) } as i64;
+        let rc : i64 = unsafe { nn_send (self.sock, buf.as_ptr() as *c_void, len as u64, 0) } as i64;
         
         if rc < 0 {
             return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
@@ -281,11 +286,10 @@ impl NanoSocket {
 
     // send a string
     pub fn sendstr(&self, b: &str) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let len : i64 = b.len() as i64;
-        if (0 == len) { return Ok(()); }
+        if 0 == len { return Ok(()); }
 
         let buf = b.to_c_str();
         let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
@@ -299,7 +303,6 @@ impl NanoSocket {
 
     // buffer receive
     pub fn recv(&self) -> Result<~[u8], NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
         
         unsafe { 
@@ -324,69 +327,40 @@ struct NanoMsgReader {
     flags : uint
 }
 
-// Current libstd reader / writer
 impl std::io::Reader for NanoSocket {
-    // new rt removes len - to be fixed later.
-    fn read(&self, buf: &mut [u8], len: uint) -> uint {
-        #[fixed_stack_segment];
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         #[inline(never)];
 
         match self.recv() {
             Err(e) => {
-                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
-                return 0;
-            },
-            Ok(b) => {
-                let copylen = min(b.len(), len);
-                vec::bytes::copy_memory(buf, b, copylen);
-                return copylen;
-            }
-        }
-    }
-
-    fn read_byte(&self) -> int {fail!()}
-    fn tell(&self) -> uint {fail!()}
-    fn eof(&self) -> bool{fail!()}
-    fn seek(&self, _position : int, _style : std::io::SeekStyle) {fail!()}
-}
-
-impl std::rt::io::Reader for NanoSocket {
-    fn read(&mut self, buf: &mut [u8]) -> Option<uint> {
-        #[fixed_stack_segment];
-        #[inline(never)];
-
-        match self.recv() {
-            Err(e) => {
-                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
-                return None;
+                warn!("recv failed: {:?} {:?}",e.rc, e.errstr)
+                // [TODO]: Return specific error based on the failure.
+                return Err(io::standard_error(io::OtherIoError));
             },
             Ok(b) => {
                 let copylen = min(b.len(), buf.len());
-                vec::bytes::copy_memory(buf, b, copylen);
-                return Some(copylen);
+                vec::bytes::copy_memory(buf, b.slice(0, copylen));
+                return Ok(copylen);
             }
         }
     }
-    fn eof(&mut self) -> bool {
-        true // Right now, the reader is unbuffered.  FIXME!
-    }
 }
 
+
+impl io::Seek for NanoSocket {
+    fn seek(&mut self, _offset: i64, _whence: io::SeekStyle) -> IoResult<()> {
+      return Err(io::standard_error(io::OtherIoError));
+    }
+    fn tell(&self) -> IoResult<u64> {fail!();}
+}
 
 impl std::io::Writer for NanoSocket {
-    fn write(&self, v: &[u8]) { self.send(v); }
-    fn flush(&self) -> int { 0 }
-
-    fn seek(&self, _offset: int, _whence: std::io::SeekStyle) {fail!();}
-    fn tell(&self) -> uint {fail!();}
-    fn get_type(&self) -> std::io::WriterType { std::io::File }
-}
-
-impl std::rt::io::Writer for NanoSocket {
-    fn write(&mut self, buf: &[u8]) {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         self.send(buf);
+        return Ok(());
     }
-    fn flush(&mut self) {
+    fn flush(&mut self) -> IoResult<()> {
+      return Ok(());
     }
 }
 
@@ -394,15 +368,14 @@ impl std::rt::io::Writer for NanoSocket {
 #[unsafe_destructor]
 impl Drop for NanoSocket {
     fn drop(&mut self) {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         // close
         let rc = unsafe { nn_close (self.sock) };
-        if (rc != 0) {
-            let msg = fmt!("nn_close(%?) failed with errno: %? '%?'", self.sock, std::os::errno(), std::os::last_os_error());
-            error!(msg);
-            fail!(msg);
+        if rc != 0 {
+            let msg = format!("nn_close({:?}) failed with errno: {:?} '{:?}'", self.sock, std::os::errno(), std::os::last_os_error());
+            error!("{:s}", msg);
+            fail!("{:s}", msg);
         }
     }
 }
@@ -456,7 +429,7 @@ impl NanoMsg {
     }
 
     pub fn printbuf(&self) {
-        printfln!("NanoMsg contains message of length %?: '%s'", self.bytes_stored_in_buf, self.copy_to_string());
+        println!("NanoMsg contains message of length {:?}: '{:s}'", self.bytes_stored_in_buf, self.copy_to_string());
     }
 
     /// Unwraps the NanoMsg.
@@ -470,10 +443,9 @@ impl NanoMsg {
 
     /// recv_any_size allows nanomsg to do zero-copy optimizations
     pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
-        match(self.cleanup) {
+        match self.cleanup {
             DoNothing => (),
             Free => self.cleanup(),
             Call_nn_freemsg => self.cleanup()
@@ -484,8 +456,8 @@ impl NanoMsg {
         }
         self.bytes_available = self.bytes_stored_in_buf;
 
-        if (self.bytes_stored_in_buf < 0) {
-            debug!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+        if self.bytes_stored_in_buf < 0 {
+            debug!("nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
             return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
         }
 
@@ -497,10 +469,9 @@ impl NanoMsg {
     /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
     /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
     pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
-        match(self.cleanup) {
+        match self.cleanup {
             DoNothing => (),
             Free => self.cleanup(),
             Call_nn_freemsg => self.cleanup()
@@ -508,7 +479,7 @@ impl NanoMsg {
 
         unsafe { 
             let ptr = malloc(maxlen as size_t) as *mut u8;
-            assert!(!ptr::is_null(ptr));
+            assert!(!ptr.is_null());
             self.cleanup = Free;
 
             self.buf = ptr;
@@ -517,15 +488,15 @@ impl NanoMsg {
                                            maxlen, 
                                            flags) as u64;
             
-            if (self.bytes_available < 0) {
-                let errmsg = fmt!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-                warn!(errmsg);
+            if self.bytes_available < 0 {
+                let errmsg = format!("recv_no_more_than_maxlen: nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
+                warn!("{:s}", errmsg);
                 return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
             }
 
-            if (self.bytes_available > maxlen) {
-                let errmsg = fmt!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", self.bytes_available, maxlen);
-                warn!(errmsg);
+            if self.bytes_available > maxlen {
+                let errmsg = format!("recv_no_more_than_maxlen: message was longer ({:?} bytes) than we allocated space for ({:?} bytes)", self.bytes_available, maxlen);
+                warn!("{:s}", errmsg);
             }
 
             self.bytes_stored_in_buf = min(maxlen, self.bytes_available);            
@@ -534,16 +505,13 @@ impl NanoMsg {
     }
 
     pub fn copy_to_string(&self) -> ~str {
-        //printfln!("copy_to_string sees size: '%?'", self.bytes_stored_in_buf);
-        //printfln!("copy_to_string sees buf : '%?'", self.buf as *u8);
         unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
     }
 
     pub fn cleanup(&self) {
-        #[fixed_stack_segment];
         #[inline(never)];
 
-        if (std::ptr::is_null(self.buf)) { return; }
+        if self.buf.is_null() { return; }
 
         match self.cleanup {
             DoNothing => (),
@@ -553,18 +521,18 @@ impl NanoMsg {
 
                     let x = intrinsics::init(); // dummy value to swap in
                     // moving the object out is needed to call the destructor
-                    ptr::replace_ptr(self.buf, x);
-                    free(self.buf as *c_void)
+                    ptr::replace(self.buf, x);
+                    free(self.buf as *mut c_void)
                 }
             },
 
             Call_nn_freemsg => {
                 unsafe {
-                    // printfln!("*** Call_nn_freemsg Drop running.");
+                    // println!("*** Call_nn_freemsg Drop running.");
 
                     let x = intrinsics::init(); // dummy value to swap in
                     // moving the object out is needed to call the destructor
-                    ptr::replace_ptr(self.buf, x);
+                    ptr::replace(self.buf, x);
                     
                     let rc = nn_freemsg(self.buf as *mut c_void);
                     assert! (rc == 0);
@@ -579,9 +547,8 @@ impl NanoMsg {
 #[unsafe_destructor]
 impl Drop for NanoMsg {
     fn drop(&mut self) {
-        #[fixed_stack_segment];
         #[inline(never)];
-        // printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
+        // println!("starting Drop for NanoMsg, with style: {:?}", self.cleanup);
         self.cleanup();
     }
 }
@@ -592,7 +559,7 @@ fn smoke_test_readerwriter() {
     let addr="tcp://127.0.0.1:1234";
 
     // server end:
-    do spawn {
+    spawn(proc() {
         let res = NanoSocket::new(AF_SP, NN_PAIR);
         let mut sock;
         match res {
@@ -604,7 +571,7 @@ fn smoke_test_readerwriter() {
         let len :uint = buf.len();
         sock.read(buf, len);
         assert!(buf[2] == 3);
-    }
+    });
 
 
     // client end:
@@ -627,7 +594,7 @@ fn msgclient_test ()
     let mut msg = NanoMsg::new();
 
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    printfln!("client binding to '%?'", SOCKET_ADDRESS);
+    println!("client binding to '{:?}'", SOCKET_ADDRESS);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -642,7 +609,7 @@ fn msgclient_test ()
                 sock = s;
             },
             Err(e) =>{
-                fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+                fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
             }
         }
         sock.connect(SOCKET_ADDRESS);
@@ -650,22 +617,22 @@ fn msgclient_test ()
         // send
         let b = "WHY";
         sock.sendstr(b);
-        printfln!("client: I sent '%s'", b);
+        println!("client: I sent '{:s}'", b);
         
 
         // demonstrate NanoMsg::recv_any_size()
         let recd = msg.recv_any_size(sock.sock, 0);
         
-        match(recd) {
+        match recd {
             Err(e) => {
-                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+                fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
             Ok(sz) => {
 
-                printfln!("actual_msg_size is %?", sz);
+                println!("actual_msg_size is {:?}", sz);
                 
                 let m = msg.copy_to_string();
-                printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
+                println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
 
                 assert!(m.as_slice() == "LUV");
                 
@@ -682,17 +649,17 @@ fn msgclient_test ()
         // demonstrate NanoMsg::recv_no_more_than_maxlen()
         let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
         
-        match(recd) {
+        match recd {
             Err(e) => {
-                fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+                fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
             Ok(sz) => {
                 
-                printfln!("recv_no_more_than_maxlen got back this many bytes: %?", sz);
+                println!("recv_no_more_than_maxlen got back this many bytes: {:?}", sz);
                 
                 let m = msg.copy_to_string();
                 
-                printfln!("client: I received a %? byte long msg: '%s', while there were '%?' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
+                println!("client: I received a {:?} byte long msg: '{:s}', while there were '{:?}' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
                 
                 assert!(m.as_slice() == "CA");
 
@@ -703,7 +670,7 @@ fn msgclient_test ()
         }
     } // end of socket lifetime
 
-    print(fmt!("verify that message is still around: "));
+    println!("verify that message is still around: ");
     msg.printbuf();
 
 } // end msgclient_test
@@ -714,7 +681,7 @@ fn msgserver_test ()
 {
     let mut msg = NanoMsg::new();
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    printfln!("server binding to '%?'", SOCKET_ADDRESS);
+    println!("server binding to '{:?}'", SOCKET_ADDRESS);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -724,7 +691,7 @@ fn msgserver_test ()
             sock = s;
         },
         Err(e) =>{
-            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
     
@@ -732,21 +699,21 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("Bind failed with err:%? %?", e.rc, e.errstr));
+            fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
 
     // receive
     let recd = msg.recv_any_size(sock.sock, 0);
-    match(recd) {
+    match recd {
         Err(e) => {
-            fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+            fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
         },
         Ok(sz) => {
-            printfln!("actual_msg_size is %?", sz);
+            println!("actual_msg_size is {:?}", sz);
             
             let m = msg.copy_to_string();
-            printfln!("server: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
+            println!("server: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
 
             assert!(m.as_slice() == "WHY");
             
@@ -761,10 +728,10 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
-    printfln!("server: I sent '%s'", b);
+    println!("server: I sent '{:s}'", b);
 
     // send 2
     let b = "CAT";
@@ -772,10 +739,10 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
-    printfln!("server: 2nd send, I sent '%s'", b);
+    println!("server: 2nd send, I sent '{:s}'", b);
 
 } // end msgserver_test
 
@@ -783,9 +750,9 @@ fn msgserver_test ()
 #[test]
 fn smoke_test_msg_client_msg_server() {
 
-    do spawn {
+    spawn(proc() {
         msgserver_test();
-    }
+    });
 
     msgclient_test();
 }

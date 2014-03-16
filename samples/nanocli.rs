@@ -1,13 +1,14 @@
-extern mod nanomsg;
-extern mod std;
-use nanomsg::*;
-use std::rt::io::{Reader,Writer};
+extern crate nanomsg;
+use std::io::{Reader,Writer};
+use nanomsg::AF_SP;
+use nanomsg::NN_PAIR;
+use nanomsg::NanoSocket;
 
 
 fn main ()
 {
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    printfln!("client connecting to '%s'", SOCKET_ADDRESS);
+    println!("client connecting to '{:s}'", SOCKET_ADDRESS);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -22,36 +23,38 @@ fn main ()
             sock = s;
           },
           Err(e) =>{
-            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
           }
         }
         let ret = sock.connect(SOCKET_ADDRESS);
         match ret {
           Ok(_) => {},
           Err(e) =>{
-            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
           }
         }
         
         // send
         let b = "WHY";
         sock.write(b.as_bytes());
-        printfln!("client: I sent '%s'", b);
+        println!("client: I sent '{:s}'", b);
         
         // demonstrante NanoMsgStream, NanoMsgReader, NanoMsgWriter.
         let mut buf = [0, .. 100];
         let res = sock.read(buf);
         
-        match(res) {
-            None => {
+        match res {
+            Err(..) => {
                 fail!("read failed!");
             },
-            Some(sz) => {
-
-                printfln!("read returned: %?", sz);
+            Ok(sz) => {
+                println!("read returned: {:?}", sz);
                 
                 let m = std::str::from_utf8(buf);
-                printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.",  sz, m, buf.len());
+                match m {
+                  Some(msg) => println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, msg, buf.len()),
+                  None() => println!("client: I received a {:?} byte long msg but it was NONE, I have '{:?}' bytes in my buffer.",  sz, buf.len()),
+                }
 
                 // also available for debugging:
                 // msg.printbuf();
@@ -63,17 +66,20 @@ fn main ()
        let mut buf = [0, ..2];
        let recd = sock.read(buf);
     
-        match(recd) {
-            None => {
+        match recd {
+            Err(..) => {
                fail!("read failed!");
             },
-            Some(sz) => {
+            Ok(sz) => {
                
-                printfln!("read got back this many bytes: %?", sz);
+                println!("read got back this many bytes: {:?}", sz);
                
                 let m = std::str::from_utf8(buf);
                
-                printfln!("client: I received a %? byte long msg: '%s'", sz, m);
+                match m {
+                  Some(msg) => println!("client: I received a {:?} byte long msg: '{:s}'", sz, msg),
+                  None() => println!("client: I received a {:?} byte long msg but it was None'", sz),
+                }
                
                 // also available for debugging:
                 // msg.printbuf();
