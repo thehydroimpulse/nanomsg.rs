@@ -1,14 +1,15 @@
-extern mod nanomsg;
-use std::str::*;
-use nanomsg::*;
-use std::rt::io::Writer;
+extern crate nanomsg;
+use std::io::Writer;
+use nanomsg::AF_SP;
+use nanomsg::NN_PAIR;
+use nanomsg::NanoSocket;
 
 
 #[fixed_stack_segment]
 fn main ()
 {
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    printfln!("server binding to '%?'", SOCKET_ADDRESS);
+    println!("server binding to '{:?}'", SOCKET_ADDRESS);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -18,7 +19,7 @@ fn main ()
             sock = s;
         },
         Err(e) =>{
-            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
     
@@ -26,7 +27,7 @@ fn main ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("Bind failed with err:%? %?", e.rc, e.errstr));
+            fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
 
@@ -34,13 +35,16 @@ fn main ()
     let recd = sock.recv();
     match(recd) {
         Err(e) => {
-            fail!("sock.recv -> failed with errno: %? '%?'", e.rc, e.errstr);
+            fail!("sock.recv -> failed with errno: {:?} '{:?}'", e.rc, e.errstr);
         },
         Ok(v) => {
-            printfln!("actual_msg_size is %?", v.len());
+            println!("actual_msg_size is {:?}", v.len());
             
-            let m = from_utf8(v);
-            printfln!("client: I received a %? byte long msg: '%s'", v.len(), m);
+            let m = std::str::from_utf8(v);
+            match m {
+              Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
+              None() => println!("server: I received a {} byte long msg but it was None'", v.len()),
+            }
         }
     }
 
@@ -50,16 +54,16 @@ fn main ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
-    printfln!("server: I sent '%s'", b);
+    println!("server: I sent '{:s}'", b);
 
     // send 2, using Writer interface
     let b = "CAT";
     sock.write(b.as_bytes());
 
-    printfln!("server: 2nd send, I sent '%s'", b);
+    println!("server: 2nd send, I sent '{:s}'", b);
 }
 
 
