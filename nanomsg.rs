@@ -348,8 +348,7 @@ impl std::io::Reader for NanoSocket {
             },
             Ok(b) => {
                 let copylen = min(b.len(), buf.len());
-                // [TODO]: This can fail.
-                vec::bytes::copy_memory(buf, b);
+                vec::bytes::copy_memory(buf, b.slice(0, copylen));
                 return Ok(copylen);
             }
         }
