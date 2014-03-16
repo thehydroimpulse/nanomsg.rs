@@ -13,7 +13,6 @@
        uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
 #[crate_type = "lib"];
 
-extern mod std;
 use std::libc::*;
 use std::ptr;
 use std::unstable::intrinsics;
