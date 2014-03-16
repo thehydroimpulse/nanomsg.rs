@@ -30,7 +30,7 @@ run: nanocli
 clean: clean-samples
 
 clean-samples:
-	rm -f build/nanocli build/nanoserv build/clinano build/servnano
+	rm -f build/nanocli build/nanosrv build/clinano build/servnano
 	rmdir build
 
 cnano-samp: build
