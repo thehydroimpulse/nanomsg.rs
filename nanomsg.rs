@@ -126,7 +126,6 @@ pub struct Struct_nn_cmsghdr {
 }
 
 #[link(name = "nanomsg")]
-#[fixed_stack_segment]
 extern "C" {
     pub static mut program_invocation_name: *mut c_schar;
 
@@ -214,7 +213,6 @@ impl NanoSocket {
 
     // example: let sock = NanoSocket::new(AF_SP, NN_PAIR);
     pub fn new(domain: c_int, protocol: c_int) -> Result<NanoSocket, NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let rc : c_int = unsafe { nn_socket (domain, protocol) };
@@ -226,7 +224,6 @@ impl NanoSocket {
 
     // connect
     pub fn connect(&self, addr: &str) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let addr_c = addr.to_c_str();
@@ -239,7 +236,6 @@ impl NanoSocket {
 
     // bind (listen)
     pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
          // bind
@@ -253,7 +249,6 @@ impl NanoSocket {
 
     // subscribe, with prefix-filter
     pub fn subscribe(&self, prefix: &[u8]) -> Result<(), NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
         unsafe { 
@@ -275,7 +270,6 @@ impl NanoSocket {
 */
     // send
     pub fn send(&self, buf: &[u8]) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let len : i64 = buf.len() as i64;
@@ -292,7 +286,6 @@ impl NanoSocket {
 
     // send a string
     pub fn sendstr(&self, b: &str) -> Result<(), NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         let len : i64 = b.len() as i64;
@@ -310,7 +303,6 @@ impl NanoSocket {
 
     // buffer receive
     pub fn recv(&self) -> Result<~[u8], NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
         
         unsafe { 
@@ -337,7 +329,6 @@ struct NanoMsgReader {
 
 impl std::io::Reader for NanoSocket {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         match self.recv() {
@@ -377,7 +368,6 @@ impl std::io::Writer for NanoSocket {
 #[unsafe_destructor]
 impl Drop for NanoSocket {
     fn drop(&mut self) {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         // close
@@ -453,7 +443,6 @@ impl NanoMsg {
 
     /// recv_any_size allows nanomsg to do zero-copy optimizations
     pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
-        #[fixed_stack_segment];
         #[inline(never)];
 
         match(self.cleanup) {
@@ -480,7 +469,6 @@ impl NanoMsg {
     /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
     /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
     pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         match(self.cleanup) {
@@ -521,7 +509,6 @@ impl NanoMsg {
     }
 
     pub fn cleanup(&self) {
-        #[fixed_stack_segment];
         #[inline(never)];
 
         if (self.buf.is_null()) { return; }
@@ -560,7 +547,6 @@ impl NanoMsg {
 #[unsafe_destructor]
 impl Drop for NanoMsg {
     fn drop(&mut self) {
-        #[fixed_stack_segment];
         #[inline(never)];
         // println!("starting Drop for NanoMsg, with style: {:?}", self.cleanup);
         self.cleanup();

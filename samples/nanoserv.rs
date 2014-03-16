@@ -5,7 +5,6 @@ use nanomsg::NN_PAIR;
 use nanomsg::NanoSocket;
 
 
-#[fixed_stack_segment]
 fn main ()
 {
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
