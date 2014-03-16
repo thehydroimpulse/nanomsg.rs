@@ -19,10 +19,10 @@ samples: rustnano-samp cnano-samp
 rustnano-samp: nanocli nanoserv
 
 nanocli: libnanomsg
-	rustc -g -L . samples/nanocli.rs
+	rustc -g -L . samples/nanocli.rs -o build/nanocli
 
 nanoserv: libnanomsg
-	rustc -g -L . samples/nanoserv.rs
+	rustc -g -L . samples/nanoserv.rs -o build/nanosrv
 
 run: nanocli
 	./nanocli
