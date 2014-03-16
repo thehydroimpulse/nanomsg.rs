@@ -21,3 +21,10 @@
 
 # OSX ds_store
 .DS_Store
+
+# Swap files
+*.sw?
+
+# Built
+build/*
+*.rlib

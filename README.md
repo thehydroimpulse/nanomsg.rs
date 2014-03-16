@@ -13,7 +13,7 @@ Rust is a modern langauge from Mozilla Research. It has  support for
  and up-to-date. The project has strong velocity, so it is evolving
  quickly. The rust version used here was:
 
-       rustc 0.8-pre (124eb21 2013-09-06 23:35:57 -0700)
+       rustc 0.10-pre (352c5e7 2014-03-15 02:21:26 -0700)
 
 - http://www.rust-lang.org/
 - https://github.com/mozilla/rust
