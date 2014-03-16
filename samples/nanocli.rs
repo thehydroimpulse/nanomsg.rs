@@ -43,7 +43,7 @@ fn main ()
         let mut buf = [0, .. 100];
         let res = sock.read(buf);
         
-        match(res) {
+        match res {
             Err(..) => {
                 fail!("read failed!");
             },
@@ -66,7 +66,7 @@ fn main ()
        let mut buf = [0, ..2];
        let recd = sock.read(buf);
     
-        match(recd) {
+        match recd {
             Err(..) => {
                fail!("read failed!");
             },

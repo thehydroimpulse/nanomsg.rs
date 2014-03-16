@@ -273,7 +273,7 @@ impl NanoSocket {
         #[inline(never)];
 
         let len : i64 = buf.len() as i64;
-        if (0 == len) { return Ok(()); }
+        if 0 == len { return Ok(()); }
 
         let rc : i64 = unsafe { nn_send (self.sock, buf.as_ptr() as *c_void, len as u64, 0) } as i64;
         
@@ -289,7 +289,7 @@ impl NanoSocket {
         #[inline(never)];
 
         let len : i64 = b.len() as i64;
-        if (0 == len) { return Ok(()); }
+        if 0 == len { return Ok(()); }
 
         let buf = b.to_c_str();
         let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
@@ -372,7 +372,7 @@ impl Drop for NanoSocket {
 
         // close
         let rc = unsafe { nn_close (self.sock) };
-        if (rc != 0) {
+        if rc != 0 {
             let msg = format!("nn_close({:?}) failed with errno: {:?} '{:?}'", self.sock, std::os::errno(), std::os::last_os_error());
             error!("{:s}", msg);
             fail!("{:s}", msg);
@@ -445,7 +445,7 @@ impl NanoMsg {
     pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
         #[inline(never)];
 
-        match(self.cleanup) {
+        match self.cleanup {
             DoNothing => (),
             Free => self.cleanup(),
             Call_nn_freemsg => self.cleanup()
@@ -456,7 +456,7 @@ impl NanoMsg {
         }
         self.bytes_available = self.bytes_stored_in_buf;
 
-        if (self.bytes_stored_in_buf < 0) {
+        if self.bytes_stored_in_buf < 0 {
             debug!("nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
             return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
         }
@@ -471,7 +471,7 @@ impl NanoMsg {
     pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
         #[inline(never)];
 
-        match(self.cleanup) {
+        match self.cleanup {
             DoNothing => (),
             Free => self.cleanup(),
             Call_nn_freemsg => self.cleanup()
@@ -488,13 +488,13 @@ impl NanoMsg {
                                            maxlen, 
                                            flags) as u64;
             
-            if (self.bytes_available < 0) {
+            if self.bytes_available < 0 {
                 let errmsg = format!("recv_no_more_than_maxlen: nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
                 warn!("{:s}", errmsg);
                 return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
             }
 
-            if (self.bytes_available > maxlen) {
+            if self.bytes_available > maxlen {
                 let errmsg = format!("recv_no_more_than_maxlen: message was longer ({:?} bytes) than we allocated space for ({:?} bytes)", self.bytes_available, maxlen);
                 warn!("{:s}", errmsg);
             }
@@ -511,7 +511,7 @@ impl NanoMsg {
     pub fn cleanup(&self) {
         #[inline(never)];
 
-        if (self.buf.is_null()) { return; }
+        if self.buf.is_null() { return; }
 
         match self.cleanup {
             DoNothing => (),
@@ -623,7 +623,7 @@ fn msgclient_test ()
         // demonstrate NanoMsg::recv_any_size()
         let recd = msg.recv_any_size(sock.sock, 0);
         
-        match(recd) {
+        match recd {
             Err(e) => {
                 fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
@@ -649,7 +649,7 @@ fn msgclient_test ()
         // demonstrate NanoMsg::recv_no_more_than_maxlen()
         let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
         
-        match(recd) {
+        match recd {
             Err(e) => {
                 fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
@@ -705,7 +705,7 @@ fn msgserver_test ()
 
     // receive
     let recd = msg.recv_any_size(sock.sock, 0);
-    match(recd) {
+    match recd {
         Err(e) => {
             fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
         },

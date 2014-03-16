@@ -32,7 +32,7 @@ fn main ()
 
     // receive
     let recd = sock.recv();
-    match(recd) {
+    match recd {
         Err(e) => {
             fail!("sock.recv -> failed with errno: {:?} '{:?}'", e.rc, e.errstr);
         },
