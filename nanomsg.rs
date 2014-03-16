@@ -13,12 +13,22 @@
        uuid = "7f3fd0d2-1e3b-11e3-9953-080027e8dde3")];
 #[crate_type = "lib"];
 
-use std::libc::*;
+//use std::libc::*;
 use std::ptr;
-use std::unstable::intrinsics;
+use std::ptr::RawPtr;
+use std::libc::c_void;
+use std::libc::c_int;
+use std::libc::c_long;
+use std::libc::c_ulong;
+use std::libc::malloc;
+use std::libc::free;
+use std::intrinsics;
 use std::cast::transmute;
-use std::num::*;
-use std::os::*;
+use std::io::Reader;
+//use std::num::*;
+use std::cmp::min;
+//use std::os::*;
+use std::os::last_os_error;
 use std::vec;
 //use std::rt::io::*;
 
@@ -332,7 +342,7 @@ impl std::io::Reader for NanoSocket {
 
         match self.recv() {
             Err(e) => {
-                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
+                warn!("recv failed: {:?} {:?}",e.rc, e.errstr)
                 return 0;
             },
             Ok(b) => {
@@ -356,7 +366,7 @@ impl std::rt::io::Reader for NanoSocket {
 
         match self.recv() {
             Err(e) => {
-                warn!(fmt!("recv failed: %? %?",e.rc, e.errstr))
+                warn!("recv failed: {:?} {:?}",e.rc, e.errstr)
                 return None;
             },
             Ok(b) => {
@@ -399,9 +409,9 @@ impl Drop for NanoSocket {
         // close
         let rc = unsafe { nn_close (self.sock) };
         if (rc != 0) {
-            let msg = fmt!("nn_close(%?) failed with errno: %? '%?'", self.sock, std::os::errno(), std::os::last_os_error());
-            error!(msg);
-            fail!(msg);
+            let msg = format!("nn_close({:?}) failed with errno: {:?} '{:?}'", self.sock, std::os::errno(), std::os::last_os_error());
+            error!("{:s}", msg);
+            fail!("{:s}", msg);
         }
     }
 }
@@ -455,7 +465,7 @@ impl NanoMsg {
     }
 
     pub fn printbuf(&self) {
-        printfln!("NanoMsg contains message of length %?: '%s'", self.bytes_stored_in_buf, self.copy_to_string());
+        println!("NanoMsg contains message of length {:?}: '{:s}'", self.bytes_stored_in_buf, self.copy_to_string());
     }
 
     /// Unwraps the NanoMsg.
@@ -484,7 +494,7 @@ impl NanoMsg {
         self.bytes_available = self.bytes_stored_in_buf;
 
         if (self.bytes_stored_in_buf < 0) {
-            debug!("nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
+            debug!("nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
             return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
         }
 
@@ -507,7 +517,7 @@ impl NanoMsg {
 
         unsafe { 
             let ptr = malloc(maxlen as size_t) as *mut u8;
-            assert!(!ptr::is_null(ptr));
+            assert!(!std::ptr::RawPtr::is_null(ptr));
             self.cleanup = Free;
 
             self.buf = ptr;
@@ -517,14 +527,14 @@ impl NanoMsg {
                                            flags) as u64;
             
             if (self.bytes_available < 0) {
-                let errmsg = fmt!("recv_no_more_than_maxlen: nn_recv failed with errno: %? '%?'", std::os::errno(), std::os::last_os_error());
-                warn!(errmsg);
+                let errmsg = format!("recv_no_more_than_maxlen: nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
+                warn!("{:s}", errmsg);
                 return Err( NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() } );
             }
 
             if (self.bytes_available > maxlen) {
-                let errmsg = fmt!("recv_no_more_than_maxlen: message was longer (%? bytes) than we allocated space for (%? bytes)", self.bytes_available, maxlen);
-                warn!(errmsg);
+                let errmsg = format!("recv_no_more_than_maxlen: message was longer ({:?} bytes) than we allocated space for ({:?} bytes)", self.bytes_available, maxlen);
+                warn!("{:s}", errmsg);
             }
 
             self.bytes_stored_in_buf = min(maxlen, self.bytes_available);            
@@ -533,8 +543,8 @@ impl NanoMsg {
     }
 
     pub fn copy_to_string(&self) -> ~str {
-        //printfln!("copy_to_string sees size: '%?'", self.bytes_stored_in_buf);
-        //printfln!("copy_to_string sees buf : '%?'", self.buf as *u8);
+        //println!("copy_to_string sees size: '{:?}'", self.bytes_stored_in_buf);
+        //println!("copy_to_string sees buf : '{:?}'", self.buf as *u8);
         unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
     }
 
@@ -559,7 +569,7 @@ impl NanoMsg {
 
             Call_nn_freemsg => {
                 unsafe {
-                    // printfln!("*** Call_nn_freemsg Drop running.");
+                    // println!("*** Call_nn_freemsg Drop running.");
 
                     let x = intrinsics::init(); // dummy value to swap in
                     // moving the object out is needed to call the destructor
@@ -580,7 +590,7 @@ impl Drop for NanoMsg {
     fn drop(&mut self) {
         #[fixed_stack_segment];
         #[inline(never)];
-        // printfln!("starting Drop for NanoMsg, with style: %?", self.cleanup);
+        // println!("starting Drop for NanoMsg, with style: {:?}", self.cleanup);
         self.cleanup();
     }
 }
@@ -626,7 +636,7 @@ fn msgclient_test ()
     let mut msg = NanoMsg::new();
 
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    printfln!("client binding to '%?'", SOCKET_ADDRESS);
+    println!("client binding to '{:?}'", SOCKET_ADDRESS);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -641,7 +651,7 @@ fn msgclient_test ()
                 sock = s;
             },
             Err(e) =>{
-                fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+                fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
             }
         }
         sock.connect(SOCKET_ADDRESS);
@@ -649,7 +659,7 @@ fn msgclient_test ()
         // send
         let b = "WHY";
         sock.sendstr(b);
-        printfln!("client: I sent '%s'", b);
+        println!("client: I sent '{:s}'", b);
         
 
         // demonstrate NanoMsg::recv_any_size()
@@ -657,14 +667,14 @@ fn msgclient_test ()
         
         match(recd) {
             Err(e) => {
-                fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+                fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
             Ok(sz) => {
 
-                printfln!("actual_msg_size is %?", sz);
+                println!("actual_msg_size is {:?}", sz);
                 
                 let m = msg.copy_to_string();
-                printfln!("client: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
+                println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
 
                 assert!(m.as_slice() == "LUV");
                 
@@ -683,15 +693,15 @@ fn msgclient_test ()
         
         match(recd) {
             Err(e) => {
-                fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+                fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
             Ok(sz) => {
                 
-                printfln!("recv_no_more_than_maxlen got back this many bytes: %?", sz);
+                println!("recv_no_more_than_maxlen got back this many bytes: {:?}", sz);
                 
                 let m = msg.copy_to_string();
                 
-                printfln!("client: I received a %? byte long msg: '%s', while there were '%?' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
+                println!("client: I received a {:?} byte long msg: '{:s}', while there were '{:?}' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
                 
                 assert!(m.as_slice() == "CA");
 
@@ -702,7 +712,7 @@ fn msgclient_test ()
         }
     } // end of socket lifetime
 
-    print(fmt!("verify that message is still around: "));
+    print(format!("verify that message is still around: "));
     msg.printbuf();
 
 } // end msgclient_test
@@ -713,7 +723,7 @@ fn msgserver_test ()
 {
     let mut msg = NanoMsg::new();
     let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    printfln!("server binding to '%?'", SOCKET_ADDRESS);
+    println!("server binding to '{:?}'", SOCKET_ADDRESS);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -723,7 +733,7 @@ fn msgserver_test ()
             sock = s;
         },
         Err(e) =>{
-            fail!(fmt!("Failed with err:%? %?", e.rc, e.errstr));
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
     
@@ -731,7 +741,7 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("Bind failed with err:%? %?", e.rc, e.errstr));
+            fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
 
@@ -739,13 +749,13 @@ fn msgserver_test ()
     let recd = msg.recv_any_size(sock.sock, 0);
     match(recd) {
         Err(e) => {
-            fail!("recv_any_size -> nn_recv failed with errno: %? '%?'", e.rc, e.errstr);
+            fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
         },
         Ok(sz) => {
-            printfln!("actual_msg_size is %?", sz);
+            println!("actual_msg_size is {:?}", sz);
             
             let m = msg.copy_to_string();
-            printfln!("server: I received a %? byte long msg: '%s', of which I have '%?' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
+            println!("server: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
 
             assert!(m.as_slice() == "WHY");
             
@@ -760,10 +770,10 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
-    printfln!("server: I sent '%s'", b);
+    println!("server: I sent '{:s}'", b);
 
     // send 2
     let b = "CAT";
@@ -771,10 +781,10 @@ fn msgserver_test ()
     match ret {
         Ok(_) => {},
         Err(e) =>{
-            fail!(fmt!("send failed with err:%? %?", e.rc, e.errstr));
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
         }
     }
-    printfln!("server: 2nd send, I sent '%s'", b);
+    println!("server: 2nd send, I sent '{:s}'", b);
 
 } // end msgserver_test
 
