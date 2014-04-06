@@ -8,13 +8,14 @@
 // currently.
 // ======================================
 
-#[crate_id = "nanomsg#0.02"];
-#[crate_type = "lib"];
+#![crate_id = "nanomsg#0.02"]
+#![crate_type = "lib"]
 
-use std::str;
+#![feature(phase)]
+#[phase(syntax, link)] extern crate log;
+
 use std::ptr;
 use std::ptr::RawPtr;
-use std::libc;
 use std::libc::c_void;
 use std::libc::c_schar;
 use std::libc::c_int;
@@ -29,10 +30,9 @@ use std::io::Reader;
 use std::io::Writer;
 use std::io::IoResult;
 use std::cmp::min;
-use std::os;
 use std::os::last_os_error;
 use std::os::errno;
-use std::vec;
+use std::slice;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -213,7 +213,7 @@ impl NanoSocket {
 
     // example: let sock = NanoSocket::new(AF_SP, NN_PAIR);
     pub fn new(domain: c_int, protocol: c_int) -> Result<NanoSocket, NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
 
         let rc : c_int = unsafe { nn_socket (domain, protocol) };
         if rc < 0 {
@@ -224,7 +224,7 @@ impl NanoSocket {
 
     // connect
     pub fn connect(&self, addr: &str) -> Result<(), NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
 
         let addr_c = addr.to_c_str();
         let rc : c_int = addr_c.with_ref(|a| unsafe { nn_connect (self.sock, a) });
@@ -236,7 +236,7 @@ impl NanoSocket {
 
     // bind (listen)
     pub fn bind(&self, addr: &str) -> Result<(), NanoErr>{
-        #[inline(never)];
+        #![inline(never)]
 
          // bind
         let addr_c = addr.to_c_str();
@@ -249,7 +249,7 @@ impl NanoSocket {
 
     // subscribe, with prefix-filter
     pub fn subscribe(&self, prefix: &[u8]) -> Result<(), NanoErr>{
-        #[inline(never)];
+        #![inline(never)]
 
         unsafe { 
             let rc : c_int = nn_setsockopt(self.sock, 
@@ -270,7 +270,7 @@ impl NanoSocket {
 */
     // send
     pub fn send(&self, buf: &[u8]) -> Result<(), NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
 
         let len : i64 = buf.len() as i64;
         if 0 == len { return Ok(()); }
@@ -286,7 +286,7 @@ impl NanoSocket {
 
     // send a string
     pub fn sendstr(&self, b: &str) -> Result<(), NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
 
         let len : i64 = b.len() as i64;
         if 0 == len { return Ok(()); }
@@ -303,7 +303,7 @@ impl NanoSocket {
 
     // buffer receive
     pub fn recv(&self) -> Result<~[u8], NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
         
         unsafe { 
             let mut mem : *mut u8 = ptr::mut_null();
@@ -313,7 +313,7 @@ impl NanoSocket {
                 return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } );
             }
 
-            let buf = vec::raw::from_buf_raw(mem as *u8, recvd as uint);
+            let buf = slice::raw::from_buf_raw(mem as *u8, recvd as uint);
             nn_freemsg(mem as *mut c_void);
             Ok(buf)
         }
@@ -329,7 +329,7 @@ struct NanoMsgReader {
 
 impl std::io::Reader for NanoSocket {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
-        #[inline(never)];
+        #![inline(never)]
 
         match self.recv() {
             Err(e) => {
@@ -339,7 +339,7 @@ impl std::io::Reader for NanoSocket {
             },
             Ok(b) => {
                 let copylen = min(b.len(), buf.len());
-                vec::bytes::copy_memory(buf, b.slice(0, copylen));
+                slice::bytes::copy_memory(buf, b.slice(0, copylen));
                 return Ok(copylen);
             }
         }
@@ -368,7 +368,7 @@ impl std::io::Writer for NanoSocket {
 #[unsafe_destructor]
 impl Drop for NanoSocket {
     fn drop(&mut self) {
-        #[inline(never)];
+        #![inline(never)]
 
         // close
         let rc = unsafe { nn_close (self.sock) };
@@ -443,7 +443,7 @@ impl NanoMsg {
 
     /// recv_any_size allows nanomsg to do zero-copy optimizations
     pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
-        #[inline(never)];
+        #![inline(never)]
 
         match self.cleanup {
             DoNothing => (),
@@ -469,7 +469,7 @@ impl NanoMsg {
     /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
     /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
     pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
-        #[inline(never)];
+        #![inline(never)]
 
         match self.cleanup {
             DoNothing => (),
@@ -509,7 +509,7 @@ impl NanoMsg {
     }
 
     pub fn cleanup(&self) {
-        #[inline(never)];
+        #![inline(never)]
 
         if self.buf.is_null() { return; }
 
@@ -547,7 +547,7 @@ impl NanoMsg {
 #[unsafe_destructor]
 impl Drop for NanoMsg {
     fn drop(&mut self) {
-        #[inline(never)];
+        #![inline(never)]
         // println!("starting Drop for NanoMsg, with style: {:?}", self.cleanup);
         self.cleanup();
     }

@@ -42,7 +42,7 @@ fn main ()
             let m = std::str::from_utf8(v);
             match m {
               Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
-              None() => println!("server: I received a {} byte long msg but it was None'", v.len()),
+              None => println!("server: I received a {} byte long msg but it was None'", v.len()),
             }
         }
     }
