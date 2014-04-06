@@ -7,8 +7,8 @@ use nanomsg::NanoSocket;
 
 fn main ()
 {
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    println!("client connecting to '{:s}'", SOCKET_ADDRESS);
+    let socket_address = "tcp://127.0.0.1:5555";
+    println!("client connecting to '{:s}'", socket_address);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -26,7 +26,7 @@ fn main ()
             fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
           }
         }
-        let ret = sock.connect(SOCKET_ADDRESS);
+        let ret = sock.connect(socket_address);
         match ret {
           Ok(_) => {},
           Err(e) =>{

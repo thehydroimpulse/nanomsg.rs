@@ -7,8 +7,8 @@ use nanomsg::NanoSocket;
 
 fn main ()
 {
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    println!("server binding to '{:?}'", SOCKET_ADDRESS);
+    let socket_address = "tcp://127.0.0.1:5555";
+    println!("server binding to '{:?}'", socket_address);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -22,7 +22,7 @@ fn main ()
         }
     }
     
-    let ret = sock.bind(SOCKET_ADDRESS);
+    let ret = sock.bind(socket_address);
     match ret {
         Ok(_) => {},
         Err(e) =>{
