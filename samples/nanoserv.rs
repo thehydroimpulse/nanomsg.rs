@@ -7,8 +7,8 @@ use nanomsg::NanoSocket;
 
 fn main ()
 {
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    println!("server binding to '{:?}'", SOCKET_ADDRESS);
+    let socket_address = "tcp://127.0.0.1:5555";
+    println!("server binding to '{:?}'", socket_address);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -22,7 +22,7 @@ fn main ()
         }
     }
     
-    let ret = sock.bind(SOCKET_ADDRESS);
+    let ret = sock.bind(socket_address);
     match ret {
         Ok(_) => {},
         Err(e) =>{
@@ -42,7 +42,7 @@ fn main ()
             let m = std::str::from_utf8(v);
             match m {
               Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
-              None() => println!("server: I received a {} byte long msg but it was None'", v.len()),
+              None => println!("server: I received a {} byte long msg but it was None'", v.len()),
             }
         }
     }

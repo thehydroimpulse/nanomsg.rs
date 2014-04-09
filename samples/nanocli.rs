@@ -7,8 +7,8 @@ use nanomsg::NanoSocket;
 
 fn main ()
 {
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5555";
-    println!("client connecting to '{:s}'", SOCKET_ADDRESS);
+    let socket_address = "tcp://127.0.0.1:5555";
+    println!("client connecting to '{:s}'", socket_address);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -26,7 +26,7 @@ fn main ()
             fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
           }
         }
-        let ret = sock.connect(SOCKET_ADDRESS);
+        let ret = sock.connect(socket_address);
         match ret {
           Ok(_) => {},
           Err(e) =>{
@@ -53,7 +53,7 @@ fn main ()
                 let m = std::str::from_utf8(buf);
                 match m {
                   Some(msg) => println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, msg, buf.len()),
-                  None() => println!("client: I received a {:?} byte long msg but it was NONE, I have '{:?}' bytes in my buffer.",  sz, buf.len()),
+                  None => println!("client: I received a {:?} byte long msg but it was NONE, I have '{:?}' bytes in my buffer.",  sz, buf.len()),
                 }
 
                 // also available for debugging:
@@ -78,7 +78,7 @@ fn main ()
                
                 match m {
                   Some(msg) => println!("client: I received a {:?} byte long msg: '{:s}'", sz, msg),
-                  None() => println!("client: I received a {:?} byte long msg but it was None'", sz),
+                  None => println!("client: I received a {:?} byte long msg but it was None'", sz),
                 }
                
                 // also available for debugging:
