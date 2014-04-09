@@ -12,18 +12,12 @@ fn main ()
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
-    let mut sock : NanoSocket;
-    match sockret {
-        Ok(s) => {
-            sock = s;
-        },
-        Err(e) =>{
-            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
-        }
-    }
+    let mut sock = match sockret {
+        Ok(s) => s,
+        Err(e) => fail!("Failed with err:{:?} {:?}", e.rc, e.errstr)
+    };
     
-    let ret = sock.bind(SOCKET_ADDRESS);
-    match ret {
+    match sock.bind(SOCKET_ADDRESS) {
         Ok(_) => {},
         Err(e) =>{
             fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
@@ -31,31 +25,25 @@ fn main ()
     }
 
     // receive
-    let recd = sock.recv();
-    match recd {
-        Err(e) => {
-            fail!("sock.recv -> failed with errno: {:?} '{:?}'", e.rc, e.errstr);
-        },
+    let recd = match sock.recv() {
         Ok(v) => {
             println!("actual_msg_size is {:?}", v.len());
             
-            let m = std::str::from_utf8(v);
-            match m {
+            match std::str::from_utf8(v) {
               Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
               None() => println!("server: I received a {} byte long msg but it was None'", v.len()),
             }
-        }
+        },
+        Err(e) => fail!("sock.recv -> failed with errno: {:?} '{:?}'", e.rc, e.errstr)
+    };
+
+    let b = "LUV";
+    // send
+    match sock.send(b.as_bytes()) {
+        Ok(_) => {},
+        Err(e) => fail!("send failed with err:{:?} {:?}", e.rc, e.errstr)
     }
 
-    // send
-    let b = "LUV";
-    let ret = sock.send(b.as_bytes());
-    match ret {
-        Ok(_) => {},
-        Err(e) =>{
-            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
-        }
-    }
     println!("server: I sent '{:s}'", b);
 
     // send 2, using Writer interface
