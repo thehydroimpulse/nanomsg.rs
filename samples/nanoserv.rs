@@ -16,7 +16,7 @@ fn main ()
         Err(e) => fail!("Failed with err:{:?} {:?}", e.rc, e.errstr)
     };
 
-    match sock.bind(SOCKET_ADDRESS) {
+    match sock.bind(socket_address) {
         Ok(_) => {},
         Err(e) =>{
             fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);

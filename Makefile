@@ -8,34 +8,32 @@ $(NANO_SRC_DIR)/pair.h \
 $(NANO_SRC_DIR)/pubsub.h \
 $(NANO_SRC_DIR)/tcp.h
 
-
 all: libnanomsg samples
 
 libnanomsg:
-	rustc -g nanomsg.rs
+	mkdir -p target
+	rustc -g nanomsg.rs --out-dir target
 
 samples: rustnano-samp cnano-samp
 
 rustnano-samp: nanocli nanoserv
 
 nanocli: libnanomsg
-	rustc -g -L . samples/nanocli.rs -o build/nanocli
+	mkdir -p target
+	rustc -g -Ltarget samples/nanocli.rs --out-dir target
 
 nanoserv: libnanomsg
-	rustc -g -L . samples/nanoserv.rs -o build/nanosrv
+	mkdir -p target
+	rustc -g -Ltarget samples/nanoserv.rs --out-dir target
 
 run: nanocli
 	./nanocli
 
-clean: clean-samples
-
-clean-samples:
-	rm -f build/nanocli build/nanosrv build/clinano build/servnano
-	rmdir build
+clean:
+	rm -rf target
 
 cnano-samp: build
 	gcc -g -o build/clinano samples/clinano.c -lnanomsg -I${NANO_SRC_DIR}
 	gcc -g -o build/servnano samples/servnano.c -lnanomsg -I${NANO_SRC_DIR}
 
-build:
-	mkdir -p $@
+.PHONY: clean

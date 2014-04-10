@@ -14,15 +14,17 @@
 #![feature(phase)]
 #[phase(syntax, link)] extern crate log;
 
+extern crate libc;
+
 use std::ptr;
 use std::ptr::RawPtr;
-use std::libc::c_void;
-use std::libc::c_schar;
-use std::libc::c_int;
-use std::libc::c_long;
-use std::libc::c_ulong;
-use std::libc::malloc;
-use std::libc::free;
+use libc::c_void;
+use libc::c_schar;
+use libc::c_int;
+use libc::c_long;
+use libc::c_ulong;
+use libc::malloc;
+use libc::free;
 use std::intrinsics;
 use std::cast::transmute;
 use std::io;
@@ -195,8 +197,8 @@ extern "C" {
 // NanoErr
 // ======================================================
 pub struct NanoErr {
-    rc: c_int,
-    errstr: ~str,
+    pub rc: c_int,
+    pub errstr: ~str,
 }
 
 // Rust-idiomatic memory safe wrappers for nanomsg objects:
@@ -292,7 +294,7 @@ impl NanoSocket {
         if 0 == len { return Ok(()); }
 
         let buf = b.to_c_str();
-        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *std::libc::c_void, len as u64, 0) }) as i64;
+        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *libc::c_void, len as u64, 0) }) as i64;
         
         if rc < 0 {
             return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
@@ -410,7 +412,7 @@ pub struct NanoMsg {
     buf: *mut u8,
     bytes_stored_in_buf: u64,
     bytes_available: u64,
-    priv cleanup: HowToCleanup,
+    cleanup: HowToCleanup,
 }
 
 impl NanoMsg {
@@ -593,8 +595,8 @@ fn msgclient_test ()
     // make a NanoMsg to hold a received message
     let mut msg = NanoMsg::new();
 
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    println!("client binding to '{:?}'", SOCKET_ADDRESS);
+    let address = "tcp://127.0.0.1:5432";
+    println!("client binding to '{:?}'", address);
 
     // verify that msg lifetime can outlive the socket
     // from whence it came
@@ -612,7 +614,8 @@ fn msgclient_test ()
                 fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
             }
         }
-        sock.connect(SOCKET_ADDRESS);
+
+        sock.connect(address);
         
         // send
         let b = "WHY";
@@ -680,8 +683,8 @@ fn msgclient_test ()
 fn msgserver_test ()
 {
     let mut msg = NanoMsg::new();
-    let SOCKET_ADDRESS = "tcp://127.0.0.1:5432";
-    println!("server binding to '{:?}'", SOCKET_ADDRESS);
+    let address = "tcp://127.0.0.1:5432";
+    println!("server binding to '{:?}'", address);
 
     // create and connect
     let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -695,7 +698,7 @@ fn msgserver_test ()
         }
     }
     
-    let ret = sock.bind(SOCKET_ADDRESS);
+    let ret = sock.bind(address);
     match ret {
         Ok(_) => {},
         Err(e) =>{
