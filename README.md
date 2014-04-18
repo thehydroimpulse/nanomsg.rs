@@ -40,6 +40,7 @@ Replacing `${folder}` with the location where the built rust-nanomsg library is.
 * Jason E. Aten ([@glycerine](https://github.com/glycerine))
 * David C. Bishop ([@dcbishop](https://github.com/dcbishop))
 * Dennis Lawler ([@evenodder](https://github.com/evenodder))
+* Daniel Fagnan ([@TheHydroImpulse](https://github.com/thehydroimpulse))
 
 ## License
 
@@ -47,8 +48,8 @@ This project is under the same license as Rust. Dual MIT and Apache 2.
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
-Copyright (c) 2014 Daniel Fagnan <dnfagnan@gmail.com>
+* Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
+* Copyright (c) 2014 Daniel Fagnan <dnfagnan@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
