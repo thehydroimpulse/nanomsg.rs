@@ -20,7 +20,7 @@ extern crate libc;
 
 use std::ptr;
 use std::ptr::RawPtr;
-use libc::{c_void,size_t,c_schar,c_int,malloc,free};
+use libc::{c_void,size_t,c_int,malloc,free};
 use std::intrinsics;
 use std::cast::transmute;
 use std::io;
@@ -99,6 +99,8 @@ pub static EFSM: c_int = (NN_HAUSNUMERO + 54);
 pub static NN_QUEUE_NOTINQUEUE: c_int = -1;
 pub static NN_LIST_NOTINLIST: c_int = -1;
 
+pub type c_schar = i8;
+
 pub struct IoVec {
     iov_base: *mut c_void,
     iov_len: size_t,
@@ -111,12 +113,6 @@ pub struct MsgHdr {
     msg_control: *mut c_void,
     msg_controllen: size_t,
 }
-
-// pub struct Struct_nn_cmsghdr {
-//     cmsg_len: size_t,
-//     cmsg_level: c_int,
-//     cmsg_type: c_int,
-// }
 
 #[link(name = "nanomsg")]
 extern "C" {
