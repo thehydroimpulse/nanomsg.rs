@@ -10,6 +10,7 @@
 
 #![crate_id = "nanomsg#0.02"]
 #![crate_type = "lib"]
+#![license = "MIT/ASL2"]
 #![feature(globs)]
 #![allow(unused_must_use,dead_code,non_camel_case_types)]
 
