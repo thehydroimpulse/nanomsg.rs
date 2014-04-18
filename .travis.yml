@@ -3,6 +3,7 @@ before_install:
   - sudo apt-get update
 install:
   - sudo apt-get install rust-nightly
+  - make deps
 script:
   - rustc -v
   - make test

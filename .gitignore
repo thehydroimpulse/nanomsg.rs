@@ -28,3 +28,5 @@
 # Built
 target/
 *.rlib
+*.tar.gz
+nanomsg-0.3-beta

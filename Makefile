@@ -26,7 +26,14 @@ test: src/lib.rs
 	rustc --test -g -Ltarget src/lib.rs --out-dir target
 	./target/nanomsg
 
+deps:
+	wget http://download.nanomsg.org/nanomsg-0.3-beta.tar.gz
+	tar -xvzf nanomsg-0.3-beta.tar.gz
+	cd nanomsg-0.3-beta && ./configure && make && make install
+
 clean:
 	rm -rf target
+	rm -rf nanomsg-0.3-beta
+	rm nanomsg-0.3-beta.tar.gz
 
-.PHONY: clean
+.PHONY: clean deps
