@@ -560,129 +560,50 @@ impl Drop for NanoMsg {
 #[cfg(test)]
 mod test {
     use super::*;
+}
 
-    #[test]
-    fn smoke_test_readerwriter() {
-        let addr="tcp://127.0.0.1:1234";
+#[test]
+fn smoke_test_readerwriter() {
+    let addr="tcp://127.0.0.1:1234";
 
-        // server end:
-        spawn(proc() {
-            let mut sock = match NanoSocket::new(AF_SP, NN_PAIR) {
-                Ok(s) => s,
-                Err(_) => fail!("asdf")
-            };
-
-            sock.bind(addr);
-
-            let mut buf = [0,0,0,0,0];
-            sock.read(buf);
-            assert!(buf[2] == 3);
-        });
-
-
-        // client end:
+    // server end:
+    spawn(proc() {
         let mut sock = match NanoSocket::new(AF_SP, NN_PAIR) {
             Ok(s) => s,
             Err(_) => fail!("asdf")
         };
 
-        sock.connect(addr);
-        sock.write([1,2,3,4]);
-    }
+        sock.bind(addr);
 
-    #[test]
-    fn msgclient_test() {
-        // make a NanoMsg to hold a received message
-        let mut msg = NanoMsg::new();
-
-        let address = "tcp://127.0.0.1:5435";
-        println!("client binding to '{:?}'", address);
-
-        // verify that msg lifetime can outlive the socket
-        // from whence it came
-
-        { // sock lifetime
-
-            // create and connect
-            let sockret = NanoSocket::new(AF_SP, NN_PAIR);
-            let sock : NanoSocket;
-            match sockret {
-                Ok(s) => {
-                    sock = s;
-                },
-                Err(e) =>{
-                    fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
-                }
-            }
-
-            sock.connect(address);
-
-            // send
-            let b = "WHY";
-            sock.sendstr(b);
-            println!("client: I sent '{:s}'", b);
+        let mut buf = [0,0,0,0,0];
+        sock.read(buf);
+        assert!(buf[2] == 3);
+    });
 
 
-            // demonstrate NanoMsg::recv_any_size()
-            let recd = msg.recv_any_size(sock.sock, 0);
+    // client end:
+    let mut sock = match NanoSocket::new(AF_SP, NN_PAIR) {
+        Ok(s) => s,
+        Err(_) => fail!("asdf")
+    };
 
-            match recd {
-                Err(e) => {
-                    fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
-                },
-                Ok(sz) => {
-
-                    println!("actual_msg_size is {:?}", sz);
-
-                    let m = msg.copy_to_string();
-                    println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
-
-                    assert!(m.as_slice() == "LUV");
-
-                    // also available for debugging:
-                    // msg.printbuf();
-
-                }
-            }
+    sock.connect(addr);
+    sock.write([1,2,3,4]);
+}
 
 
-            // it is okay to reuse msg (e.g. as below, or in a loop). NanoMsg will free any previous message before
-            //  receiving a new one.
+// basic test that NanoMsg and NanoSocket are working
+fn msgclient_test() {
+    // make a NanoMsg to hold a received message
+    let mut msg = NanoMsg::new();
 
-            // demonstrate NanoMsg::recv_no_more_than_maxlen()
-            let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
+    let address = "tcp://127.0.0.1:5435";
+    println!("client binding to '{:?}'", address);
 
-            match recd {
-                Err(e) => {
-                    fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
-                },
-                Ok(sz) => {
+    // verify that msg lifetime can outlive the socket
+    // from whence it came
 
-                    println!("recv_no_more_than_maxlen got back this many bytes: {:?}", sz);
-
-                    let m = msg.copy_to_string();
-
-                    println!("client: I received a {:?} byte long msg: '{:s}', while there were '{:?}' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
-
-                    assert!(m.as_slice() == "CA");
-
-                    // also available for debugging:
-                    // msg.printbuf();
-
-                }
-            }
-        } // end of socket lifetime
-
-        println!("verify that message is still around: ");
-        msg.printbuf();
-
-    } // end msgclient_test
-
-    #[test]
-    fn msgserver_test () {
-        let mut msg = NanoMsg::new();
-        let address = "tcp://127.0.0.1:5435";
-        println!("server binding to '{:?}'", address);
+    { // sock lifetime
 
         // create and connect
         let sockret = NanoSocket::new(AF_SP, NN_PAIR);
@@ -696,67 +617,147 @@ mod test {
             }
         }
 
-        let ret = sock.bind(address);
-        match ret {
-            Ok(_) => {},
-            Err(e) =>{
-                fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
-            }
-        }
+        sock.connect(address);
 
-        // receive
+        // send
+        let b = "WHY";
+        sock.sendstr(b);
+        println!("client: I sent '{:s}'", b);
+
+
+        // demonstrate NanoMsg::recv_any_size()
         let recd = msg.recv_any_size(sock.sock, 0);
+
         match recd {
             Err(e) => {
                 fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
             },
             Ok(sz) => {
+
                 println!("actual_msg_size is {:?}", sz);
 
                 let m = msg.copy_to_string();
-                println!("server: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
+                println!("client: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.",  sz, m, msg.actual_msg_bytes_avail());
 
-                assert!(m.as_slice() == "WHY");
+                assert!(m.as_slice() == "LUV");
 
                 // also available for debugging:
                 // msg.printbuf();
+
             }
         }
 
-        // send
-        let b = "LUV";
-        let ret = sock.sendstr(b);
-        match ret {
-            Ok(_) => {},
-            Err(e) =>{
-                fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
+
+        // it is okay to reuse msg (e.g. as below, or in a loop). NanoMsg will free any previous message before
+        //  receiving a new one.
+
+        // demonstrate NanoMsg::recv_no_more_than_maxlen()
+        let recd = msg.recv_no_more_than_maxlen(sock.sock, 2, 0);
+
+        match recd {
+            Err(e) => {
+                fail!("recv_no_more_than_maxlen -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
+            },
+            Ok(sz) => {
+
+                println!("recv_no_more_than_maxlen got back this many bytes: {:?}", sz);
+
+                let m = msg.copy_to_string();
+
+                println!("client: I received a {:?} byte long msg: '{:s}', while there were '{:?}' bytes available from nanomsg.", sz, m, msg.actual_msg_bytes_avail());
+
+                assert!(m.as_slice() == "CA");
+
+                // also available for debugging:
+                // msg.printbuf();
+
             }
         }
-        println!("server: I sent '{:s}'", b);
+    } // end of socket lifetime
 
-        // send 2
-        let b = "CAT";
-        let ret = sock.sendstr(b);
-        match ret {
-            Ok(_) => {},
-            Err(e) =>{
-                fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
-            }
+    println!("verify that message is still around: ");
+    msg.printbuf();
+
+} // end msgclient_test
+
+
+
+fn msgserver_test ()
+{
+    let mut msg = NanoMsg::new();
+    let address = "tcp://127.0.0.1:5435";
+    println!("server binding to '{:?}'", address);
+
+    // create and connect
+    let sockret = NanoSocket::new(AF_SP, NN_PAIR);
+    let sock : NanoSocket;
+    match sockret {
+        Ok(s) => {
+            sock = s;
+        },
+        Err(e) =>{
+            fail!("Failed with err:{:?} {:?}", e.rc, e.errstr);
         }
-        println!("server: 2nd send, I sent '{:s}'", b);
-
-    } // end msgserver_test
-
-    #[test]
-    fn smoke_test_msg_client_msg_server() {
-
-        spawn(proc() {
-            msgserver_test();
-        });
-
-        msgclient_test();
     }
 
+    let ret = sock.bind(address);
+    match ret {
+        Ok(_) => {},
+        Err(e) =>{
+            fail!("Bind failed with err:{:?} {:?}", e.rc, e.errstr);
+        }
+    }
+
+    // receive
+    let recd = msg.recv_any_size(sock.sock, 0);
+    match recd {
+        Err(e) => {
+            fail!("recv_any_size -> nn_recv failed with errno: {:?} '{:?}'", e.rc, e.errstr);
+        },
+        Ok(sz) => {
+            println!("actual_msg_size is {:?}", sz);
+
+            let m = msg.copy_to_string();
+            println!("server: I received a {:?} byte long msg: '{:s}', of which I have '{:?}' bytes in my buffer.", sz, m, msg.actual_msg_bytes_avail());
+
+            assert!(m.as_slice() == "WHY");
+
+            // also available for debugging:
+            // msg.printbuf();
+        }
+    }
+
+    // send
+    let b = "LUV";
+    let ret = sock.sendstr(b);
+    match ret {
+        Ok(_) => {},
+        Err(e) =>{
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
+        }
+    }
+    println!("server: I sent '{:s}'", b);
+
+    // send 2
+    let b = "CAT";
+    let ret = sock.sendstr(b);
+    match ret {
+        Ok(_) => {},
+        Err(e) =>{
+            fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
+        }
+    }
+    println!("server: 2nd send, I sent '{:s}'", b);
+
+} // end msgserver_test
+
+
+#[test]
+fn smoke_test_msg_client_msg_server() {
+
+    spawn(proc() {
+        msgserver_test();
+    });
+
+    msgclient_test();
 }
-
-

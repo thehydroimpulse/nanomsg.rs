@@ -1,70 +1,69 @@
-rust-nanomsg
-============
+# Rust NanoMsg [![Build Status](https://travis-ci.org/TheHydroImpulse/rust-nanomsg.svg)](https://travis-ci.org/TheHydroImpulse/rust-nanomsg)
 
-Summary: nanomsg bindings for rust
+**Note:** Rust NanoMsg is currently being cleaned up and turned into an idiomatic Rust library. As a result, things might not work as expected.
 
-rust
------ 
-Rust is a modern langauge from Mozilla Research. It has  support for 
- writing embedded applications that are memory safe and simultaneously
- do not suffer garbage-collection pauses. license: dual MIT / Apache 2.
+## NanoMsg
 
- You'll want the github MASTER branch of rust to do anything useful
- and up-to-date. The project has strong velocity, so it is evolving
- quickly. The rust version used here was:
-
-       rustc 0.10-pre (352c5e7 2014-03-15 02:21:26 -0700)
-
-- http://www.rust-lang.org/
-- https://github.com/mozilla/rust
-
-nanomsg
--------
-nanomsg is a modern messaging library that is the 
- successor to ZeroMQ, written in C by Martin Sustrik and colleagues.
- The nanomsg library is licensed under MIT/X11 license. "nanomsg" 
- is a trademark of 250bpm s.r.o.  I'm using the HEAD of the
-
-       * master 244540c changed location of the repo reflected in README
-
- branch for nanomsg.
+nanomsg is a modern messaging library that is the successor to ZeroMQ, written in C by Martin Sustrik and colleagues. The nanomsg library is licensed under MIT/X11 license. "nanomsg" is a trademark of 250bpm s.r.o.
 
 - http://nanomsg.org/
 - https://github.com/nanomsg/nanomsg
 
-rust-nanomsg bindings
----------------------
+## Requirements
 
-These rust-nanogen bindings were initiated using an automated bindings
- generator called rust-bindgen from Jyun-Yan You (repository:
- https://github.com/crabtw/rust-bindgen ) and then hand edited to
- include necessary pub static constants extracted manually. The
- later process involved using the cpp -dD flag to extract #defines,
- and rewriting them as "pub static MYCONST: int = 1;" statements.
+You'll need to have nanomsg installed beforehand.
 
+## Getting Started
 
+Rust doesn't have any package distribution system yet :), unfortunately. You'll have to manually clone this repo and build it:
 
-Status:  
--------
-We have completed the wrapping of the client and server examples
-in nanocli.rs and nanoserv.rs in an idiomatic-Rust API layer.
-All unsafe blocks are encapsulated within the nanomsg.rs API, and
-consumers of the API should not need to use unsafe blocks at all.
+```bash
+git clone git@github.com:TheHydroImpulse/rust-nanomsg.git
+cd rust-nanomsg
+make # Builds the library into ./target
+```
 
-warn! level logging is implemented for some failures, but certainly
-could be made more comprehensive. Or less comprehensive, since really
-this should be the job of the consumer of the API.
+You'll find the latest library within the `target` directory, which you can then copy somewhere.
 
-The binding appears to work just fine, although do note
-that both rust and nanomsg are in active development.
-The test programs (nanoserv.rs, nanocli.rs) demonstrate
-the bindings in action; they create an nn_socket and send
-and receive messages over the wire. 
+You can link this library from another Rust crate:
 
+```bash
+rustc -L ${folder} src/lib.rs --out-dir target
+```
 
-Other protocols beyond nn_socket: 
----------------------------------
+Replacing `${folder}` with the location where the built rust-nanomsg library is.
 
-The other scalability protocols implemented in nanomsg work in the C side,
-so rust ports/examples/contributions are welcome. Please feel free to fork 
-this repo and send me pull requests with improvements. 
+## Contributors
+
+(In arbitrary order):
+
+* Jason E. Aten ([@glycerine](https://github.com/glycerine))
+* David C. Bishop ([@dcbishop](https://github.com/dcbishop))
+* Dennis Lawler ([@evenodder](https://github.com/evenodder))
+
+## License
+
+This project is under the same license as Rust. Dual MIT and Apache 2.
+
+The MIT License (MIT)
+
+Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
+Copyright (c) 2014 Daniel Fagnan <dnfagnan@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

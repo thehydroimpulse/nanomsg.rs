@@ -26,5 +26,5 @@
 *.sw?
 
 # Built
-targer/
+target/
 *.rlib
