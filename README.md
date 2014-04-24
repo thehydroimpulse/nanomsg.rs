@@ -41,6 +41,7 @@ Replacing `${folder}` with the location where the built rust-nanomsg library is.
 * David C. Bishop ([@dcbishop](https://github.com/dcbishop))
 * Dennis Lawler ([@evenodder](https://github.com/evenodder))
 * Daniel Fagnan ([@TheHydroImpulse](https://github.com/thehydroimpulse))
+* Zachary Tong ([@polyfractal](https://github.com/polyfractal))
 
 ## License
 
