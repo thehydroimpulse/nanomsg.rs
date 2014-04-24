@@ -319,9 +319,8 @@ impl NanoSocket {
         }
     }
 
-
+    #[inline(never)]
     pub fn getsockopt(&self, level: i32, option: i32) -> Result<u32, NanoErr> {
-        #![inline(never)]
 
         unsafe {
             let mut optval: u32 = 0;
