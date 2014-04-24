@@ -318,6 +318,26 @@ impl NanoSocket {
             Ok(buf)
         }
     }
+
+
+    pub fn getsockopt(&self, level: i32, option: i32) -> Result<u32, NanoErr> {
+        #![inline(never)]
+
+        unsafe {
+            let mut optval: u32 = 0;
+            let mut optval_ptr: *mut u32 = &mut optval;
+
+            let mut optvallen: u64 = 4;
+            let mut optvallen_ptr: *mut u64 = &mut optvallen;
+            let recvd = nn_getsockopt (self.sock, level, option, optval_ptr as *mut c_void, optvallen_ptr) as i64;
+
+            match recvd {
+              0 => Ok(optval),
+              _ => return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } )
+            }
+
+        }
+    }
 }
 
 
@@ -679,5 +699,51 @@ mod test {
                 fail!("send failed with err:{:?} {:?}", e.rc, e.errstr);
             }
         }
+    }
+
+    #[test]
+    fn test_getsockopt() {
+        let addr="tcp://127.0.0.1:8898";
+
+        let mut sock = match NanoSocket::new(AF_SP, NN_PAIR) {
+            Ok(s) => s,
+            Err(_) => fail!("asdf")
+        };
+
+        sock.bind(addr);
+
+        // Linger default is 1000ms
+        let ret = match sock.getsockopt(NN_SOL_SOCKET, NN_LINGER) {
+          Ok(s) => s,
+          Err(e) => fail!("failed getsockopt(NN_SOL_SOCKET, NN_LINGER) with err:{:?} {:?}", e.rc, e.errstr)
+        };
+
+        assert!(ret == 1000);
+
+        // SendBuffer default is 128kb (131072 bytes)
+        let ret = match sock.getsockopt(NN_SOL_SOCKET, NN_SNDBUF) {
+          Ok(s) => s,
+          Err(e) => fail!("failed getsockopt(NN_SOL_SOCKET, NN_SNDBUF) with err:{:?} {:?}", e.rc, e.errstr)
+        };
+
+        assert!(ret == 131072);
+
+        // ReceiveBuffer default is 128kb (131072 bytes)
+        let ret = match sock.getsockopt(NN_SOL_SOCKET, NN_RCVBUF) {
+          Ok(s) => s,
+          Err(e) => fail!("failed getsockopt(NN_SOL_SOCKET, NN_RCVBUF) with err:{:?} {:?}", e.rc, e.errstr)
+        };
+
+        assert!(ret == 131072);
+
+        // Send timeout default is -1 (unlimited)
+        let ret = match sock.getsockopt(NN_SOL_SOCKET, NN_SNDTIMEO) {
+          Ok(s) => s,
+          Err(e) => fail!("failed getsockopt(NN_SOL_SOCKET, NN_SNDTIMEO) with err:{:?} {:?}", e.rc, e.errstr)
+        };
+
+        assert!(ret == -1);
+
+
     }
 }
