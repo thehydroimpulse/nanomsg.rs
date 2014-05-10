@@ -18,6 +18,7 @@
 #[phase(syntax, link)] extern crate log;
 
 extern crate libc;
+extern crate core;
 
 use std::ptr;
 use std::ptr::RawPtr;
@@ -32,6 +33,7 @@ use std::os::last_os_error;
 use std::os::errno;
 use std::slice;
 use std::num::FromPrimitive;
+use core::slice::raw::buf_as_slice;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -351,13 +353,15 @@ impl NanoSocket {
 
         unsafe {
             let mut mem : *mut u8 = ptr::mut_null();
-            let recvd = nn_recv (self.sock, transmute(&mut mem), NN_MSG, 0) as i64;
+            let recvd = nn_recv (self.sock, transmute(&mut mem), NN_MSG, 0) as uint;
 
             if recvd < 0 {
                 return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } );
             }
 
-            let buf = slice::raw::from_buf_raw(mem as *u8, recvd as uint);
+            let buf = core::slice::raw::buf_as_slice(mem as *u8, recvd, |buf| {
+              buf.to_owned()
+            });
             nn_freemsg(mem as *mut c_void);
             Ok(buf)
         }
@@ -415,7 +419,7 @@ impl NanoSocket {
       let ret = unsafe { nn_poll(pollfds_ptr, 1 as c_int, timeout as i32) };
 
       drop(pollfds_ptr);
-      
+
       match ret {
         0 => Err(ETIMEOUT),
         -1 => {
