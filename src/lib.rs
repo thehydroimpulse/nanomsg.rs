@@ -199,7 +199,7 @@ extern "C" {
 // ======================================================
 pub struct NanoErr {
     pub rc: c_int,
-    pub errstr: ~str,
+    pub errstr: StrBuf,
 }
 
 // Rust-idiomatic memory safe wrappers for nanomsg objects:
