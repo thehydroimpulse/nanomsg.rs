@@ -24,7 +24,7 @@ use std::ptr;
 use std::ptr::RawPtr;
 use libc::{c_void,size_t,c_int,c_short,malloc,free};
 use std::intrinsics;
-use std::cast::transmute;
+use std::mem::transmute;
 use std::io;
 use std::io::{Reader,Writer};
 use std::io::IoResult;
