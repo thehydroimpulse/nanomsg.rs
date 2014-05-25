@@ -5,4 +5,5 @@ install:
   - sudo ./rust-nightly-x86_64-unknown-linux-gnu/install.sh
 script:
   - rustc -v
+  - make deps
   - make test
