@@ -630,8 +630,8 @@ impl NanoMsg {
         }
     }
 
-    pub fn copy_to_string(&self) -> ~str {
-        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
+    pub fn copy_to_string(&self) -> StrBuf {
+        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint).to_strbuf() }
     }
 
     #[inline(never)]
