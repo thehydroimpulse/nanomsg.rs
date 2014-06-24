@@ -11,14 +11,14 @@
 #![crate_id = "nanomsg#0.02"]
 #![crate_type = "lib"]
 #![license = "MIT/ASL2"]
-#![feature(globs)]
+#![feature(globs, unsafe_destructor)]
 #![allow(unused_must_use,dead_code,non_camel_case_types)]
 
 #![feature(phase)]
-#[phase(syntax, link)] extern crate log;
+#[phase(plugin, link)] extern crate log;
 
 extern crate libc;
-extern crate core;
+extern crate debug;
 
 use std::ptr;
 use std::ptr::RawPtr;
@@ -33,7 +33,7 @@ use std::os::last_os_error;
 use std::os::errno;
 use std::slice;
 use std::num::FromPrimitive;
-use core::slice::raw::buf_as_slice;
+use std::slice::raw::buf_as_slice;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -199,7 +199,7 @@ extern "C" {
 // ======================================================
 pub struct NanoErr {
     pub rc: c_int,
-    pub errstr: StrBuf,
+    pub errstr: String,
 }
 
 // Rust-idiomatic memory safe wrappers for nanomsg objects:
@@ -212,7 +212,7 @@ pub struct NanoSocket {
     sock: c_int,
 }
 
-#[deriving(Eq, FromPrimitive, Show)]
+#[deriving(PartialEq, FromPrimitive, Show)]
 pub enum NanoError {
   ENOTSUP = NN_HAUSNUMERO + 1,
   EPROTONOSUPPORT = NN_HAUSNUMERO + 2,
@@ -349,7 +349,7 @@ impl NanoSocket {
 
     // buffer receive
     #[inline(never)]
-    pub fn recv(&self) -> Result<~[u8], NanoErr> {
+    pub fn recv(&self) -> Result<Vec<u8>, NanoErr> {
 
         unsafe {
             let mut mem : *mut u8 = ptr::mut_null();
@@ -359,7 +359,7 @@ impl NanoSocket {
                 return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } );
             }
 
-            let buf = core::slice::raw::buf_as_slice(mem as *u8, recvd, |buf| {
+            let buf = std::slice::raw::buf_as_slice(mem as *u8, recvd, |buf| {
               buf.to_owned()
             });
             nn_freemsg(mem as *mut c_void);
@@ -630,8 +630,8 @@ impl NanoMsg {
         }
     }
 
-    pub fn copy_to_string(&self) -> StrBuf {
-        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint).to_strbuf() }
+    pub fn copy_to_string(&self) -> String {
+        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
     }
 
     #[inline(never)]
@@ -682,10 +682,9 @@ impl Drop for NanoMsg {
 
 #[cfg(test)]
 mod test {
-
-    extern crate sync;
     use super::*;
     use std::io::timer::sleep;
+    use std::comm;
 
     #[test]
     fn smoke_test_msg_client_msg_server() {
@@ -866,7 +865,7 @@ mod test {
 
         sock.bind(addr);
 
-        let (parent, child) = sync::duplex();
+        let (parent, child) = comm::duplex();
         spawn(proc() {
             let addr="tcp://127.0.0.1:8899";
 
