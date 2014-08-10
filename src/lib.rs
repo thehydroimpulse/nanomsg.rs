@@ -14,7 +14,6 @@
 #![allow(dead_code, non_camel_case_types)]
 
 #[phase(plugin, link)] extern crate log;
-#[phase(plugin, link)] extern crate shiny;
 
 extern crate libc;
 extern crate debug;
