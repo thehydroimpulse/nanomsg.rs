@@ -1,10 +1,10 @@
 extern crate debug;
 extern crate nanomsg;
+
 use std::io::Writer;
 use nanomsg::AF_SP;
 use nanomsg::NN_PAIR;
 use nanomsg::NanoSocket;
-
 
 fn main() {
     let socket_address = "tcp://127.0.0.1:5555";

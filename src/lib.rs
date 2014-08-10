@@ -8,7 +8,7 @@
 // currently.
 // ======================================
 
-#![crate_id = "nanomsg#0.02"]
+#![crate_name = "nanomsg"]
 #![crate_type = "lib"]
 #![license = "MIT/ASL2"]
 #![feature(globs, unsafe_destructor)]

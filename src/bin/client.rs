@@ -1,8 +1,6 @@
-#![crate_id = "nanocli" ]
-#![crate_type = "bin" ]
-
 extern crate debug;
 extern crate nanomsg;
+
 use std::io::{Reader,Writer};
 use nanomsg::AF_SP;
 use nanomsg::NN_PAIR;

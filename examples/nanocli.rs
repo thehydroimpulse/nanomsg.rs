@@ -6,8 +6,7 @@ use nanomsg::NN_PAIR;
 use nanomsg::NanoSocket;
 
 
-fn main()
-{
+fn main() {
     let socket_address = "tcp://127.0.0.1:5555";
     println!("client connecting to '{:s}'", socket_address);
 
