@@ -1,8 +1,8 @@
-# Rust NanoMsg [![Build Status](https://travis-ci.org/thehydroimpulse/rust-nanomsg.svg)](https://travis-ci.org/thehydroimpulse/rust-nanomsg)
+# Rust Nanomsg [![Build Status](https://travis-ci.org/thehydroimpulse/rust-nanomsg.svg)](https://travis-ci.org/thehydroimpulse/rust-nanomsg)
 
 **Note:** Rust NanoMsg is currently being cleaned up and turned into an idiomatic Rust library. As a result, things might not work as expected.
 
-## NanoMsg
+## Nanomsg
 
 nanomsg is a modern messaging library that is the successor to ZeroMQ, written in C by Martin Sustrik and colleagues. The nanomsg library is licensed under MIT/X11 license. "nanomsg" is a trademark of 250bpm s.r.o.
 
@@ -15,23 +15,21 @@ You'll need to have nanomsg installed beforehand.
 
 ## Getting Started
 
-Rust doesn't have any package distribution system yet :), unfortunately. You'll have to manually clone this repo and build it:
+This library is Cargo supported! Simply add a new cargo dependency and
+away you go!
 
-```bash
-git clone git@github.com:TheHydroImpulse/rust-nanomsg.git
-cd rust-nanomsg
-make # Builds the library into ./target
+```toml
+[dependencies.nanomsg]
+git = "git@github.com:thehydroimpulse/rust-nanomsg.git"
 ```
 
-You'll find the latest library within the `target` directory, which you can then copy somewhere.
+Now you can use the crate after you include it:
 
-You can link this library from another Rust crate:
+```rust
+extern crate nanomsg;
 
-```bash
-rustc -L ${folder} src/lib.rs --out-dir target
+use nanomsg::{Nanomsg, AF_SP, NN_PAIR};
 ```
-
-Replacing `${folder}` with the location where the built rust-nanomsg library is.
 
 ## Contributors
 
@@ -51,7 +49,6 @@ This project is under the same license as Rust. Dual MIT and Apache 2.
 The MIT License (MIT)
 
 * Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
-* Copyright (c) 2014 Daniel Fagnan <dnfagnan@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
