@@ -1,4 +1,4 @@
-# Rust Nanomsg [![Build Status](https://travis-ci.org/thehydroimpulse/rust-nanomsg.svg)](https://travis-ci.org/thehydroimpulse/rust-nanomsg)
+# Rust Nanomsg [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs)
 
 **Note:** Rust NanoMsg is currently being cleaned up and turned into an idiomatic Rust library. As a result, things might not work as expected.
 
