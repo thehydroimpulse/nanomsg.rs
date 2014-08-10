@@ -1,3 +1,7 @@
+#![crate_name = "client"]
+#![crate_type = "bin"]
+#![allow(dead_code)]
+
 extern crate debug;
 extern crate nanomsg;
 
@@ -36,7 +40,7 @@ fn main() {
 
         // send
         let b = "WHY";
-        sock.write(b.as_bytes());
+        sock.write(b.as_bytes()).unwrap();
         println!("client: I sent '{:s}'", b);
 
         // demonstrante NanoMsgStream, NanoMsgReader, NanoMsgWriter.
