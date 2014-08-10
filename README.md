@@ -20,7 +20,7 @@ away you go!
 
 ```toml
 [dependencies.nanomsg]
-git = "git@github.com:thehydroimpulse/rust-nanomsg.git"
+git = "https://github.com/thehydroimpulse/nanomsg.rs"
 ```
 
 Now you can use the crate after you include it:
@@ -28,7 +28,7 @@ Now you can use the crate after you include it:
 ```rust
 extern crate nanomsg;
 
-use nanomsg::{Nanomsg, AF_SP, NN_PAIR};
+use nanomsg::Nanomsg;
 ```
 
 ## Contributors
