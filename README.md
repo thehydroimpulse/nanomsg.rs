@@ -1,4 +1,4 @@
-# Rust NanoMsg [![Build Status](https://travis-ci.org/TheHydroImpulse/rust-nanomsg.svg)](https://travis-ci.org/TheHydroImpulse/rust-nanomsg)
+# Rust NanoMsg [![Build Status](https://travis-ci.org/thehydroimpulse/rust-nanomsg.svg)](https://travis-ci.org/thehydroimpulse/rust-nanomsg)
 
 **Note:** Rust NanoMsg is currently being cleaned up and turned into an idiomatic Rust library. As a result, things might not work as expected.
 
@@ -42,6 +42,7 @@ Replacing `${folder}` with the location where the built rust-nanomsg library is.
 * Dennis Lawler ([@evenodder](https://github.com/evenodder))
 * Daniel Fagnan ([@TheHydroImpulse](https://github.com/thehydroimpulse))
 * Zachary Tong ([@polyfractal](https://github.com/polyfractal))
+* Dan Burkert ([@danburkert](https://github.com/danburkert))
 
 ## License
 
