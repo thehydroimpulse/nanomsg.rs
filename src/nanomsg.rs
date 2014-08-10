@@ -43,7 +43,7 @@ pub static NN_DONTWAIT: c_int = 1;
 pub static NN_FSM_ACTION: c_int = -2;
 pub static NN_FSM_START: c_int = -2;
 pub static NN_FSM_STOP: c_int = -3;
-pub static NN_HAUSNUMERO: c_int = 156384712;
+pub static NN_HAUSNUMERO: int = 156384712;
 pub static NN_INPROC: c_int = -1;
 pub static NN_IPC: c_int = -2;
 pub static NN_IPV4ONLY: c_int = 14;
@@ -135,10 +135,10 @@ extern "C" {
 
     pub fn nn_errno() -> c_int;
 
-    pub fn nn_strerror(errnum: c_int) -> *c_schar;
+    pub fn nn_strerror(errnum: c_int) -> *const c_schar;
 
     pub fn nn_symbol(i: c_int,
-                     value: *mut c_int) -> *c_schar;
+                     value: *mut c_int) -> *const c_schar;
 
     pub fn nn_term();
 
@@ -154,7 +154,7 @@ extern "C" {
     pub fn nn_setsockopt(s: c_int,
                          level: c_int,
                          option: c_int,
-                         optval: *c_void,
+                         optval: *const c_void,
                          optvallen: size_t) -> c_int;
 
     pub fn nn_getsockopt(s: c_int, level: c_int,
@@ -162,14 +162,14 @@ extern "C" {
                          optval: *mut c_void,
                          optvallen: *mut size_t) -> c_int;
 
-    pub fn nn_bind(s: c_int, addr: *c_schar) -> c_int;
+    pub fn nn_bind(s: c_int, addr: *const c_schar) -> c_int;
 
-    pub fn nn_connect(s: c_int, addr: *c_schar) -> c_int;
+    pub fn nn_connect(s: c_int, addr: *const c_schar) -> c_int;
 
     pub fn nn_shutdown(s: c_int, how: c_int) -> c_int;
 
     pub fn nn_send(s: c_int,
-                   buf: *c_void,
+                   buf: *const c_void,
                    len: size_t,
                    flags: c_int) -> c_int;
 
@@ -179,7 +179,7 @@ extern "C" {
                    flags: c_int) -> c_int;
 
     pub fn nn_sendmsg(s: c_int,
-                      msghdr: *MsgHdr,
+                      msghdr: *const MsgHdr,
                       flags: c_int) -> c_int;
 
     pub fn nn_recvmsg(s: c_int,
@@ -301,7 +301,7 @@ impl NanoSocket {
             let rc : c_int = nn_setsockopt(self.sock,
                 NN_SUB,
                 NN_SUB_SUBSCRIBE,
-                prefix.as_ptr() as *c_void,
+                prefix.as_ptr() as *const c_void,
                 prefix.len() as u64);
             if rc < 0 {
                 return Err( NanoErr{ rc: rc, errstr: last_os_error() });
@@ -321,7 +321,7 @@ impl NanoSocket {
         let len : i64 = buf.len() as i64;
         if 0 == len { return Ok(()); }
 
-        let rc : i64 = unsafe { nn_send (self.sock, buf.as_ptr() as *c_void, len as u64, 0) } as i64;
+        let rc : i64 = unsafe { nn_send (self.sock, buf.as_ptr() as *const c_void, len as u64, 0) } as i64;
 
         if rc < 0 {
             return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
@@ -338,7 +338,7 @@ impl NanoSocket {
         if 0 == len { return Ok(()); }
 
         let buf = b.to_c_str();
-        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *libc::c_void, len as u64, 0) }) as i64;
+        let rc : i64 = buf.with_ref(|b| unsafe { nn_send (self.sock, b as *const libc::c_void, len as u64, 0) }) as i64;
 
         if rc < 0 {
             return Err( NanoErr{rc: rc as i32, errstr: last_os_error() } );
@@ -359,7 +359,7 @@ impl NanoSocket {
                 return Err( NanoErr{rc: recvd as i32, errstr: last_os_error() } );
             }
 
-            let buf = std::slice::raw::buf_as_slice(mem as *u8, recvd, |buf| {
+            let buf = std::slice::raw::buf_as_slice(mem as *const u8, recvd, |buf| {
               buf.to_owned()
             });
             nn_freemsg(mem as *mut c_void);
@@ -631,7 +631,7 @@ impl NanoMsg {
     }
 
     pub fn copy_to_string(&self) -> String {
-        unsafe { std::str::raw::from_buf_len(self.buf as *u8, self.bytes_stored_in_buf as uint) }
+        unsafe { std::str::raw::from_buf_len(self.buf as *const u8, self.bytes_stored_in_buf as uint) }
     }
 
     #[inline(never)]
@@ -682,6 +682,8 @@ impl Drop for NanoMsg {
 
 #[cfg(test)]
 mod test {
+    extern crate debug;
+
     use super::*;
     use std::io::timer::sleep;
     use std::comm;
@@ -865,7 +867,7 @@ mod test {
 
         sock.bind(addr);
 
-        let (parent, child) = comm::duplex();
+        let (parent, child) = comm::duplex::<int, int>();
         spawn(proc() {
             let addr="tcp://127.0.0.1:8899";
 

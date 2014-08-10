@@ -1,3 +1,4 @@
+extern crate debug;
 extern crate nanomsg;
 use std::io::Writer;
 use nanomsg::AF_SP;
@@ -28,7 +29,7 @@ fn main ()
         Ok(v) => {
             println!("actual_msg_size is {:?}", v.len());
             
-            match std::str::from_utf8(v) {
+            match std::str::from_utf8(v.as_slice()) {
               Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
               None => println!("server: I received a {} byte long msg but it was None'", v.len()),
             }
