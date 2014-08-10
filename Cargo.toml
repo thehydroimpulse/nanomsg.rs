@@ -1,4 +1,8 @@
 [project]
 name = "nanomsg"
 version = "0.1.0"
-authors = ["Daniel Fagnan <dnfagnan@gmail.com>"]
+authors = ["Daniel Fagnan <dnfagnan@gmail.com>", "Jason E. Aten", "David C. Bishop", "Dennis Lawler", "Zachary Tong", "Dan Burkert"]
+
+[dependencies.shiny]
+git = "https://github.com/farcaller/shiny"
+phase = ["plugin", "link"]
