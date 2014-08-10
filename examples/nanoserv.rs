@@ -6,8 +6,7 @@ use nanomsg::NN_PAIR;
 use nanomsg::NanoSocket;
 
 
-fn main ()
-{
+fn main() {
     let socket_address = "tcp://127.0.0.1:5555";
     println!("server binding to '{:?}'", socket_address);
 
@@ -28,10 +27,10 @@ fn main ()
     let recd = match sock.recv() {
         Ok(v) => {
             println!("actual_msg_size is {:?}", v.len());
-            
+
             match std::str::from_utf8(v.as_slice()) {
-              Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
-              None => println!("server: I received a {} byte long msg but it was None'", v.len()),
+                Some(msg) => println!("server: I received a {} byte long msg: '{:s}'", v.len(), msg),
+                None => println!("server: I received a {} byte long msg but it was None'", v.len()),
             }
         },
         Err(e) => fail!("sock.recv -> failed with errno: {:?} '{:?}'", e.rc, e.errstr)
@@ -52,6 +51,3 @@ fn main ()
 
     println!("server: 2nd send, I sent '{:s}'", b);
 }
-
-
-
