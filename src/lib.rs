@@ -18,6 +18,7 @@
 extern crate libc;
 extern crate debug;
 
+extern crate libnanomsg;
 
 use std::ptr;
 use std::ptr::RawPtr;
@@ -649,9 +650,15 @@ mod tests {
     #![allow(unused_must_use)]
     extern crate debug;
 
-    use super::*;
+    use super::{
+        Nanomsg, NanoSocket,
+        NN_PAIR, AF_SP,
+        NN_SNDTIMEO, NN_SOL_SOCKET,
+        NN_RCVBUF, NN_SNDBUF, NN_LINGER
+    };
     use std::io::timer::sleep;
     use std::comm;
+    use std::time::duration::Duration;
 
 
     #[test]
@@ -716,7 +723,7 @@ mod tests {
         child_recv.recv();
 
         // hacky, but sometimes the socket send doesnt finish before the chan send.
-        sleep(100);
+        sleep(Duration::milliseconds(100));
 
         let (can_send, can_recv) = match sock.poll(true, true, 1000) {
             Ok((s, r)) => (s,r),

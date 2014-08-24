@@ -1,0 +1,9 @@
+[package]
+
+name = "libnanomsg"
+version = "0.0.1"
+authors = ["Daniel Fagnan <dnfagnan@gmail.com>"]
+build = "make -f nanomsg.mk"
+
+[dependencies.link-config]
+git = "https://github.com/alexcrichton/link-config"

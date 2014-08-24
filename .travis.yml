@@ -1,10 +1,9 @@
+language: rust
+
 install:
-  - curl http://www.rust-lang.org/rustup.sh | sudo sh -
   - make deps
 
 script:
   - rustc -v
   - cargo test
-
-env:
-  - LD_LIBRARY_PATH=/usr/local/lib
+  - cd libnanomsg && cargo test
