@@ -25,6 +25,8 @@ use std::slice;
 use std::num::FromPrimitive;
 use std::slice::raw::buf_as_slice;
 
+mod result;
+
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
 pub static NN_CHUNKREF_MAX: c_int = 32;
