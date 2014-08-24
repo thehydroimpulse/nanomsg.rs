@@ -1,13 +1,3 @@
-// ======================================
-// nanomsg.rs : nanomsg bindings for rust
-//
-// This aims to be a rust version of the
-// full public API of nanomsg. But parts
-// are probably still missing, since the
-// safe API only does nn_send and nn_recv
-// currently.
-// ======================================
-
 #![crate_type = "lib"]
 #![license = "MIT/ASL2"]
 #![feature(globs, unsafe_destructor, phase)]
@@ -34,8 +24,6 @@ use std::os::errno;
 use std::slice;
 use std::num::FromPrimitive;
 use std::slice::raw::buf_as_slice;
-
-mod ffi;
 
 pub static AF_SP: c_int = 1;
 pub static AF_SP_RAW: c_int = 2;
@@ -480,18 +468,6 @@ impl Drop for NanoSocket {
         }
     }
 }
-
-// ======================================================
-// Nanomsg
-//
-//  It is not necessary to restrict the lifetime of the
-//  Nanomsg to be a subset of the lifetime of the
-//  NanoSocket. But if you wanted to do that, you would
-//  write:
-//     struct Msg<'self> { socket: &'self Socket, ... }
-//  which would put a borrowed pointer to the socket in
-//  the msg and restrict the messages' lifetime.
-// ======================================================
 
 enum HowToCleanup {
     ///  depending on whether recv_any_size() or recv_no_more_than_maxlen()
