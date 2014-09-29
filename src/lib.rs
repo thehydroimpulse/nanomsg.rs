@@ -10,9 +10,11 @@ extern crate libnanomsg;
 
 pub use result::{NanoResult, NanoError};
 
-use libc::{c_int};
+use libc::{c_int, c_void, size_t};
+use std::mem::transmute;
+use std::ptr;
 use std::kinds::marker::ContravariantLifetime;
-use result::{SocketInitializationError, SocketBindError};
+use result::{SocketInitializationError, SocketBindError, SocketBufferError};
 
 mod result;
 
@@ -105,10 +107,48 @@ impl<'a> Socket<'a> {
     /// }
     /// ```
     pub fn bind(&mut self, addr: &'a str) -> NanoResult<()> {
-        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
             return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
+        }
+
+        Ok(())
+    }
+
+    pub fn connect(&mut self, addr: &'a str) -> NanoResult<()> {
+        let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
+
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
+        }
+
+        Ok(())
+    }
+
+    pub fn read(&mut self, buf: &mut [u8]) -> NanoResult<Vec<u8>> {
+        let mut buf: *mut u8 = ptr::mut_null();
+
+        let ret = unsafe {
+            libnanomsg::nn_recv(self.socket, transmute(&mut buf),
+                libnanomsg::NN_MSG, 0 as c_int)
+        };
+
+        if ret == -1 {
+            return Err(NanoError::new("Failed to retrieve data from the socket", SocketBufferError));
+        }
+
+        Ok(unsafe { Vec::from_raw_parts(ret as uint, ret as uint, buf) })
+    }
+
+    pub fn write(&mut self, bytes: &[u8]) -> NanoResult<()> {
+        let ret = unsafe {
+            libnanomsg::nn_send(self.socket, bytes.as_ptr() as *const c_void,
+                                bytes.len() as size_t, 0)
+        };
+
+        if ret as uint != bytes.len() {
+            return Err(NanoError::new("Failed to write the buffer to the socket", SocketBufferError));
         }
 
         Ok(())
@@ -125,9 +165,16 @@ impl<'a> Drop for Socket<'a> {
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
+    #[phase(plugin, link)]
+    extern crate log;
     extern crate debug;
+    extern crate libnanomsg;
+    extern crate libc;
 
     use super::*;
+
+    use libc::{size_t, c_void};
+    use std::string::raw::from_buf_len;
 
     #[test]
     fn initialize_socket() {
@@ -150,5 +197,38 @@ mod tests {
             Ok(_) => {},
             Err(err) => fail!("{}", err)
         }
+    }
+
+    fn receive_from_socket() {
+        spawn(proc() {
+            let mut socket = match Socket::new(Pull) {
+                Ok(socket) => socket,
+                Err(err) => fail!("{}", err)
+            };
+
+
+            match socket.bind("ipc:///tmp/pipeline.ipc") {
+                Ok(_) => {},
+                Err(err) => fail!("{}", err)
+            }
+
+            let mut buf = [0u8, ..8];
+            match socket.read(&mut buf) {
+                Ok(len) => println!("buf: {}", len),
+                Err(err) => fail!("{}", err)
+            }
+        });
+
+        let mut socket = match Socket::new(Push) {
+            Ok(socket) => socket,
+            Err(err) => fail!("{}", err)
+        };
+
+        match socket.connect("ipc:///tmp/pipeline.ipc") {
+            Ok(_) => {},
+            Err(err) => fail!("{}", err)
+        }
+
+        socket.write("foobar".as_bytes());
     }
 }

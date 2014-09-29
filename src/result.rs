@@ -6,7 +6,8 @@ pub type NanoResult<T> = Result<T, NanoError>;
 pub enum ErrorKind {
     Unknown,
     SocketInitializationError,
-    SocketBindError
+    SocketBindError,
+    SocketBufferError
 }
 
 #[deriving(Show, PartialEq)]
