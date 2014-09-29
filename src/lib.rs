@@ -12,7 +12,7 @@ pub use result::{NanoResult, NanoError};
 
 use libc::{c_int};
 use std::kinds::marker::ContravariantLifetime;
-use result::{SocketInitializationError};
+use result::{SocketInitializationError, SocketBindError};
 
 mod result;
 
@@ -77,6 +77,42 @@ impl<'a> Socket<'a> {
             marker: ContravariantLifetime::<'a>
         })
     }
+
+    /// Creating a new socket through `Socket::new` does **not**
+    /// bind that socket to a listening state. Instead, one has to be
+    /// explicit in enabling the socket to listen onto a specific address.
+    ///
+    /// That's what the `bind` method does. Passing in a raw string like:
+    /// "ipc:///tmp/pipeline.ipc" is supported.
+    ///
+    /// Note: This does **not** block the current task. That job
+    /// is up to the user of the library by entering a loop.
+    ///
+    /// Usage:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Pull};
+    ///
+    /// let mut socket = match Socket::new(Pull) {
+    ///     Ok(socket) => socket,
+    ///     Err(err) => fail!("{}", err)
+    /// };
+    ///
+    /// // Bind the newly created socket to the following address:
+    /// match socket.bind("ipc:///tmp/pipeline.ipc") {
+    ///     Ok(_) => {},
+    ///     Err(err) => fail!("Failed to bind socket: {}", err)
+    /// }
+    /// ```
+    pub fn bind(&mut self, addr: &'a str) -> NanoResult<()> {
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.as_ptr() as *const i8) };
+
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
+        }
+
+        Ok(())
+    }
 }
 
 #[unsafe_destructor]
@@ -101,5 +137,18 @@ mod tests {
         };
 
         assert!(socket.socket >= 0);
+    }
+
+    #[test]
+    fn bind_socket() {
+        let mut socket = match Socket::new(Pull) {
+            Ok(socket) => socket,
+            Err(err) => fail!("{}", err)
+        };
+
+        match socket.bind("ipc:///tmp/pipeline.ipc") {
+            Ok(_) => {},
+            Err(err) => fail!("{}", err)
+        }
     }
 }
