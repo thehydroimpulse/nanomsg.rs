@@ -31,12 +31,11 @@ pub enum Protocol {
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
-pub struct Socket<'a> {
-    addr: Option<&'a str>,
+pub struct Socket {
     socket: c_int
 }
 
-impl<'a> Socket<'a> {
+impl Socket {
 
     /// Allocate and initialize a new Nanomsg socket which returns
     /// a new file descriptor behind the scene. The safe interface doesn't
@@ -52,7 +51,7 @@ impl<'a> Socket<'a> {
     ///     Err(err) => fail!("{}", err)
     /// };
     /// ```
-    pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
+    pub fn new(protocol: Protocol) -> NanoResult<Socket> {
 
         let proto = match protocol {
             Req => libnanomsg::NN_REQ,
@@ -72,9 +71,7 @@ impl<'a> Socket<'a> {
         debug!("Initialized a new raw socket");
 
         Ok(Socket {
-            addr: None,
-            socket: socket,
-            marker: ContravariantLifetime::<'a>
+            socket: socket
         })
     }
 
@@ -104,7 +101,7 @@ impl<'a> Socket<'a> {
     ///     Err(err) => fail!("Failed to bind socket: {}", err)
     /// }
     /// ```
-    pub fn bind(&mut self, addr: &'a str) -> NanoResult<()> {
+    pub fn bind(&mut self, addr: &str) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
@@ -114,7 +111,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
-    pub fn connect(&mut self, addr: &'a str) -> NanoResult<()> {
+    pub fn connect(&mut self, addr: &str) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
@@ -154,7 +151,7 @@ impl<'a> Socket<'a> {
 }
 
 #[unsafe_destructor]
-impl<'a> Drop for Socket<'a> {
+impl Drop for Socket {
     fn drop(&mut self) {
         unsafe { libnanomsg::nn_shutdown(self.socket, 0); }
     }
