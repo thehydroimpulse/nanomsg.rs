@@ -13,7 +13,6 @@ pub use result::{NanoResult, NanoError};
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
-use std::kinds::marker::ContravariantLifetime;
 use result::{SocketInitializationError, SocketBindError, SocketBufferError};
 
 mod result;
@@ -34,8 +33,7 @@ pub enum Protocol {
 /// and receiving messages.
 pub struct Socket<'a> {
     addr: Option<&'a str>,
-    socket: c_int,
-    marker: ContravariantLifetime<'a>
+    socket: c_int
 }
 
 impl<'a> Socket<'a> {
