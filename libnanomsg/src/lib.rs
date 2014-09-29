@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 
 #[phase(plugin)]
-extern crate link_config = "link-config";
+extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char};
