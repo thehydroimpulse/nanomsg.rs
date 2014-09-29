@@ -8,13 +8,17 @@ extern crate libc;
 
 extern crate libnanomsg;
 
+pub use result::{NanoResult, NanoError};
+
 use libc::{c_int};
 use std::kinds::marker::ContravariantLifetime;
-pub use result::{NanoResult, NanoError};
 use result::{SocketInitializationError};
 
 mod result;
 
+/// Type-safe protocols that Nanomsg uses. Each socket
+/// is bound to a single protocol that has specific behaviour
+/// (such as only being able to receive messages and not send 'em).
 #[deriving(Show, PartialEq)]
 pub enum Protocol {
     Req,
@@ -33,6 +37,21 @@ pub struct Socket<'a> {
 }
 
 impl<'a> Socket<'a> {
+
+    /// Allocate and initialize a new Nanomsg socket which returns
+    /// a new file descriptor behind the scene. The safe interface doesn't
+    /// expose any of the underlying file descriptors and such.
+    ///
+    /// Usage:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Pull};
+    ///
+    /// let mut socket = match Socket::new(Pull) {
+    ///     Ok(socket) => socket,
+    ///     Err(err) => fail!("{}", err)
+    /// };
+    /// ```
     pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
 
         let proto = match protocol {
@@ -50,6 +69,8 @@ impl<'a> Socket<'a> {
             return Err(NanoError::new("Failed to create a new nanomsg socket. Error: {}", SocketInitializationError));
         }
 
+        debug!("Initialized a new raw socket");
+
         Ok(Socket {
             addr: None,
             socket: socket,
@@ -61,7 +82,7 @@ impl<'a> Socket<'a> {
 #[unsafe_destructor]
 impl<'a> Drop for Socket<'a> {
     fn drop(&mut self) {
-
+        unsafe { libnanomsg::nn_shutdown(self.socket, 0); }
     }
 }
 
@@ -70,4 +91,15 @@ mod tests {
     #![allow(unused_must_use)]
     extern crate debug;
 
+    use super::*;
+
+    #[test]
+    fn initialize_socket() {
+        let mut socket = match Socket::new(Pull) {
+            Ok(socket) => socket,
+            Err(err) => fail!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+    }
 }
