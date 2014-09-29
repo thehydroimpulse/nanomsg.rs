@@ -4,7 +4,8 @@ pub type NanoResult<T> = Result<T, NanoError>;
 
 #[deriving(Show, Clone, PartialEq)]
 pub enum ErrorKind {
-    Unknown
+    Unknown,
+    SocketInitializationError
 }
 
 #[deriving(Show, PartialEq)]
@@ -13,10 +14,10 @@ pub struct NanoError {
     kind: ErrorKind
 }
 
-impl NanoError {
-    pub fn new(kind: ErrorKind, description: SendStr) -> NanoError {
+impl<T: IntoMaybeOwned<'static>> NanoError {
+    pub fn new(description: T, kind: ErrorKind) -> NanoError {
         NanoError {
-            description: description,
+            description: description.into_maybe_owned(),
             kind: kind
         }
     }
