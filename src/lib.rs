@@ -122,7 +122,7 @@ impl Socket {
     }
 
     pub fn read(&mut self, buf: &mut [u8]) -> NanoResult<Vec<u8>> {
-        let mut buf: *mut u8 = ptr::mut_null();
+        let mut buf: *mut u8 = ptr::null_mut();
 
         let ret = unsafe {
             libnanomsg::nn_recv(self.socket, transmute(&mut buf),
