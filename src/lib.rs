@@ -162,7 +162,6 @@ mod tests {
     #![allow(unused_must_use)]
     #[phase(plugin, link)]
     extern crate log;
-    extern crate debug;
     extern crate libnanomsg;
     extern crate libc;
 

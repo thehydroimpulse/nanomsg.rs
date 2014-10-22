@@ -159,7 +159,7 @@ mod tests {
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
 
             loop {
-                let mut buf: *mut u8 = ptr::mut_null();
+                let mut buf: *mut u8 = ptr::null_mut();
                 let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
                 assert!(bytes >= 0);
                 let msg = unsafe { from_buf(buf as *const u8) };
