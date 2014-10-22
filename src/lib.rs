@@ -6,7 +6,6 @@
 #[phase(plugin, link)] extern crate log;
 
 extern crate libc;
-extern crate debug;
 
 extern crate libnanomsg;
 
@@ -27,73 +26,73 @@ use std::slice::raw::buf_as_slice;
 
 mod result;
 
-pub static AF_SP: c_int = 1;
-pub static AF_SP_RAW: c_int = 2;
-pub static NN_CHUNKREF_MAX: c_int = 32;
-pub static NN_DOMAIN: c_int = 12;
-pub static NN_DONTWAIT: c_int = 1;
-pub static NN_FSM_ACTION: c_int = -2;
-pub static NN_FSM_START: c_int = -2;
-pub static NN_FSM_STOP: c_int = -3;
-pub static NN_HAUSNUMERO: int = 156384712;
-pub static NN_INPROC: c_int = -1;
-pub static NN_IPC: c_int = -2;
-pub static NN_IPV4ONLY: c_int = 14;
-pub static NN_LINGER: c_int = 1;
-pub static NN_PIPEBASE_PARSED: c_int = 2;
-pub static NN_PIPEBASE_RELEASE: c_int = 1;
-pub static NN_PIPE_IN: c_int = 33987;
-pub static NN_PIPE_OUT: c_int = 33988;
-pub static NN_PIPE_PARSED: c_int = 2;
-pub static NN_PIPE_RELEASE: c_int = 1;
-pub static NN_PROTO_BUS: c_int = 7;
-pub static NN_PROTOCOL: c_int = 13;
-pub static NN_PROTO_PAIR: c_int = 1;
-pub static NN_PROTO_PIPELINE: c_int = 5;
-pub static NN_PROTO_PUBSUB: c_int = 2;
-pub static NN_PROTO_REQREP: c_int = 3;
-pub static NN_PROTO_SURVEY: c_int = 6;
-pub static NN_RCVBUF: c_int = 3;
-pub static NN_RCVFD: c_int = 11;
-pub static NN_RCVTIMEO: c_int = 5;
-pub static NN_RECONNECT_IVL: c_int = 6;
-pub static NN_RECONNECT_IVL_MAX: c_int = 7;
-pub static NN_REQ_RESEND_IVL: c_int = 1;
-pub static NN_SNDBUF: c_int = 2;
-pub static NN_SNDFD: c_int = 10;
-pub static NN_SNDPRIO: c_int = 8;
-pub static NN_SNDTIMEO: c_int = 4;
-pub static NN_SOCKADDR_MAX: c_int = 128;
-pub static NN_SOCKBASE_EVENT_IN: c_int = 1;
-pub static NN_SOCKBASE_EVENT_OUT: c_int = 2;
-pub static NN_SOCKTYPE_FLAG_NORECV: c_int = 1;
-pub static NN_SOCKTYPE_FLAG_NOSEND: c_int = 2;
-pub static NN_SOL_SOCKET: c_int = 0;
-pub static NN_SUB_SUBSCRIBE: c_int = 1;
-pub static NN_SUB_UNSUBSCRIBE: c_int = 2;
-pub static NN_SURVEYOR_DEADLINE: c_int = 1;
-pub static NN_TCP: c_int = -3;
-pub static NN_TCP_NODELAY: c_int = 1;
-pub static NN_VERSION_AGE: c_int = 0;
-pub static NN_VERSION_CURRENT: c_int = 0;
-pub static NN_VERSION_REVISION: c_int = 0;
-pub static NN_POLLIN: c_short = 1;
-pub static NN_POLLOUT: c_short = 2;
+pub const AF_SP: c_int = 1;
+pub const AF_SP_RAW: c_int = 2;
+pub const NN_CHUNKREF_MAX: c_int = 32;
+pub const NN_DOMAIN: c_int = 12;
+pub const NN_DONTWAIT: c_int = 1;
+pub const NN_FSM_ACTION: c_int = -2;
+pub const NN_FSM_START: c_int = -2;
+pub const NN_FSM_STOP: c_int = -3;
+pub const NN_HAUSNUMERO: int = 156384712;
+pub const NN_INPROC: c_int = -1;
+pub const NN_IPC: c_int = -2;
+pub const NN_IPV4ONLY: c_int = 14;
+pub const NN_LINGER: c_int = 1;
+pub const NN_PIPEBASE_PARSED: c_int = 2;
+pub const NN_PIPEBASE_RELEASE: c_int = 1;
+pub const NN_PIPE_IN: c_int = 33987;
+pub const NN_PIPE_OUT: c_int = 33988;
+pub const NN_PIPE_PARSED: c_int = 2;
+pub const NN_PIPE_RELEASE: c_int = 1;
+pub const NN_PROTO_BUS: c_int = 7;
+pub const NN_PROTOCOL: c_int = 13;
+pub const NN_PROTO_PAIR: c_int = 1;
+pub const NN_PROTO_PIPELINE: c_int = 5;
+pub const NN_PROTO_PUBSUB: c_int = 2;
+pub const NN_PROTO_REQREP: c_int = 3;
+pub const NN_PROTO_SURVEY: c_int = 6;
+pub const NN_RCVBUF: c_int = 3;
+pub const NN_RCVFD: c_int = 11;
+pub const NN_RCVTIMEO: c_int = 5;
+pub const NN_RECONNECT_IVL: c_int = 6;
+pub const NN_RECONNECT_IVL_MAX: c_int = 7;
+pub const NN_REQ_RESEND_IVL: c_int = 1;
+pub const NN_SNDBUF: c_int = 2;
+pub const NN_SNDFD: c_int = 10;
+pub const NN_SNDPRIO: c_int = 8;
+pub const NN_SNDTIMEO: c_int = 4;
+pub const NN_SOCKADDR_MAX: c_int = 128;
+pub const NN_SOCKBASE_EVENT_IN: c_int = 1;
+pub const NN_SOCKBASE_EVENT_OUT: c_int = 2;
+pub const NN_SOCKTYPE_FLAG_NORECV: c_int = 1;
+pub const NN_SOCKTYPE_FLAG_NOSEND: c_int = 2;
+pub const NN_SOL_SOCKET: c_int = 0;
+pub const NN_SUB_SUBSCRIBE: c_int = 1;
+pub const NN_SUB_UNSUBSCRIBE: c_int = 2;
+pub const NN_SURVEYOR_DEADLINE: c_int = 1;
+pub const NN_TCP: c_int = -3;
+pub const NN_TCP_NODELAY: c_int = 1;
+pub const NN_VERSION_AGE: c_int = 0;
+pub const NN_VERSION_CURRENT: c_int = 0;
+pub const NN_VERSION_REVISION: c_int = 0;
+pub const NN_POLLIN: c_short = 1;
+pub const NN_POLLOUT: c_short = 2;
 
-pub static NN_BUS: c_int = (NN_PROTO_BUS * 16 + 0);
-pub static NN_MSG: u64 = -1;
-pub static NN_PAIR: c_int = (NN_PROTO_PAIR * 16 + 0);
-pub static NN_PUSH: c_int = (NN_PROTO_PIPELINE * 16 + 0);
-pub static NN_PULL: c_int = (NN_PROTO_PIPELINE * 16 + 1);
-pub static NN_PUB: c_int = (NN_PROTO_PUBSUB * 16 + 0);
-pub static NN_SUB: c_int = (NN_PROTO_PUBSUB * 16 + 1);
-pub static NN_REQ: c_int = (NN_PROTO_REQREP * 16 + 0);
-pub static NN_REP: c_int = (NN_PROTO_REQREP * 16 + 1);
-pub static NN_SURVEYOR: c_int = (NN_PROTO_SURVEY * 16 + 0);
-pub static NN_RESPONDENT: c_int = (NN_PROTO_SURVEY * 16 + 1);
+pub const NN_BUS: c_int = (NN_PROTO_BUS * 16 + 0);
+pub const NN_MSG: u64 = -1;
+pub const NN_PAIR: c_int = (NN_PROTO_PAIR * 16 + 0);
+pub const NN_PUSH: c_int = (NN_PROTO_PIPELINE * 16 + 0);
+pub const NN_PULL: c_int = (NN_PROTO_PIPELINE * 16 + 1);
+pub const NN_PUB: c_int = (NN_PROTO_PUBSUB * 16 + 0);
+pub const NN_SUB: c_int = (NN_PROTO_PUBSUB * 16 + 1);
+pub const NN_REQ: c_int = (NN_PROTO_REQREP * 16 + 0);
+pub const NN_REP: c_int = (NN_PROTO_REQREP * 16 + 1);
+pub const NN_SURVEYOR: c_int = (NN_PROTO_SURVEY * 16 + 0);
+pub const NN_RESPONDENT: c_int = (NN_PROTO_SURVEY * 16 + 1);
 
-pub static NN_QUEUE_NOTINQUEUE: c_int = -1;
-pub static NN_LIST_NOTINLIST: c_int = -1;
+pub const NN_QUEUE_NOTINQUEUE: c_int = -1;
+pub const NN_LIST_NOTINLIST: c_int = -1;
 
 pub type c_schar = i8;
 
@@ -426,7 +425,7 @@ impl std::io::Reader for NanoSocket {
 
         match self.recv() {
             Err(e) => {
-                warn!("recv failed: {:?} {:?}",e.rc, e.errstr);
+                warn!("recv failed: {} {}",e.rc, e.errstr);
                 // [TODO]: Return specific error based on the failure.
                 Err(io::standard_error(io::OtherIoError))
             },
@@ -464,7 +463,7 @@ impl Drop for NanoSocket {
         // close
         let rc = unsafe { nn_close(self.sock) };
         if rc != 0 {
-            let msg = format!("nn_close({:?}) failed with errno: {:?} '{:?}'", self.sock, std::os::errno(), std::os::last_os_error());
+            let msg = format!("nn_close({}) failed with errno: {} '{}'", self.sock, std::os::errno(), std::os::last_os_error());
             error!("{:s}", msg);
             fail!("{:s}", msg);
         }
@@ -506,7 +505,7 @@ impl Nanomsg {
     }
 
     pub fn printbuf(&self) {
-        println!("Nanomsg contains message of length {:?}: '{:s}'", self.bytes_stored_in_buf, self.copy_to_string());
+        println!("Nanomsg contains message of length {}: '{}'", self.bytes_stored_in_buf, self.copy_to_string());
     }
 
     /// Unwraps the Nanomsg.
@@ -534,7 +533,7 @@ impl Nanomsg {
         self.bytes_available = self.bytes_stored_in_buf;
 
         if len < 0 {
-            debug!("nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
+            debug!("nn_recv failed with errno: {} '{}'", std::os::errno(), std::os::last_os_error());
             Err(NanoErr{ rc: std::os::errno() as i32, errstr: last_os_error() })
         } else {
             self.cleanup = FreeMsg;
@@ -565,13 +564,13 @@ impl Nanomsg {
         self.bytes_available = len as u64;
 
         if len < 0 {
-            let errmsg = format!("recv_no_more_than_maxlen: nn_recv failed with errno: {:?} '{:?}'", std::os::errno(), std::os::last_os_error());
+            let errmsg = format!("recv_no_more_than_maxlen: nn_recv failed with errno: {} '{}'", std::os::errno(), std::os::last_os_error());
             warn!("{:s}", errmsg);
             return Err(NanoErr{rc: std::os::errno() as i32, errstr: last_os_error() });
         }
 
         if self.bytes_available > maxlen {
-            let errmsg = format!("recv_no_more_than_maxlen: message was longer ({:?} bytes) than we allocated space for ({:?} bytes)", self.bytes_available, maxlen);
+            let errmsg = format!("recv_no_more_than_maxlen: message was longer ({} bytes) than we allocated space for ({} bytes)", self.bytes_available, maxlen);
             warn!("{:s}", errmsg);
         }
 

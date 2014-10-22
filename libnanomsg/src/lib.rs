@@ -10,12 +10,12 @@ use std::mem::transmute;
 
 link_config!("libnanomsg", ["only_static"])
 
-pub static AF_SP: c_int = 1;
-pub static AF_SP_RAW: c_int = 2;
-pub static NN_PROTO_PIPELINE: c_int = 5;
-pub static NN_PUSH: c_int = NN_PROTO_PIPELINE * 16 + 0;
-pub static NN_PULL: c_int = NN_PROTO_PIPELINE * 16 + 1;
-pub static NN_MSG: u64 = -1;
+pub const AF_SP: c_int = 1;
+pub const AF_SP_RAW: c_int = 2;
+pub const NN_PROTO_PIPELINE: c_int = 5;
+pub const NN_PUSH: c_int = NN_PROTO_PIPELINE * 16 + 0;
+pub const NN_PULL: c_int = NN_PROTO_PIPELINE * 16 + 1;
+pub const NN_MSG: u64 = -1;
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
