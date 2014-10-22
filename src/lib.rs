@@ -519,7 +519,7 @@ impl Nanomsg {
 
     /// recv_any_size allows nanomsg to do zero-copy optimizations
     #[inline(never)]
-    pub fn recv_any_size(&mut self, sock: c_int, flags: c_int) -> Result<u64, NanoErr>{
+    pub fn recv_any_size(&mut self, sock: &NanoSocket, flags: c_int) -> Result<u64, NanoErr>{
 
         match self.cleanup {
             DoNothing => (),
@@ -527,7 +527,7 @@ impl Nanomsg {
             FreeMsg => self.cleanup()
         }
 
-        let len = unsafe { nn_recv(sock,  transmute(&mut self.buf), NN_MSG, flags) };
+        let len = unsafe { nn_recv(sock.sock,  transmute(&mut self.buf), NN_MSG, flags) };
 
         self.bytes_stored_in_buf = len as u64;
         self.bytes_available = self.bytes_stored_in_buf;
@@ -544,7 +544,7 @@ impl Nanomsg {
     /// Use recv_no_more_than_maxlen() if we need our own copy anyway, but don't want to overflow our
     /// heap. The function will truncate any part of the message over maxlen. In general, prefer recv_any_size() above.
     #[inline(never)]
-    pub fn recv_no_more_than_maxlen(&mut self, sock: c_int, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
+    pub fn recv_no_more_than_maxlen(&mut self, sock: &NanoSocket, maxlen: u64, flags: c_int) -> Result<u64, NanoErr> {
 
         match self.cleanup {
             DoNothing => (),
@@ -559,7 +559,7 @@ impl Nanomsg {
         self.cleanup = Free;
         self.buf = ptr;
 
-        let len = unsafe { nn_recv(sock, transmute(self.buf), maxlen, flags) };
+        let len = unsafe { nn_recv(sock.sock, transmute(self.buf), maxlen, flags) };
 
         self.bytes_available = len as u64;
 
@@ -625,7 +625,6 @@ impl Drop for Nanomsg {
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
-    extern crate debug;
 
     use super::{
         Nanomsg, NanoSocket,
@@ -834,7 +833,7 @@ mod tests {
         let b = "WHY";
         sock.sendstr(b);
 
-        match msg.recv_any_size(sock.sock, 0) {
+        match msg.recv_any_size(&sock, 0) {
             Ok(_) => {
                 let m = msg.copy_to_string();
                 assert_eq!(m.as_slice(), "LUV");
@@ -844,7 +843,7 @@ mod tests {
 
         // it is okay to reuse msg (e.g. as below, or in a loop). Nanomsg will free any previous message before
         // receiving a new one. Demonstrate Nanomsg::recv_no_more_than_maxlen()
-        match msg.recv_no_more_than_maxlen(sock.sock, 2, 0) {
+        match msg.recv_no_more_than_maxlen(&sock, 2, 0) {
             Ok(_) => {
                 let m = msg.copy_to_string();
                 assert_eq!(m.as_slice(), "CA");
@@ -867,7 +866,7 @@ mod tests {
             Err(e) => fail!("Bind failed with err: {}", e)
         }
 
-        match msg.recv_any_size(sock.sock, 0) {
+        match msg.recv_any_size(&sock, 0) {
             Ok(_) => {
                 let m = msg.copy_to_string();
                 assert_eq!(m.as_slice(), "WHY");
