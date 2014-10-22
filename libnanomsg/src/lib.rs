@@ -16,6 +16,9 @@ pub const NN_PROTO_PIPELINE: c_int = 5;
 pub const NN_PUSH: c_int = NN_PROTO_PIPELINE * 16 + 0;
 pub const NN_PULL: c_int = NN_PROTO_PIPELINE * 16 + 1;
 pub const NN_MSG: u64 = -1;
+pub const NN_PROTO_REQREP: c_int = 3;
+pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
+pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
@@ -156,7 +159,7 @@ mod tests {
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
 
             loop {
-                let mut buf: *mut u8 = ptr::mut_null();
+                let mut buf: *mut u8 = ptr::null_mut();
                 let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
                 assert!(bytes >= 0);
                 let msg = unsafe { from_buf(buf as *const u8) };
