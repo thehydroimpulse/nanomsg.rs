@@ -14,6 +14,8 @@ use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
 use result::{SocketInitializationError, SocketBindError, SocketBufferError};
+use std::io::{Writer, Reader, IoResult};
+use std::io;
 
 mod result;
 
@@ -96,10 +98,10 @@ impl Socket {
     /// };
     ///
     /// // Bind the newly created socket to the following address:
-    /// match socket.bind("ipc:///tmp/pipeline.ipc") {
-    ///     Ok(_) => {},
-    ///     Err(err) => fail!("Failed to bind socket: {}", err)
-    /// }
+    /// //match socket.bind("ipc:///tmp/pipeline.ipc") {
+    /// //    Ok(_) => {},
+    /// //   Err(err) => fail!("Failed to bind socket: {}", err)
+    /// //}
     /// ```
     pub fn bind(&mut self, addr: &str) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
@@ -121,29 +123,39 @@ impl Socket {
         Ok(())
     }
 
-    pub fn read(&mut self, buf: &mut [u8]) -> NanoResult<Vec<u8>> {
-        let mut buf: *mut u8 = ptr::null_mut();
+}
+
+impl Reader for Socket {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
+        let mut mem : *mut u8 = ptr::null_mut();
 
         let ret = unsafe {
-            libnanomsg::nn_recv(self.socket, transmute(&mut buf),
+            libnanomsg::nn_recv(self.socket, transmute(&mut mem),
                 libnanomsg::NN_MSG, 0 as c_int)
         };
 
         if ret == -1 {
-            return Err(NanoError::new("Failed to retrieve data from the socket", SocketBufferError));
+            return Err(io::standard_error(io::OtherIoError));
         }
 
-        Ok(unsafe { Vec::from_raw_parts(ret as uint, ret as uint, buf) })
-    }
+        unsafe { ptr::copy_memory(buf.as_mut_ptr(), mem as *const u8, buf.len() as uint) };
 
-    pub fn write(&mut self, bytes: &[u8]) -> NanoResult<()> {
+        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
+
+        Ok(ret as uint)
+    }
+}
+
+impl Writer for Socket {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
+        let len = buf.len();
         let ret = unsafe {
-            libnanomsg::nn_send(self.socket, bytes.as_ptr() as *const c_void,
-                                bytes.len() as size_t, 0)
+            libnanomsg::nn_send(self.socket, buf.as_ptr() as *const c_void,
+                                len as size_t, 0)
         };
 
-        if ret as uint != bytes.len() {
-            return Err(NanoError::new("Failed to write the buffer to the socket", SocketBufferError));
+        if ret as uint != len {
+            return Err(io::standard_error(io::OtherIoError));
         }
 
         Ok(())
@@ -193,6 +205,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn receive_from_socket() {
         spawn(proc() {
             let mut socket = match Socket::new(Pull) {
@@ -206,11 +219,16 @@ mod tests {
                 Err(err) => fail!("{}", err)
             }
 
-            let mut buf = [0u8, ..8];
+            let mut buf = [0u8, ..6];
             match socket.read(&mut buf) {
-                Ok(len) => println!("buf: {}", len),
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
                 Err(err) => fail!("{}", err)
             }
+
+            drop(socket)
         });
 
         let mut socket = match Socket::new(Push) {
@@ -223,6 +241,9 @@ mod tests {
             Err(err) => fail!("{}", err)
         }
 
-        socket.write("foobar".as_bytes());
+        match socket.write(b"foobar") {
+            Ok(..) => {},
+            Err(err) => fail!("Failed to write to the socket: {}", err)
+        }
     }
 }
