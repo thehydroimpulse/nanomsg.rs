@@ -27,7 +27,8 @@ pub enum Protocol {
     Req,
     Rep,
     Push,
-    Pull
+    Pull,
+    Pair
 }
 
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
@@ -59,7 +60,8 @@ impl Socket {
             Req => libnanomsg::NN_REQ,
             Rep => libnanomsg::NN_REP,
             Push => libnanomsg::NN_PUSH,
-            Pull => libnanomsg::NN_PULL
+            Pull => libnanomsg::NN_PULL,
+            Pair => libnanomsg::NN_PAIR
         };
 
         let socket = unsafe {
@@ -244,6 +246,62 @@ mod tests {
         match socket.write(b"foobar") {
             Ok(..) => {},
             Err(err) => fail!("Failed to write to the socket: {}", err)
+        }
+    }
+
+    #[test]
+    fn send_and_recv_from_socket_in_pair() {
+        spawn(proc() {
+            let mut socket = match Socket::new(Pair) {
+                Ok(socket) => socket,
+                Err(err) => fail!("{}", err)
+            };
+
+
+            match socket.bind("ipc:///tmp/pair.ipc") {
+                Ok(_) => {},
+                Err(err) => fail!("{}", err)
+            }
+
+            let mut buf = [0u8, ..6];
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
+                Err(err) => fail!("{}", err)
+            }
+
+            match socket.write(b"foobaz") {
+                Ok(..) => {},
+                Err(err) => fail!("Failed to write to the socket: {}", err)
+            }
+
+            drop(socket)
+        });
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => fail!("{}", err)
+        };
+
+        match socket.connect("ipc:///tmp/pair.ipc") {
+            Ok(_) => {},
+            Err(err) => fail!("{}", err)
+        }
+
+        match socket.write(b"foobar") {
+            Ok(..) => {},
+            Err(err) => fail!("Failed to write to the socket: {}", err)
+        }
+
+        let mut buf = [0u8, ..6];
+        match socket.read(&mut buf) {
+            Ok(len) => {
+                assert_eq!(len, 6);
+                assert_eq!(buf.as_slice(), b"foobaz")
+            },
+            Err(err) => fail!("{}", err)
         }
     }
 }
