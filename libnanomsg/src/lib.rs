@@ -19,6 +19,30 @@ pub const NN_MSG: u64 = -1;
 pub const NN_PROTO_REQREP: c_int = 3;
 pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
 pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
+pub const NN_PROTO_PAIR: c_int = 1;
+pub const NN_PAIR: c_int = NN_PROTO_PAIR * 16 + 0;
+
+pub const NN_SOCKADDR_MAX: c_int = 128;
+
+pub const NN_SOL_SOCKET: c_int = 0;
+
+pub const NN_LINGER: c_int = 1;
+pub const NN_SNDBUF: c_int = 2;
+pub const NN_RCVBUF: c_int = 3;
+pub const NN_SNDTIMEO: c_int = 4;
+pub const NN_RCVTIMEO: c_int = 5;
+pub const NN_RECONNECT_IVL: c_int = 6;
+pub const NN_RECONNECT_IVL_MAX: c_int = 7;
+pub const NN_SNDPRIO: c_int = 8;
+pub const NN_RCVPRIO: c_int = 9;
+pub const NN_SNDFD: c_int = 10;
+pub const NN_RCVFD: c_int = 11;
+pub const NN_DOMAIN: c_int = 12;
+pub const NN_PROTOCOL: c_int = 13;
+pub const NN_IPV4ONLY: c_int = 14;
+pub const NN_SOCKET_NAME: c_int = 15;
+
+pub const NN_DONTWAIT: c_int = 1;
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
@@ -142,6 +166,7 @@ mod tests {
     use libc::{c_void, c_int, c_char, size_t};
     use std::ptr;
     use std::mem::transmute;
+    use std::mem::size_of;
     use std::string::raw::from_buf;
 
     /// This ensures that the one-way pipe works correctly and also serves as an example
@@ -182,6 +207,63 @@ mod tests {
         };
 
         assert!(bytes == 6);
+        unsafe { nn_shutdown(sock, 0) };
+    }
+
+    #[test]
+    fn should_create_a_pair() {
+
+        spawn(proc() {
+            let url = "ipc:///tmp/pair.ipc".to_c_str();
+            let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+
+            assert!(sock >= 0);
+            assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+
+            let to = -1 as c_int;
+            let c_int_size = size_of::<c_int>() as size_t;
+            let setsockopt_res = unsafe {
+                nn_setsockopt (sock, NN_SOL_SOCKET, NN_RCVTIMEO, transmute(&to), c_int_size)
+            };
+            assert!(setsockopt_res >= 0);
+
+            loop {
+                let mut buf: *mut u8 = ptr::null_mut();
+                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+                assert!(bytes >= 0);
+                let msg = unsafe { from_buf(buf as *const u8) };
+                assert!(msg.as_slice() == "foobar");
+                unsafe { nn_freemsg(buf as *mut c_void); }
+
+                let msg = "foobaz".to_c_str();
+                let bytes = unsafe {
+                    nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+                };
+
+                unsafe { nn_shutdown(sock, 0); }
+                break;
+            }
+        });
+
+        let url = "ipc:///tmp/pair.ipc".to_c_str();
+        let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+
+        assert!(sock >= 0);
+        assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+
+        let msg = "foobar".to_c_str();
+        let bytes = unsafe {
+            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+        };
+        assert!(bytes == 6);
+
+        let mut buf: *mut u8 = ptr::null_mut();
+        let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+        assert!(bytes >= 0);
+        let msg = unsafe { from_buf(buf as *const u8) };
+        assert!(msg.as_slice() == "foobaz");
+        unsafe { nn_freemsg(buf as *mut c_void); }
+
         unsafe { nn_shutdown(sock, 0) };
     }
 }
