@@ -186,4 +186,54 @@ mod tests {
         assert!(bytes == 6);
         unsafe { nn_shutdown(sock, 0) };
     }
+
+    #[test]
+    fn should_create_a_pair() {
+
+        spawn(proc() {
+            let url = "ipc:///tmp/pair.ipc".to_c_str();
+            let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+
+            assert!(sock >= 0);
+            assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+
+            loop {
+                let mut buf: *mut u8 = ptr::null_mut();
+                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+                assert!(bytes >= 0);
+                let msg = unsafe { from_buf(buf as *const u8) };
+                assert!(msg.as_slice() == "foobar");
+                unsafe { nn_freemsg(buf as *mut c_void); }
+
+                let msg = "foobaz".to_c_str();
+                let bytes = unsafe {
+                    nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+                };
+
+                unsafe { nn_shutdown(sock, 0); }
+                break;
+            }
+        });
+
+        let url = "ipc:///tmp/pair.ipc".to_c_str();
+        let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+
+        assert!(sock >= 0);
+        assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+
+        let msg = "foobar".to_c_str();
+        let bytes = unsafe {
+            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+        };
+        assert!(bytes == 6);
+
+        let mut buf: *mut u8 = ptr::null_mut();
+        let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+        assert!(bytes >= 0);
+        let msg = unsafe { from_buf(buf as *const u8) };
+        assert!(msg.as_slice() == "foobaz");
+        unsafe { nn_freemsg(buf as *mut c_void); }
+
+        unsafe { nn_shutdown(sock, 0) };
+    }
 }
