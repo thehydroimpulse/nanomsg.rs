@@ -19,6 +19,8 @@ pub const NN_MSG: u64 = -1;
 pub const NN_PROTO_REQREP: c_int = 3;
 pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
 pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
+pub const NN_PROTO_PAIR: c_int = 1;
+pub const NN_PAIR: c_int = NN_PROTO_PAIR * 16 + 0;
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
