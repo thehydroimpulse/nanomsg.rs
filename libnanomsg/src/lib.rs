@@ -6,7 +6,6 @@ extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char};
-use std::mem::transmute;
 
 link_config!("libnanomsg", ["only_static"])
 
@@ -21,6 +20,8 @@ pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
 pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
 pub const NN_PROTO_PAIR: c_int = 1;
 pub const NN_PAIR: c_int = NN_PROTO_PAIR * 16 + 0;
+pub const NN_PROTO_BUS: c_int = 7;
+pub const NN_BUS: c_int = NN_PROTO_BUS * 16 + 0;
 
 pub const NN_SOCKADDR_MAX: c_int = 128;
 
@@ -163,11 +164,14 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_void, c_int, c_char, size_t};
+    use libc::{c_void, c_int, size_t};
     use std::ptr;
     use std::mem::transmute;
     use std::mem::size_of;
     use std::string::raw::from_buf;
+
+    use std::time::duration::Duration;
+    use std::io::timer::sleep;
 
     /// This ensures that the one-way pipe works correctly and also serves as an example
     /// on how to properly use the low-level bindings directly, although it's recommended to
@@ -177,8 +181,8 @@ mod tests {
     fn should_create_a_pipeline() {
 
         spawn(proc() {
-            let url = "ipc:///tmp/pipeline.ipc".to_c_str();
-            let mut sock = unsafe { nn_socket(AF_SP, NN_PULL) };
+            let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_PULL) };
 
             assert!(sock >= 0);
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
@@ -195,8 +199,8 @@ mod tests {
             }
         });
 
-        let url = "ipc:///tmp/pipeline.ipc".to_c_str();
-        let mut sock = unsafe { nn_socket(AF_SP, NN_PUSH) };
+        let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_PUSH) };
 
         assert!(sock >= 0);
         assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
@@ -214,8 +218,8 @@ mod tests {
     fn should_create_a_pair() {
 
         spawn(proc() {
-            let url = "ipc:///tmp/pair.ipc".to_c_str();
-            let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+            let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
 
             assert!(sock >= 0);
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
@@ -239,14 +243,15 @@ mod tests {
                 let bytes = unsafe {
                     nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
                 };
+                assert!(bytes == 6);
 
                 unsafe { nn_shutdown(sock, 0); }
                 break;
             }
         });
 
-        let url = "ipc:///tmp/pair.ipc".to_c_str();
-        let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+        let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
 
         assert!(sock >= 0);
         assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
@@ -263,6 +268,65 @@ mod tests {
         let msg = unsafe { from_buf(buf as *const u8) };
         assert!(msg.as_slice() == "foobaz");
         unsafe { nn_freemsg(buf as *mut c_void); }
+
+        unsafe { nn_shutdown(sock, 0) };
+    }
+
+    #[test]
+    fn should_create_a_bus() {
+        
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
+
+            assert!(sock >= 0);
+            assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+
+            loop {
+                let mut buf: *mut u8 = ptr::null_mut();
+                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+                assert!(bytes >= 0);
+                let msg = unsafe { from_buf(buf as *const u8) };
+                assert!(msg.as_slice() == "foobar");
+                unsafe { nn_freemsg(buf as *mut c_void); }
+                unsafe { nn_shutdown(sock, 0); }
+                break;
+            }
+        });
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
+
+            assert!(sock >= 0);
+            assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+
+            loop {
+                let mut buf: *mut u8 = ptr::null_mut();
+                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+                assert!(bytes >= 0);
+                let msg = unsafe { from_buf(buf as *const u8) };
+                assert!(msg.as_slice() == "foobar");
+                unsafe { nn_freemsg(buf as *mut c_void); }
+                unsafe { nn_shutdown(sock, 0); }
+                break;
+            }
+        });
+
+        let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
+
+        assert!(sock >= 0);
+        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+        sleep(Duration::milliseconds(200));
+        // This sleep is required to establish connections.
+        // Taken from example at http://tim.dysinger.net/posts/2013-09-16-getting-started-with-nanomsg.html
+
+        let msg = "foobar".to_c_str();
+        let bytes = unsafe {
+            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+        };
+        assert!(bytes == 6);
 
         unsafe { nn_shutdown(sock, 0) };
     }
