@@ -13,7 +13,7 @@ pub use result::{NanoResult, NanoError};
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
-use result::{SocketInitializationError, SocketBindError, SocketBufferError};
+use result::{SocketInitializationError, SocketBindError};
 use std::io::{Writer, Reader, IoResult};
 use std::io;
 
@@ -181,17 +181,16 @@ mod tests {
 
     use super::*;
 
-    use libc::{size_t, c_void};
-    use std::string::raw::from_buf_len;
-
     #[test]
     fn initialize_socket() {
-        let mut socket = match Socket::new(Pull) {
+        let socket = match Socket::new(Pull) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         };
 
         assert!(socket.socket >= 0);
+
+        drop(socket)
     }
 
     #[test]
@@ -201,10 +200,12 @@ mod tests {
             Err(err) => panic!("{}", err)
         };
 
-        match socket.bind("ipc:///tmp/pipeline.ipc") {
+        match socket.bind("ipc:///tmp/bind_socket.ipc") {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
         }
+
+        drop(socket)
     }
 
     #[test]
@@ -247,7 +248,9 @@ mod tests {
             Ok(..) => {},
             Err(err) => panic!("Failed to write to the socket: {}", err)
         }
-    }
+ 
+        drop(socket)
+   }
 
     #[test]
     fn send_and_recv_from_socket_in_pair() {
@@ -303,5 +306,7 @@ mod tests {
             },
             Err(err) => panic!("{}", err)
         }
+ 
+        drop(socket)
     }
 }

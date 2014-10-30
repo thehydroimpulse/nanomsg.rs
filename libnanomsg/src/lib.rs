@@ -6,7 +6,6 @@ extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char};
-use std::mem::transmute;
 
 link_config!("libnanomsg", ["only_static"])
 
@@ -163,7 +162,7 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_void, c_int, c_char, size_t};
+    use libc::{c_void, c_int, size_t};
     use std::ptr;
     use std::mem::transmute;
     use std::mem::size_of;
@@ -177,8 +176,8 @@ mod tests {
     fn should_create_a_pipeline() {
 
         spawn(proc() {
-            let url = "ipc:///tmp/pipeline.ipc".to_c_str();
-            let mut sock = unsafe { nn_socket(AF_SP, NN_PULL) };
+            let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_PULL) };
 
             assert!(sock >= 0);
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
@@ -195,8 +194,8 @@ mod tests {
             }
         });
 
-        let url = "ipc:///tmp/pipeline.ipc".to_c_str();
-        let mut sock = unsafe { nn_socket(AF_SP, NN_PUSH) };
+        let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_PUSH) };
 
         assert!(sock >= 0);
         assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
@@ -214,8 +213,8 @@ mod tests {
     fn should_create_a_pair() {
 
         spawn(proc() {
-            let url = "ipc:///tmp/pair.ipc".to_c_str();
-            let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+            let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
+            let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
 
             assert!(sock >= 0);
             assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
@@ -239,14 +238,15 @@ mod tests {
                 let bytes = unsafe {
                     nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
                 };
+                assert!(bytes == 6);
 
                 unsafe { nn_shutdown(sock, 0); }
                 break;
             }
         });
 
-        let url = "ipc:///tmp/pair.ipc".to_c_str();
-        let mut sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+        let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
 
         assert!(sock >= 0);
         assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
