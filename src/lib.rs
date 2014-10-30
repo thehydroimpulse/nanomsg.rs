@@ -51,7 +51,7 @@ impl Socket {
     ///
     /// let mut socket = match Socket::new(Pull) {
     ///     Ok(socket) => socket,
-    ///     Err(err) => fail!("{}", err)
+    ///     Err(err) => panic!("{}", err)
     /// };
     /// ```
     pub fn new(protocol: Protocol) -> NanoResult<Socket> {
@@ -96,13 +96,13 @@ impl Socket {
     ///
     /// let mut socket = match Socket::new(Pull) {
     ///     Ok(socket) => socket,
-    ///     Err(err) => fail!("{}", err)
+    ///     Err(err) => panic!("{}", err)
     /// };
     ///
     /// // Bind the newly created socket to the following address:
     /// //match socket.bind("ipc:///tmp/pipeline.ipc") {
     /// //    Ok(_) => {},
-    /// //   Err(err) => fail!("Failed to bind socket: {}", err)
+    /// //   Err(err) => panic!("Failed to bind socket: {}", err)
     /// //}
     /// ```
     pub fn bind(&mut self, addr: &str) -> NanoResult<()> {
@@ -188,7 +188,7 @@ mod tests {
     fn initialize_socket() {
         let mut socket = match Socket::new(Pull) {
             Ok(socket) => socket,
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         };
 
         assert!(socket.socket >= 0);
@@ -198,12 +198,12 @@ mod tests {
     fn bind_socket() {
         let mut socket = match Socket::new(Pull) {
             Ok(socket) => socket,
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         };
 
         match socket.bind("ipc:///tmp/pipeline.ipc") {
             Ok(_) => {},
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         }
     }
 
@@ -212,13 +212,13 @@ mod tests {
         spawn(proc() {
             let mut socket = match Socket::new(Pull) {
                 Ok(socket) => socket,
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             };
 
 
             match socket.bind("ipc:///tmp/pipeline.ipc") {
                 Ok(_) => {},
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             }
 
             let mut buf = [0u8, ..6];
@@ -227,7 +227,7 @@ mod tests {
                     assert_eq!(len, 6);
                     assert_eq!(buf.as_slice(), b"foobar")
                 },
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             }
 
             drop(socket)
@@ -235,17 +235,17 @@ mod tests {
 
         let mut socket = match Socket::new(Push) {
             Ok(socket) => socket,
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         };
 
         match socket.connect("ipc:///tmp/pipeline.ipc") {
             Ok(_) => {},
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         }
 
         match socket.write(b"foobar") {
             Ok(..) => {},
-            Err(err) => fail!("Failed to write to the socket: {}", err)
+            Err(err) => panic!("Failed to write to the socket: {}", err)
         }
     }
 
@@ -254,13 +254,13 @@ mod tests {
         spawn(proc() {
             let mut socket = match Socket::new(Pair) {
                 Ok(socket) => socket,
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             };
 
 
             match socket.bind("ipc:///tmp/pair.ipc") {
                 Ok(_) => {},
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             }
 
             let mut buf = [0u8, ..6];
@@ -269,12 +269,12 @@ mod tests {
                     assert_eq!(len, 6);
                     assert_eq!(buf.as_slice(), b"foobar")
                 },
-                Err(err) => fail!("{}", err)
+                Err(err) => panic!("{}", err)
             }
 
             match socket.write(b"foobaz") {
                 Ok(..) => {},
-                Err(err) => fail!("Failed to write to the socket: {}", err)
+                Err(err) => panic!("Failed to write to the socket: {}", err)
             }
 
             drop(socket)
@@ -282,17 +282,17 @@ mod tests {
 
         let mut socket = match Socket::new(Pair) {
             Ok(socket) => socket,
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         };
 
         match socket.connect("ipc:///tmp/pair.ipc") {
             Ok(_) => {},
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         }
 
         match socket.write(b"foobar") {
             Ok(..) => {},
-            Err(err) => fail!("Failed to write to the socket: {}", err)
+            Err(err) => panic!("Failed to write to the socket: {}", err)
         }
 
         let mut buf = [0u8, ..6];
@@ -301,7 +301,7 @@ mod tests {
                 assert_eq!(len, 6);
                 assert_eq!(buf.as_slice(), b"foobaz")
             },
-            Err(err) => fail!("{}", err)
+            Err(err) => panic!("{}", err)
         }
     }
 }
