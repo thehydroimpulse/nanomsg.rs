@@ -28,7 +28,8 @@ pub enum Protocol {
     Rep,
     Push,
     Pull,
-    Pair
+    Pair,
+    Bus
 }
 
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
@@ -61,7 +62,8 @@ impl Socket {
             Rep => libnanomsg::NN_REP,
             Push => libnanomsg::NN_PUSH,
             Pull => libnanomsg::NN_PULL,
-            Pair => libnanomsg::NN_PAIR
+            Pair => libnanomsg::NN_PAIR,
+            Bus => libnanomsg::NN_BUS
         };
 
         let socket = unsafe {
@@ -180,6 +182,9 @@ mod tests {
     extern crate libc;
 
     use super::*;
+
+    use std::time::duration::Duration;
+    use std::io::timer::sleep;
 
     #[test]
     fn initialize_socket() {
@@ -307,6 +312,77 @@ mod tests {
             Err(err) => panic!("{}", err)
         }
  
+        drop(socket)
+    }
+
+    #[test]
+    fn send_and_receive_from_socket_in_bus() {
+        
+        spawn(proc() {
+            let mut socket = match Socket::new(Bus) {
+                Ok(socket) => socket,
+                Err(err) => panic!("{}", err)
+            };
+
+
+            match socket.connect("ipc:///tmp/bus.ipc") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            let mut buf = [0u8, ..6];
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
+                Err(err) => panic!("{}", err)
+            }
+
+            drop(socket)
+        });
+        
+        spawn(proc() {
+            let mut socket = match Socket::new(Bus) {
+                Ok(socket) => socket,
+                Err(err) => panic!("{}", err)
+            };
+
+
+            match socket.connect("ipc:///tmp/bus.ipc") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            let mut buf = [0u8, ..6];
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
+                Err(err) => panic!("{}", err)
+            }
+
+            drop(socket)
+        });
+
+        let mut socket = match Socket::new(Bus) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        match socket.bind("ipc:///tmp/bus.ipc") {
+            Ok(_) => {},
+            Err(err) => panic!("{}", err)
+        }
+
+        sleep(Duration::milliseconds(200));
+
+        match socket.write(b"foobar") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to write to the socket: {}", err)
+        }
+
         drop(socket)
     }
 }
