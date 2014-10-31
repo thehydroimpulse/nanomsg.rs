@@ -425,6 +425,7 @@ mod tests {
         loop {
             let mut buf: *mut u8 = ptr::null_mut();
             let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
             let survey_msg = unsafe { from_buf(buf as *const u8) };
             assert!(survey_msg.as_slice() == expected);
             unsafe { nn_freemsg(buf as *mut c_void); }
@@ -470,6 +471,7 @@ mod tests {
         {
             let mut buf: *mut u8 = ptr::null_mut();
             let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
             let survey_msg = unsafe { from_buf(buf as *const u8) };
             assert!(
                 survey_msg.as_slice() == "yes".as_slice() ||
@@ -481,6 +483,7 @@ mod tests {
         {
             let mut buf: *mut u8 = ptr::null_mut();
             let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
             let survey_msg = unsafe { from_buf(buf as *const u8) };
             assert!(
                 survey_msg.as_slice() == "yes".as_slice() ||
