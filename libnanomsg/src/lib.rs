@@ -22,6 +22,16 @@ pub const NN_PROTO_PAIR: c_int = 1;
 pub const NN_PAIR: c_int = NN_PROTO_PAIR * 16 + 0;
 pub const NN_PROTO_BUS: c_int = 7;
 pub const NN_BUS: c_int = NN_PROTO_BUS * 16 + 0;
+pub const NN_PROTO_PUBSUB: c_int = 2;
+pub const NN_PUB: c_int = NN_PROTO_PUBSUB * 16 + 0;
+pub const NN_SUB: c_int = NN_PROTO_PUBSUB * 16 + 1;
+pub const NN_SUB_SUBSCRIBE: c_int = 1;
+pub const NN_SUB_UNSUBSCRIBE: c_int = 2;
+pub const NN_PROTO_SURVEY: c_int = 6;
+pub const NN_SURVEYOR: c_int = NN_PROTO_SURVEY * 16 + 0;
+pub const NN_RESPONDENT: c_int = NN_PROTO_SURVEY * 16 + 1;
+pub const NN_SURVEYOR_DEADLINE: c_int = 1;
+
 
 pub const NN_SOCKADDR_MAX: c_int = 128;
 
@@ -327,6 +337,160 @@ mod tests {
             nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
         };
         assert!(bytes == 6);
+
+        unsafe { nn_shutdown(sock, 0) };
+    }
+
+    fn subscribe(url: &str, topic: &str, expected: &str) {
+
+        let url_c_str = url.to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_SUB) };
+
+        assert!(sock >= 0);
+
+        // Keeping variables here seems mandatory.
+        // Looks like chaining the calls destroy a buffer too quickly, to be confirmed.
+        let topic_len = topic.len() as size_t;
+        let topic_c_str = topic.to_c_str();
+        let topic_ptr = topic_c_str.as_ptr();
+        let topic_raw_ptr = topic_ptr as *const c_void;
+        assert!(unsafe { nn_setsockopt (sock, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
+
+        assert!(unsafe { nn_connect(sock, url_c_str.as_ptr()) } >= 0);
+
+        loop {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(bytes >= 0);
+            let msg = unsafe { from_buf(buf as *const u8) };
+            assert!(msg.as_slice() == expected);
+            unsafe { nn_freemsg(buf as *mut c_void); }
+            unsafe { nn_shutdown(sock, 0); }
+            break;
+        }
+    }
+
+    #[test]
+    fn should_create_a_pubsub() {
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_pubsub.ipc";
+            let topic = "foo";
+            let expected = "foobar";
+        
+            subscribe(url, topic, expected);
+        });
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_pubsub.ipc";
+            let topic = "bar";
+            let expected = "barfoo";
+        
+            subscribe(url, topic, expected);
+        });
+
+        let url = "ipc:///tmp/should_create_a_pubsub.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_PUB) };
+
+        assert!(sock >= 0);
+
+        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+        sleep(Duration::milliseconds(200));
+        // This sleep is required to establish connections.
+        // Taken from example at http://tim.dysinger.net/posts/2013-09-16-getting-started-with-nanomsg.html
+
+        let msg = "foobar".to_c_str();
+        let bytes = unsafe {
+            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+        };
+        assert!(bytes == 6);
+
+        let msg2 = "barfoo".to_c_str();
+        let bytes2 = unsafe {
+            nn_send(sock, msg2.as_ptr() as *const c_void, msg2.len() as size_t, 0)
+        };
+        assert!(bytes2 == 6);
+
+        unsafe { nn_shutdown(sock, 0) };
+    }
+
+    fn respond_to_survey(url: &str, expected: &str, vote: &str) {
+
+        let url_c_str = url.to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_RESPONDENT) };
+        assert!(sock >= 0);
+
+        assert!(unsafe { nn_connect(sock, url_c_str.as_ptr()) } >= 0);
+
+        loop {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(survey_msg.as_slice() == expected);
+            unsafe { nn_freemsg(buf as *mut c_void); }
+
+            let vote_msg = vote.to_c_str();
+            unsafe { nn_send(sock, vote_msg.as_ptr() as *const c_void, vote_msg.len() as size_t, 0) };
+
+            unsafe { nn_shutdown(sock, 0); }
+            break;
+        } 
+    }
+
+    #[test]
+    fn should_create_a_survey() {
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_survey.ipc";
+            let expected = "are_you_there";
+            let vote = "yes";
+        
+            respond_to_survey(url, expected, vote);
+        });
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_survey.ipc";
+            let expected = "are_you_there";
+            let vote = "YES";
+        
+            respond_to_survey(url, expected, vote);
+        });
+
+        let url = "ipc:///tmp/should_create_a_survey.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_SURVEYOR) };
+
+        assert!(sock >= 0);
+
+        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+        sleep(Duration::milliseconds(200));
+
+        let msg = "are_you_there".to_c_str();
+        unsafe { nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0) };
+
+        {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(
+                survey_msg.as_slice() == "yes".as_slice() ||
+                survey_msg.as_slice() == "YES".as_slice()
+                );
+            unsafe { nn_freemsg(buf as *mut c_void); }
+        }
+
+        {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            assert!(survey_bytes > 0);
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(
+                survey_msg.as_slice() == "yes".as_slice() ||
+                survey_msg.as_slice() == "YES".as_slice()
+                );
+            unsafe { nn_freemsg(buf as *mut c_void); }
+        }
 
         unsafe { nn_shutdown(sock, 0) };
     }

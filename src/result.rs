@@ -7,7 +7,8 @@ pub enum ErrorKind {
     Unknown,
     SocketInitializationError,
     SocketBindError,
-    SocketBufferError
+    SocketBufferError,
+    SocketOptionError
 }
 
 #[deriving(Show, PartialEq)]
