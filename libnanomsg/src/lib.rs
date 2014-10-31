@@ -25,9 +25,12 @@ pub const NN_BUS: c_int = NN_PROTO_BUS * 16 + 0;
 pub const NN_PROTO_PUBSUB: c_int = 2;
 pub const NN_PUB: c_int = NN_PROTO_PUBSUB * 16 + 0;
 pub const NN_SUB: c_int = NN_PROTO_PUBSUB * 16 + 1;
-
 pub const NN_SUB_SUBSCRIBE: c_int = 1;
 pub const NN_SUB_UNSUBSCRIBE: c_int = 2;
+pub const NN_PROTO_SURVEY: c_int = 6;
+pub const NN_SURVEYOR: c_int = NN_PROTO_SURVEY * 16 + 0;
+pub const NN_RESPONDENT: c_int = NN_PROTO_SURVEY * 16 + 1;
+pub const NN_SURVEYOR_DEADLINE: c_int = 1;
 
 
 pub const NN_SOCKADDR_MAX: c_int = 128;
@@ -407,6 +410,84 @@ mod tests {
             nn_send(sock, msg2.as_ptr() as *const c_void, msg2.len() as size_t, 0)
         };
         assert!(bytes2 == 6);
+
+        unsafe { nn_shutdown(sock, 0) };
+    }
+
+    fn respond_to_survey(url: &str, expected: &str, vote: &str) {
+
+        let url_c_str = url.to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_RESPONDENT) };
+        assert!(sock >= 0);
+
+        assert!(unsafe { nn_connect(sock, url_c_str.as_ptr()) } >= 0);
+
+        loop {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(survey_msg.as_slice() == expected);
+            unsafe { nn_freemsg(buf as *mut c_void); }
+
+            let vote_msg = vote.to_c_str();
+            unsafe { nn_send(sock, vote_msg.as_ptr() as *const c_void, vote_msg.len() as size_t, 0) };
+
+            unsafe { nn_shutdown(sock, 0); }
+            break;
+        } 
+    }
+
+    #[test]
+    fn should_create_a_survey() {
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_survey.ipc";
+            let expected = "are_you_there";
+            let vote = "yes";
+        
+            respond_to_survey(url, expected, vote);
+        });
+
+        spawn(proc() {
+            let url = "ipc:///tmp/should_create_a_survey.ipc";
+            let expected = "are_you_there";
+            let vote = "YES";
+        
+            respond_to_survey(url, expected, vote);
+        });
+
+        let url = "ipc:///tmp/should_create_a_survey.ipc".to_c_str();
+        let sock = unsafe { nn_socket(AF_SP, NN_SURVEYOR) };
+
+        assert!(sock >= 0);
+
+        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
+        sleep(Duration::milliseconds(200));
+
+        let msg = "are_you_there".to_c_str();
+        unsafe { nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0) };
+
+        {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(
+                survey_msg.as_slice() == "yes".as_slice() ||
+                survey_msg.as_slice() == "YES".as_slice()
+                );
+            unsafe { nn_freemsg(buf as *mut c_void); }
+        }
+
+        {
+            let mut buf: *mut u8 = ptr::null_mut();
+            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
+            let survey_msg = unsafe { from_buf(buf as *const u8) };
+            assert!(
+                survey_msg.as_slice() == "yes".as_slice() ||
+                survey_msg.as_slice() == "YES".as_slice()
+                );
+            unsafe { nn_freemsg(buf as *mut c_void); }
+        }
 
         unsafe { nn_shutdown(sock, 0) };
     }
