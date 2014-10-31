@@ -13,7 +13,7 @@ pub use result::{NanoResult, NanoError};
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
-use result::{SocketInitializationError, SocketBindError};
+use result::{SocketInitializationError, SocketBindError, SocketOptionError};
 use std::io::{Writer, Reader, IoResult};
 use std::io;
 
@@ -29,7 +29,9 @@ pub enum Protocol {
     Push,
     Pull,
     Pair,
-    Bus
+    Bus,
+    Pub,
+    Sub
 }
 
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
@@ -63,7 +65,9 @@ impl Socket {
             Push => libnanomsg::NN_PUSH,
             Pull => libnanomsg::NN_PULL,
             Pair => libnanomsg::NN_PAIR,
-            Bus => libnanomsg::NN_BUS
+            Bus => libnanomsg::NN_BUS,
+            Pub => libnanomsg::NN_PUB,
+            Sub => libnanomsg::NN_SUB
         };
 
         let socket = unsafe {
@@ -126,6 +130,38 @@ impl Socket {
 
         Ok(())
     }
+
+    pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
+        let topic_len = topic.len() as size_t;
+        let topic_c_str = topic.to_c_str();
+        let topic_ptr = topic_c_str.as_ptr();
+        let topic_raw_ptr = topic_ptr as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (self.socket, libnanomsg::NN_SUB, libnanomsg::NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to subscribe to the topic: {}", topic), SocketOptionError));
+        }
+
+        Ok(())
+   }
+
+    pub fn unsubscribe(&mut self, topic: &str) -> NanoResult<()> {
+        let topic_len = topic.len() as size_t;
+        let topic_c_str = topic.to_c_str();
+        let topic_ptr = topic_c_str.as_ptr();
+        let topic_raw_ptr = topic_ptr as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (self.socket, libnanomsg::NN_SUB, libnanomsg::NN_SUB_UNSUBSCRIBE, topic_raw_ptr, topic_len) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to unsubscribe from the topic: {}", topic), SocketOptionError));
+        }
+
+        Ok(())
+   }
 
 }
 
@@ -372,6 +408,85 @@ mod tests {
         };
 
         match socket.bind("ipc:///tmp/bus.ipc") {
+            Ok(_) => {},
+            Err(err) => panic!("{}", err)
+        }
+
+        sleep(Duration::milliseconds(200));
+
+        match socket.write(b"foobar") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to write to the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn send_and_receive_from_socket_in_pubsub() {
+        
+        spawn(proc() {
+            let mut socket = match Socket::new(Sub) {
+                Ok(socket) => socket,
+                Err(err) => panic!("{}", err)
+            };
+
+            match socket.subscribe("foo") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            match socket.connect("ipc:///tmp/pubsub.ipc") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            let mut buf = [0u8, ..6];
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
+                Err(err) => panic!("{}", err)
+            }
+
+            drop(socket)
+        });
+        
+        spawn(proc() {
+            let mut socket = match Socket::new(Sub) {
+                Ok(socket) => socket,
+                Err(err) => panic!("{}", err)
+            };
+
+            match socket.subscribe("foo") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            match socket.connect("ipc:///tmp/pubsub.ipc") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            let mut buf = [0u8, ..6];
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    assert_eq!(len, 6);
+                    assert_eq!(buf.as_slice(), b"foobar")
+                },
+                Err(err) => panic!("{}", err)
+            }
+
+            drop(socket)
+        });
+
+        let mut socket = match Socket::new(Pub) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        match socket.bind("ipc:///tmp/pubsub.ipc") {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
         }
