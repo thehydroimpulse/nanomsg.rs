@@ -184,7 +184,7 @@ mod tests {
     /// on how to properly use the low-level bindings directly, although it's recommended to
     /// use the high-level Rust idiomatic API to ensure safety. The low-level bindings are
     /// quite unsafe to use because there are a lot of unsafe pointers, unsafe blocks, etc...
-    //#[test]
+    #[test]
     fn should_create_a_pipeline() {
 
         spawn(proc() {
@@ -221,7 +221,7 @@ mod tests {
         unsafe { nn_shutdown(sock, 0) };
     }
 
-    //#[test]
+    #[test]
     fn should_create_a_pair() {
 
         spawn(proc() {
@@ -279,7 +279,7 @@ mod tests {
         unsafe { nn_shutdown(sock, 0) };
     }
 
-    //#[test]
+    #[test]
     fn should_create_a_bus() {
         
         spawn(proc() {
