@@ -138,9 +138,11 @@ impl Socket {
     }
 
     // --------------------------------------------------------------------- //
-    // Generic socket option getters and setters                             //
+    // Generic socket options                                                //
     // --------------------------------------------------------------------- //
-    // TODO see http://nanomsg.org/v0.4/nn_setsockopt.3.html
+
+    // TODO set comments according to http://nanomsg.org/v0.4/nn_setsockopt.3.html
+    
     pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
         let milliseconds = linger.num_milliseconds();
         let c_linger = milliseconds as c_int;
@@ -272,13 +274,104 @@ impl Socket {
         Ok(())
     }
 
-    // --------------------------------------------------------------------- //
-    // TCP transport socket option getters and setters                       //
-    // --------------------------------------------------------------------- //
-    // TODO see http://nanomsg.org/v0.4/nn_tcp.7.html
+    pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
+        let c_priority = priority as c_int;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SNDPRIO, 
+                transmute(&c_priority), 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set send priority to {}", priority), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
+        let c_priority = priority as c_int;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RCVPRIO, 
+                transmute(&c_priority), 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set receive priority to {}", priority), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
+        let c_ipv4_only = if ipv4_only { 1 as c_int } else { 0 as c_int };
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_IPV4ONLY, 
+                transmute(&c_ipv4_only), 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set ipv4 only to {}", ipv4_only), SocketOptionError));
+        }
+
+        Ok(())
+    }
+    
+    pub fn set_socket_name(&mut self, name: &str) -> NanoResult<()> {
+        let name_len = name.len() as size_t;
+        let name_c_str = name.to_c_str();
+        let name_ptr = name_c_str.as_ptr();
+        let name_raw_ptr = name_ptr as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SOCKET_NAME, 
+                name_raw_ptr, 
+                name_len) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set the socket name to: {}", name), SocketOptionError));
+        }
+
+        Ok(())
+    }
 
     // --------------------------------------------------------------------- //
-    // PubSub protocol socket option getters and setters                     //
+    // TCP transport socket options                                          //
+    // --------------------------------------------------------------------- //
+    pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
+        let c_tcp_nodelay = if tcp_nodelay { 1 as c_int } else { 0 as c_int };
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_TCP, 
+                libnanomsg::NN_TCP_NODELAY, 
+                transmute(&c_tcp_nodelay), 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set tcp nodelay to {}", tcp_nodelay), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------- //
+    // PubSub protocol socket options                                        //
     // --------------------------------------------------------------------- //
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         let topic_len = topic.len() as size_t;
@@ -313,7 +406,7 @@ impl Socket {
     }
 
     // --------------------------------------------------------------------- //
-    // Survey protocol socket option getters and setters                     //
+    // Survey protocol socket options                                        //
     // --------------------------------------------------------------------- //
 
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
@@ -333,7 +426,30 @@ impl Socket {
         }
 
         Ok(())
-   }
+    }
+
+    // --------------------------------------------------------------------- //
+    // Request/reply protocol socket options                                        //
+    // --------------------------------------------------------------------- //
+
+    pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+        let milliseconds = interval.num_milliseconds();
+        let c_interval = milliseconds as c_int;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_REQ, 
+                libnanomsg::NN_REQ_RESEND_IVL, 
+                transmute(&c_interval), 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set request resend interval to {}", interval), SocketOptionError));
+        }
+
+        Ok(())
+    }
 
 }
 
@@ -903,6 +1019,116 @@ mod tests {
         match socket.set_max_reconnect_interval(&interval) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_send_priority() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_send_priority(15u8) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change send priority on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_receive_priority() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_receive_priority(2u8) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change receive priority on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_ipv4_only() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_ipv4_only(true) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change ipv4 only on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_socket_name() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_socket_name("bob") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change the socket name: {}", err)
+        }
+
+        drop(socket)
+    }
+
+
+    #[test]
+    fn should_change_request_resend_interval() {
+
+        let mut socket = match Socket::new(Req) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let interval = Duration::milliseconds(60042);
+        match socket.set_request_resend_interval(&interval) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change request resend interval on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_tcp_nodelay() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_tcp_nodelay(true) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change tcp nodelay only on the socket: {}", err)
         }
 
         drop(socket)
