@@ -506,7 +506,7 @@ impl Writer for Socket {
 #[unsafe_destructor]
 impl Drop for Socket {
     fn drop(&mut self) {
-        unsafe { libnanomsg::nn_shutdown(self.socket, 0); }
+        unsafe { libnanomsg::nn_close(self.socket); }
     }
 }
 
