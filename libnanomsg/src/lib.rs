@@ -18,6 +18,7 @@ pub const NN_MSG: u64 = -1;
 pub const NN_PROTO_REQREP: c_int = 3;
 pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
 pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
+pub const NN_REQ_RESEND_IVL: c_int = 1;
 pub const NN_PROTO_PAIR: c_int = 1;
 pub const NN_PAIR: c_int = NN_PROTO_PAIR * 16 + 0;
 pub const NN_PROTO_BUS: c_int = 7;
@@ -54,6 +55,10 @@ pub const NN_IPV4ONLY: c_int = 14;
 pub const NN_SOCKET_NAME: c_int = 15;
 
 pub const NN_DONTWAIT: c_int = 1;
+
+pub const NN_TCP: c_int = -3;
+
+pub const NN_TCP_NODELAY: c_int = 1;
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns

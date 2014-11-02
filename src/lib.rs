@@ -17,6 +17,7 @@ use result::{SocketInitializationError, SocketBindError, SocketOptionError};
 use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
+use std::time::duration::Duration;
 
 mod result;
 
@@ -136,6 +137,253 @@ impl Socket {
         Ok(())
     }
 
+    // --------------------------------------------------------------------- //
+    // Generic socket options                                                //
+    // --------------------------------------------------------------------- //
+
+    // TODO set comments according to http://nanomsg.org/v0.4/nn_setsockopt.3.html
+    
+    pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
+        let milliseconds = linger.num_milliseconds();
+        let c_linger = milliseconds as c_int;
+        let c_linger_ptr = &c_linger as *const _ as *const c_void;
+        let ret = unsafe { ;
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_LINGER, 
+                c_linger_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set linger to {}", linger), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_send_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
+        let c_size_in_bytes = size_in_bytes as c_int;
+        let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SNDBUF, 
+                c_size_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set send buffer size to {}", size_in_bytes), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_receive_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
+        let c_size_in_bytes = size_in_bytes as c_int;
+        let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RCVBUF, 
+                c_size_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set receive buffer size to {}", size_in_bytes), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_send_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
+        let milliseconds = timeout.num_milliseconds();
+        let c_timeout = milliseconds as c_int;
+        let c_timeout_ptr = &c_timeout as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SNDTIMEO, 
+                c_timeout_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set send timeout to {}", timeout), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_receive_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
+        let milliseconds = timeout.num_milliseconds();
+        let c_timeout = milliseconds as c_int;
+        let c_timeout_ptr = &c_timeout as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RCVTIMEO, 
+                c_timeout_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set receive timeout to {}", timeout), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+        let milliseconds = interval.num_milliseconds();
+        let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RECONNECT_IVL, 
+                c_interval_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set reconnect interval to {}", interval), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_max_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+        let milliseconds = interval.num_milliseconds();
+        let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RECONNECT_IVL_MAX, 
+                c_interval_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set max reconnect interval to {}", interval), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
+        let c_priority = priority as c_int;
+        let c_priority_ptr = &c_priority as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SNDPRIO, 
+                c_priority_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set send priority to {}", priority), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
+        let c_priority = priority as c_int;
+        let c_priority_ptr = &c_priority as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_RCVPRIO, 
+                c_priority_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set receive priority to {}", priority), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
+        let c_ipv4_only = if ipv4_only { 1 as c_int } else { 0 as c_int };
+        let option_value_ptr = &c_ipv4_only as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_IPV4ONLY, 
+                option_value_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set ipv4 only to {}", ipv4_only), SocketOptionError));
+        }
+
+        Ok(())
+    }
+    
+    pub fn set_socket_name(&mut self, name: &str) -> NanoResult<()> {
+        let name_len = name.len() as size_t;
+        let name_c_str = name.to_c_str();
+        let name_ptr = name_c_str.as_ptr();
+        let name_raw_ptr = name_ptr as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_SOL_SOCKET, 
+                libnanomsg::NN_SOCKET_NAME, 
+                name_raw_ptr, 
+                name_len) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set the socket name to: {}", name), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------- //
+    // TCP transport socket options                                          //
+    // --------------------------------------------------------------------- //
+    pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
+        let c_tcp_nodelay = if tcp_nodelay { 1 as c_int } else { 0 as c_int };
+        let option_value_ptr = &c_tcp_nodelay as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_TCP, 
+                libnanomsg::NN_TCP_NODELAY, 
+                option_value_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set tcp nodelay to {}", tcp_nodelay), SocketOptionError));
+        }
+
+        Ok(())
+    }
+
+    // --------------------------------------------------------------------- //
+    // PubSub protocol socket options                                        //
+    // --------------------------------------------------------------------- //
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         let topic_len = topic.len() as size_t;
         let topic_c_str = topic.to_c_str();
@@ -168,14 +416,20 @@ impl Socket {
         Ok(())
     }
 
-    pub fn set_survey_deadline(&mut self, deadline: int) -> NanoResult<()> {
-        let c_deadline = deadline as c_int;
+    // --------------------------------------------------------------------- //
+    // Survey protocol socket options                                        //
+    // --------------------------------------------------------------------- //
+
+    pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
+        let milliseconds = deadline.num_milliseconds();
+        let c_deadline = milliseconds as c_int;
+        let c_deadline_ptr = &c_deadline as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SURVEYOR, 
                 libnanomsg::NN_SURVEYOR_DEADLINE, 
-                transmute(&c_deadline), 
+                c_deadline_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -184,7 +438,31 @@ impl Socket {
         }
 
         Ok(())
-   }
+    }
+
+    // --------------------------------------------------------------------- //
+    // Request/reply protocol socket options                                        //
+    // --------------------------------------------------------------------- //
+
+    pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+        let milliseconds = interval.num_milliseconds();
+        let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
+        let ret = unsafe { 
+            libnanomsg::nn_setsockopt (
+                self.socket, 
+                libnanomsg::NN_REQ, 
+                libnanomsg::NN_REQ_RESEND_IVL, 
+                c_interval_ptr, 
+                size_of::<c_int>() as size_t) 
+        };
+ 
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to set request resend interval to {}", interval), SocketOptionError));
+        }
+
+        Ok(())
+    }
 
 }
 
@@ -228,7 +506,7 @@ impl Writer for Socket {
 #[unsafe_destructor]
 impl Drop for Socket {
     fn drop(&mut self) {
-        unsafe { libnanomsg::nn_shutdown(self.socket, 0); }
+        unsafe { libnanomsg::nn_close(self.socket); }
     }
 }
 
@@ -588,7 +866,8 @@ mod tests {
             Err(err) => panic!("{}", err)
         };
 
-        match socket.set_survey_deadline(2000) {
+        let deadline = Duration::milliseconds(500);
+        match socket.set_survey_deadline(&deadline) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         };
@@ -622,6 +901,249 @@ mod tests {
             Err(err) => panic!("{}", err)
         }
         
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_linger() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let linger = Duration::milliseconds(1024);
+        match socket.set_linger(&linger) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change linger on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_send_buffer_size() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let size: int = 64 * 1024;
+        match socket.set_send_buffer_size(size) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change send buffer size on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_receive_buffer_size() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let size: int = 64 * 1024;
+        match socket.set_receive_buffer_size(size) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change receive buffer size on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_send_timeout() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let timeout = Duration::milliseconds(-2);
+        match socket.set_send_timeout(&timeout) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change send timeout on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_receive_timeout() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let timeout = Duration::milliseconds(200);
+        match socket.set_receive_timeout(&timeout) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change receive timeout on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_reconnect_interval() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let interval = Duration::milliseconds(142);
+        match socket.set_reconnect_interval(&interval) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_max_reconnect_interval() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let interval = Duration::milliseconds(666);
+        match socket.set_max_reconnect_interval(&interval) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_send_priority() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_send_priority(15u8) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change send priority on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_receive_priority() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_receive_priority(2u8) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change receive priority on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_ipv4_only() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_ipv4_only(true) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change ipv4 only on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_socket_name() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_socket_name("bob") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change the socket name: {}", err)
+        }
+
+        drop(socket)
+    }
+
+
+    #[test]
+    fn should_change_request_resend_interval() {
+
+        let mut socket = match Socket::new(Req) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        let interval = Duration::milliseconds(60042);
+        match socket.set_request_resend_interval(&interval) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change request resend interval on the socket: {}", err)
+        }
+
+        drop(socket)
+    }
+
+    #[test]
+    fn should_change_tcp_nodelay() {
+
+        let mut socket = match Socket::new(Pair) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        assert!(socket.socket >= 0);
+
+        match socket.set_tcp_nodelay(true) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change tcp nodelay only on the socket: {}", err)
+        }
+
         drop(socket)
     }
 }
