@@ -146,12 +146,13 @@ impl Socket {
     pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
         let milliseconds = linger.num_milliseconds();
         let c_linger = milliseconds as c_int;
-        let ret = unsafe { 
+        let c_linger_ptr = &c_linger as *const _ as *const c_void;
+        let ret = unsafe { ;
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_LINGER, 
-                transmute(&c_linger), 
+                c_linger_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -164,12 +165,13 @@ impl Socket {
 
     pub fn set_send_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         let c_size_in_bytes = size_in_bytes as c_int;
+        let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_SNDBUF, 
-                transmute(&c_size_in_bytes), 
+                c_size_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -182,12 +184,13 @@ impl Socket {
 
     pub fn set_receive_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         let c_size_in_bytes = size_in_bytes as c_int;
+        let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_RCVBUF, 
-                transmute(&c_size_in_bytes), 
+                c_size_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -201,12 +204,13 @@ impl Socket {
     pub fn set_send_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         let milliseconds = timeout.num_milliseconds();
         let c_timeout = milliseconds as c_int;
+        let c_timeout_ptr = &c_timeout as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_SNDTIMEO, 
-                transmute(&c_timeout), 
+                c_timeout_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -220,12 +224,13 @@ impl Socket {
     pub fn set_receive_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         let milliseconds = timeout.num_milliseconds();
         let c_timeout = milliseconds as c_int;
+        let c_timeout_ptr = &c_timeout as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_RCVTIMEO, 
-                transmute(&c_timeout), 
+                c_timeout_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -239,12 +244,13 @@ impl Socket {
     pub fn set_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_RECONNECT_IVL, 
-                transmute(&c_interval), 
+                c_interval_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -258,12 +264,13 @@ impl Socket {
     pub fn set_max_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_RECONNECT_IVL_MAX, 
-                transmute(&c_interval), 
+                c_interval_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -276,12 +283,13 @@ impl Socket {
 
     pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
         let c_priority = priority as c_int;
+        let c_priority_ptr = &c_priority as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_SNDPRIO, 
-                transmute(&c_priority), 
+                c_priority_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -294,12 +302,13 @@ impl Socket {
 
     pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
         let c_priority = priority as c_int;
+        let c_priority_ptr = &c_priority as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_RCVPRIO, 
-                transmute(&c_priority), 
+                c_priority_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -312,12 +321,13 @@ impl Socket {
 
     pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
         let c_ipv4_only = if ipv4_only { 1 as c_int } else { 0 as c_int };
+        let option_value_ptr = &c_ipv4_only as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SOL_SOCKET, 
                 libnanomsg::NN_IPV4ONLY, 
-                transmute(&c_ipv4_only), 
+                option_value_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -354,12 +364,13 @@ impl Socket {
     // --------------------------------------------------------------------- //
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
         let c_tcp_nodelay = if tcp_nodelay { 1 as c_int } else { 0 as c_int };
+        let option_value_ptr = &c_tcp_nodelay as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_TCP, 
                 libnanomsg::NN_TCP_NODELAY, 
-                transmute(&c_tcp_nodelay), 
+                option_value_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -412,12 +423,13 @@ impl Socket {
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
         let milliseconds = deadline.num_milliseconds();
         let c_deadline = milliseconds as c_int;
+        let c_deadline_ptr = &c_deadline as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_SURVEYOR, 
                 libnanomsg::NN_SURVEYOR_DEADLINE, 
-                transmute(&c_deadline), 
+                c_deadline_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
@@ -435,12 +447,13 @@ impl Socket {
     pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
+        let c_interval_ptr = &c_interval as *const _ as *const c_void;
         let ret = unsafe { 
             libnanomsg::nn_setsockopt (
                 self.socket, 
                 libnanomsg::NN_REQ, 
                 libnanomsg::NN_REQ_RESEND_IVL, 
-                transmute(&c_interval), 
+                c_interval_ptr, 
                 size_of::<c_int>() as size_t) 
         };
  
