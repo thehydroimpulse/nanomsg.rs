@@ -19,6 +19,7 @@ use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use endpoint::Endpoint;
+use std::kinds::marker::ContravariantLifetime;
 
 mod result;
 mod endpoint;
@@ -44,7 +45,8 @@ pub enum Protocol {
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
 pub struct Socket<'a> {
-    socket: c_int
+    socket: c_int,
+    marker: ContravariantLifetime<'a>
 }
 
 impl<'a> Socket<'a> {
@@ -89,7 +91,8 @@ impl<'a> Socket<'a> {
         debug!("Initialized a new raw socket");
 
         Ok(Socket {
-            socket: socket
+            socket: socket,
+            marker: ContravariantLifetime::<'a>
         })
     }
 
@@ -119,7 +122,7 @@ impl<'a> Socket<'a> {
     /// //   Err(err) => panic!("Failed to bind socket: {}", err)
     /// //}
     /// ```
-    pub fn bind<'b: 'a>(&'a mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
+    pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
