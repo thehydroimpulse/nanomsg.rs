@@ -476,6 +476,9 @@ impl Reader for Socket {
         };
 
         if ret == -1 {
+            //let error_code = libnanomsg::nn_errno();
+            //let error_c_str = libnanomsg::nn_strerror(error_code);
+            //let x: int = io::standard_error(io::OtherIoError);
             return Err(io::standard_error(io::OtherIoError));
         }
 
@@ -547,372 +550,197 @@ mod tests {
             Err(err) => panic!("{}", err)
         }
 
-        drop(socket)
+        drop(socket);
     }
 
-    #[test]
-    fn receive_from_socket() {
-        spawn(proc() {
-            let mut socket = match Socket::new(Pull) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
-
-
-            match socket.bind("ipc:///tmp/pipeline.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
-
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
-
-            drop(socket)
-        });
-
-        let mut socket = match Socket::new(Push) {
+    fn test_create_socket(protocol: Protocol) -> Socket {
+        match Socket::new(protocol) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
-        };
+        }
+    }
 
-        match socket.connect("ipc:///tmp/pipeline.ipc") {
+    fn test_bind(socket: &mut Socket, addr: &str) {
+        match socket.bind(addr) {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
-        }
+        }    
+    }
 
-        match socket.write(b"foobar") {
+    fn test_connect(socket: &mut Socket, addr: &str) {
+        match socket.connect(addr) {
+            Ok(_) => {},
+            Err(err) => panic!("{}", err)
+        }    
+    }
+
+    fn test_write(socket: &mut Socket, buf: &[u8]) {
+        match socket.write(buf) {
             Ok(..) => {},
             Err(err) => panic!("Failed to write to the socket: {}", err)
         }
- 
-        drop(socket)
-   }
+    }
 
-    #[test]
-    fn send_and_recv_from_socket_in_pair() {
-        spawn(proc() {
-            let mut socket = match Socket::new(Pair) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
-
-
-            match socket.bind("ipc:///tmp/pair.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
-
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
-
-            match socket.write(b"foobaz") {
-                Ok(..) => {},
-                Err(err) => panic!("Failed to write to the socket: {}", err)
-            }
-
-            drop(socket)
-        });
-
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        match socket.connect("ipc:///tmp/pair.ipc") {
-            Ok(_) => {},
-            Err(err) => panic!("{}", err)
-        }
-
-        match socket.write(b"foobar") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
-        }
-
+    fn test_read(socket: &mut Socket, expected: &[u8]) {
         let mut buf = [0u8, ..6];
         match socket.read(&mut buf) {
             Ok(len) => {
                 assert_eq!(len, 6);
-                assert_eq!(buf.as_slice(), b"foobaz")
+                assert_eq!(buf.as_slice(), expected)
             },
             Err(err) => panic!("{}", err)
         }
- 
-        drop(socket)
     }
 
-    #[test]
-    fn send_and_receive_from_socket_in_bus() {
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Bus) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
-
-
-            match socket.connect("ipc:///tmp/bus.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
-
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
-
-            drop(socket)
-        });
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Bus) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
-
-
-            match socket.connect("ipc:///tmp/bus.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
-
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
-
-            drop(socket)
-        });
-
-        let mut socket = match Socket::new(Bus) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        match socket.bind("ipc:///tmp/bus.ipc") {
+    fn test_subscribe(socket: &mut Socket, topic: &str) {
+        match socket.subscribe(topic) {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
-        }
-
-        sleep(Duration::milliseconds(200));
-
-        match socket.write(b"foobar") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
-        }
-
-        drop(socket)
+        }    
     }
 
     #[test]
-    fn send_and_receive_from_socket_in_pubsub() {
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Sub) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
+    fn pipeline() {
 
-            match socket.subscribe("foo") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
+        let url = "ipc:///tmp/pipeline.ipc";
 
-            match socket.connect("ipc:///tmp/pubsub.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
 
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
 
-            drop(socket)
-        });
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Sub) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
+        sleep(Duration::milliseconds(10));
 
-            match socket.subscribe("foo") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
+        test_write(&mut push_socket, b"foobar");
+        test_read(&mut pull_socket, b"foobar");
 
-            match socket.connect("ipc:///tmp/pubsub.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
-
-            let mut buf = [0u8, ..6];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 6);
-                    assert_eq!(buf.as_slice(), b"foobar")
-                },
-                Err(err) => panic!("{}", err)
-            }
-
-            drop(socket)
-        });
-
-        let mut socket = match Socket::new(Pub) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        match socket.bind("ipc:///tmp/pubsub.ipc") {
-            Ok(_) => {},
-            Err(err) => panic!("{}", err)
-        }
-
-        sleep(Duration::milliseconds(200));
-
-        match socket.write(b"foobar") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
-        }
-
-        drop(socket)
+        drop(pull_socket);
+        drop(push_socket);
     }
 
     #[test]
-    fn send_and_receive_from_socket_in_survey() {
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Respondent) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
+    fn pair() {
 
-            match socket.connect("ipc:///tmp/survey.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
+        let url = "ipc:///tmp/pair.ipc";
 
-            let mut buf = [0u8, ..9];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 9);
-                    assert_eq!(buf.as_slice(), b"yes_or_no")
-                },
-                Err(err) => panic!("{}", err)
-            }
+        let mut left_socket = test_create_socket(Pair);
+        test_bind(&mut left_socket, url);
 
-            match socket.write(b"yes") {
-                Ok(..) => {},
-                Err(err) => panic!("Failed to write to the socket: {}", err)
-            }
+        let mut right_socket = test_create_socket(Pair);
+        test_connect(&mut right_socket, url);
 
-            drop(socket)
-        });
-        
-        spawn(proc() {
-            let mut socket = match Socket::new(Respondent) {
-                Ok(socket) => socket,
-                Err(err) => panic!("{}", err)
-            };
+        sleep(Duration::milliseconds(10));
 
-            match socket.connect("ipc:///tmp/survey.ipc") {
-                Ok(_) => {},
-                Err(err) => panic!("{}", err)
-            }
+        test_write(&mut right_socket, b"foobar");
+        test_read(&mut left_socket, b"foobar");
 
-            let mut buf = [0u8, ..9];
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    assert_eq!(len, 9);
-                    assert_eq!(buf.as_slice(), b"yes_or_no")
-                },
-                Err(err) => panic!("{}", err)
-            }
+        test_write(&mut left_socket, b"foobaz");
+        test_read(&mut right_socket, b"foobaz");
 
-            match socket.write(b"YES") {
-                Ok(..) => {},
-                Err(err) => panic!("Failed to write to the socket: {}", err)
-            }
+        drop(left_socket);
+        drop(right_socket);
+    }
 
-            drop(socket)
-        });
+    #[test]
+    fn bus() {
+         
+        let url = "ipc:///tmp/bus.ipc";
 
-        let mut socket = match Socket::new(Surveyor) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
+        let mut sock1 = test_create_socket(Bus);
+        test_bind(&mut sock1, url);
+
+        let mut sock2 = test_create_socket(Bus);
+        test_connect(&mut sock2, url);
+
+        let mut sock3 = test_create_socket(Bus);
+        test_connect(&mut sock3, url);
+
+        sleep(Duration::milliseconds(10));
+
+        let msg = b"foobar";
+        test_write(&mut sock1, msg);
+        test_read(&mut sock2, msg);
+        test_read(&mut sock3, msg);
+
+        drop(sock3);
+        drop(sock2);
+        drop(sock1);
+    }
+
+    #[test]
+    fn pubsub() {
+         
+        let url = "ipc:///tmp/pubsub.ipc";
+
+        let mut sock1 = test_create_socket(Pub);
+        test_bind(&mut sock1, url);
+
+        let mut sock2 = test_create_socket(Sub);
+        test_subscribe(&mut sock2, "foo");
+        test_connect(&mut sock2, url);
+
+        let mut sock3 = test_create_socket(Sub);
+        test_subscribe(&mut sock3, "bar");
+        test_connect(&mut sock3, url);
+
+        sleep(Duration::milliseconds(10));
+
+        let msg1 = b"foobar";
+        test_write(&mut sock1, msg1);
+        test_read(&mut sock2, msg1);
+
+        let msg2 = b"barfoo";
+        test_write(&mut sock1, msg2);
+        test_read(&mut sock3, msg2);
+
+        drop(sock3);
+        drop(sock2);
+        drop(sock1);
+    }
+
+    #[test]
+    fn survey() {
+         
+        let url = "ipc:///tmp/survey.ipc";
+
+        let mut sock1 = test_create_socket(Surveyor);
+        test_bind(&mut sock1, url);
+
+        let mut sock2 = test_create_socket(Respondent);
+        test_connect(&mut sock2, url);
+
+        let mut sock3 = test_create_socket(Respondent);
+        test_connect(&mut sock3, url);
+
+        sleep(Duration::milliseconds(10));
 
         let deadline = Duration::milliseconds(500);
-        match socket.set_survey_deadline(&deadline) {
+        match sock1.set_survey_deadline(&deadline) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         };
 
-        match socket.bind("ipc:///tmp/survey.ipc") {
-            Ok(_) => {},
-            Err(err) => panic!("{}", err)
-        }
+        let question = b"yesno?";
+        test_write(&mut sock1, question);
+        test_read(&mut sock2, question);
+        test_read(&mut sock3, question);
 
-        sleep(Duration::milliseconds(200));
+        let vote = b"may be";
+        test_write(&mut sock2, vote);
+        test_write(&mut sock3, vote);
+        test_read(&mut sock1, vote);
+        test_read(&mut sock1, vote);
 
-        match socket.write(b"yes_or_no") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
-        }
-
-        let mut buf = [0u8, ..3];
-        match socket.read(&mut buf) {
-            Ok(len) => {
-                assert_eq!(len, 3);
-                assert!(buf.as_slice() == b"yes" || buf.as_slice() == b"YES")
-            },
-            Err(err) => panic!("{}", err)
-        }
-
-        match socket.read(&mut buf) {
-            Ok(len) => {
-                assert_eq!(len, 3);
-                assert!(buf.as_slice() == b"yes" || buf.as_slice() == b"YES")
-            },
-            Err(err) => panic!("{}", err)
-        }
-        
-        drop(socket)
+        drop(sock3);
+        drop(sock2);
+        drop(sock1);
     }
 
     #[test]
     fn should_change_linger() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let linger = Duration::milliseconds(1024);
         match socket.set_linger(&linger) {
@@ -926,12 +754,7 @@ mod tests {
     #[test]
     fn should_change_send_buffer_size() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let size: int = 64 * 1024;
         match socket.set_send_buffer_size(size) {
@@ -945,12 +768,7 @@ mod tests {
     #[test]
     fn should_change_receive_buffer_size() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let size: int = 64 * 1024;
         match socket.set_receive_buffer_size(size) {
@@ -964,12 +782,7 @@ mod tests {
     #[test]
     fn should_change_send_timeout() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let timeout = Duration::milliseconds(-2);
         match socket.set_send_timeout(&timeout) {
@@ -983,12 +796,7 @@ mod tests {
     #[test]
     fn should_change_receive_timeout() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let timeout = Duration::milliseconds(200);
         match socket.set_receive_timeout(&timeout) {
@@ -1002,12 +810,7 @@ mod tests {
     #[test]
     fn should_change_reconnect_interval() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let interval = Duration::milliseconds(142);
         match socket.set_reconnect_interval(&interval) {
@@ -1021,12 +824,7 @@ mod tests {
     #[test]
     fn should_change_max_reconnect_interval() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         let interval = Duration::milliseconds(666);
         match socket.set_max_reconnect_interval(&interval) {
@@ -1040,12 +838,7 @@ mod tests {
     #[test]
     fn should_change_send_priority() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         match socket.set_send_priority(15u8) {
             Ok(..) => {},
@@ -1058,12 +851,7 @@ mod tests {
     #[test]
     fn should_change_receive_priority() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         match socket.set_receive_priority(2u8) {
             Ok(..) => {},
@@ -1076,12 +864,7 @@ mod tests {
     #[test]
     fn should_change_ipv4_only() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         match socket.set_ipv4_only(true) {
             Ok(..) => {},
@@ -1094,12 +877,7 @@ mod tests {
     #[test]
     fn should_change_socket_name() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         match socket.set_socket_name("bob") {
             Ok(..) => {},
@@ -1109,16 +887,10 @@ mod tests {
         drop(socket)
     }
 
-
     #[test]
     fn should_change_request_resend_interval() {
 
-        let mut socket = match Socket::new(Req) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Req);
 
         let interval = Duration::milliseconds(60042);
         match socket.set_request_resend_interval(&interval) {
@@ -1132,12 +904,7 @@ mod tests {
     #[test]
     fn should_change_tcp_nodelay() {
 
-        let mut socket = match Socket::new(Pair) {
-            Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
-        };
-
-        assert!(socket.socket >= 0);
+        let mut socket = test_create_socket(Pair);
 
         match socket.set_tcp_nodelay(true) {
             Ok(..) => {},
