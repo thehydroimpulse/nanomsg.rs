@@ -558,7 +558,24 @@ mod tests {
         drop(socket);
     }
 
-    fn test_create_socket(protocol: Protocol) -> Socket {
+    #[test]
+    fn bind_and_shutdown() {
+        let mut socket = match Socket::new(Pull) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        let mut endpoint = match socket.bind("ipc:///tmp/bind_and_shutdown.ipc") {
+            Ok(endpoint) => endpoint,
+            Err(err) => panic!("{}", err)
+        };
+
+        endpoint.shutdown();
+
+        drop(socket);
+    }
+
+    fn test_create_socket<'a>(protocol: Protocol) -> Socket<'a> {
         match Socket::new(protocol) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
