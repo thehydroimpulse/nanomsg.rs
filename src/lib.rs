@@ -471,12 +471,6 @@ impl<'a> Socket<'a> {
 
 }
 
-fn convert_nn_errno() -> IoErrorKind {
-    let errno = unsafe { libnanomsg::nn_errno() };
-    match errno {
-    }
-}
-
 impl<'a> Reader for Socket<'a> {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         let mut mem : *mut u8 = ptr::null_mut();
