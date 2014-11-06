@@ -18,8 +18,11 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
+use endpoint::Endpoint;
+use std::kinds::marker::ContravariantLifetime;
 
 mod result;
+mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
@@ -41,11 +44,12 @@ pub enum Protocol {
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
-pub struct Socket {
-    socket: c_int
+pub struct Socket<'a> {
+    socket: c_int,
+    marker: ContravariantLifetime<'a>
 }
 
-impl Socket {
+impl<'a> Socket<'a> {
 
     /// Allocate and initialize a new Nanomsg socket which returns
     /// a new file descriptor behind the scene. The safe interface doesn't
@@ -61,7 +65,7 @@ impl Socket {
     ///     Err(err) => panic!("{}", err)
     /// };
     /// ```
-    pub fn new(protocol: Protocol) -> NanoResult<Socket> {
+    pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
 
         let proto = match protocol {
             Req => libnanomsg::NN_REQ,
@@ -87,7 +91,8 @@ impl Socket {
         debug!("Initialized a new raw socket");
 
         Ok(Socket {
-            socket: socket
+            socket: socket,
+            marker: ContravariantLifetime::<'a>
         })
     }
 
@@ -117,14 +122,14 @@ impl Socket {
     /// //   Err(err) => panic!("Failed to bind socket: {}", err)
     /// //}
     /// ```
-    pub fn bind(&mut self, addr: &str) -> NanoResult<()> {
+    pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
             return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
         }
 
-        Ok(())
+        Ok(Endpoint::new(ret, self.socket))
     }
 
     pub fn connect(&mut self, addr: &str) -> NanoResult<()> {
@@ -466,7 +471,7 @@ impl Socket {
 
 }
 
-impl Reader for Socket {
+impl<'a> Reader for Socket<'a> {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -487,7 +492,7 @@ impl Reader for Socket {
     }
 }
 
-impl Writer for Socket {
+impl<'a> Writer for Socket<'a> {
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -504,7 +509,7 @@ impl Writer for Socket {
 }
 
 #[unsafe_destructor]
-impl Drop for Socket {
+impl<'a> Drop for Socket<'a> {
     fn drop(&mut self) {
         unsafe { libnanomsg::nn_close(self.socket); }
     }
