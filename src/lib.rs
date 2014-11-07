@@ -24,6 +24,8 @@ use std::kinds::marker::ContravariantLifetime;
 mod result;
 mod endpoint;
 
+const DEFAULT_BUF_SIZE: uint = 1024 * 64;
+
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
@@ -490,6 +492,15 @@ impl<'a> Reader for Socket<'a> {
 
         Ok(ret as uint)
     }
+
+    fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
+        let mut buf = Vec::with_capacity(DEFAULT_BUF_SIZE);
+        match self.push_at_least(1, DEFAULT_BUF_SIZE, &mut buf) {
+            Ok(_) => {}
+            Err(e) => return Err(e)
+        }
+        return Ok(buf);
+    }
 }
 
 impl<'a> Writer for Socket<'a> {
@@ -598,6 +609,50 @@ mod tests {
  
         drop(socket)
    }
+
+
+    #[test]
+    fn receive_string_from_req_rep_socket() {
+        spawn(proc() {
+            let mut socket = match Socket::new(Rep) {
+                Ok(socket) => socket,
+                Err(err) => panic!("{}", err)
+            };
+
+
+            match socket.bind("ipc:///tmp/reqrep.ipc") {
+                Ok(_) => {},
+                Err(err) => panic!("{}", err)
+            }
+
+            match socket.read_to_string() {
+                Ok(message) => {
+                    assert_eq!(message.as_slice(), "This is a long string for the test.")
+                },
+                Err(err) => panic!("{}", err)
+            }
+
+            drop(socket)
+        });
+
+        let mut socket = match Socket::new(Req) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        match socket.connect("ipc:///tmp/reqrep.ipc") {
+            Ok(_) => {},
+            Err(err) => panic!("{}", err)
+        }
+
+        match socket.write_str("This is a long string for the test.") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to write to the socket: {}", err)
+        }
+ 
+        drop(socket)
+   }
+
 
     #[test]
     fn send_and_recv_from_socket_in_pair() {
