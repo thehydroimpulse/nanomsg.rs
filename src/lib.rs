@@ -126,20 +126,20 @@ impl<'a> Socket<'a> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
+            return Err(NanoError::new(format!("Failed to bind the socket to the address: {}", addr), SocketBindError));
         }
 
         Ok(Endpoint::new(ret, self.socket))
     }
 
-    pub fn connect(&mut self, addr: &str) -> NanoResult<()> {
+    pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to find the socket to the address: {}", addr), SocketBindError));
+            return Err(NanoError::new(format!("Failed to connect the socket to the address: {}", addr), SocketBindError));
         }
 
-        Ok(())
+        Ok(Endpoint::new(ret, self.socket))
     }
 
     // --------------------------------------------------------------------- //
@@ -563,6 +563,23 @@ mod tests {
         };
 
         let mut endpoint = match socket.bind("ipc:///tmp/bind_and_shutdown.ipc") {
+            Ok(endpoint) => endpoint,
+            Err(err) => panic!("{}", err)
+        };
+
+        endpoint.shutdown();
+
+        drop(socket);
+    }
+
+    #[test]
+    fn connect_and_shutdown() {
+        let mut socket = match Socket::new(Push) {
+            Ok(socket) => socket,
+            Err(err) => panic!("{}", err)
+        };
+
+        let mut endpoint = match socket.connect("ipc:///tmp/bind_and_shutdown.ipc") {
             Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
         };
