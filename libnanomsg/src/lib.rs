@@ -179,14 +179,57 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_void, c_int, size_t};
+    use libc::{c_int, c_void, size_t, c_char};
     use std::ptr;
     use std::mem::transmute;
-    use std::mem::size_of;
     use std::string::raw::from_buf;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
+
+    fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
+        let sock = unsafe { nn_socket(domain, protocol) };
+        assert!(sock >= 0);
+        sock
+    } 
+
+    fn test_bind(socket: c_int, addr: *const c_char) -> c_int {
+        let endpoint = unsafe { nn_bind(socket, addr) };
+        assert!(endpoint >= 0);
+        endpoint
+    }
+
+    fn test_connect(socket: c_int, addr: *const c_char) -> c_int {
+        let endpoint = unsafe { nn_connect(socket, addr) };
+        assert!(endpoint >= 0);
+        endpoint
+    }
+
+    fn test_send(socket: c_int, msg: &str) {
+        let c_msg = msg.to_c_str();
+        let bytes = unsafe {
+            nn_send(socket, c_msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+        };
+        let expected = msg.len() as i32;
+        assert!(bytes == expected);
+    }
+
+    fn test_receive(socket: c_int, expected: &str) {
+        let mut buf: *mut u8 = ptr::null_mut();
+        let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
+        assert!(bytes >= 0);
+        let msg = unsafe { from_buf(buf as *const u8) };
+        assert!(msg.as_slice() == expected);
+        unsafe { nn_freemsg(buf as *mut c_void); }
+    }
+
+    fn test_subscribe(socket: c_int, topic: &str) {
+        let topic_len = topic.len() as size_t;
+        let topic_c_str = topic.to_c_str();
+        let topic_ptr = topic_c_str.as_ptr();
+        let topic_raw_ptr = topic_ptr as *const c_void;
+        assert!(unsafe { nn_setsockopt (socket, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
+    }
 
     /// This ensures that the one-way pipe works correctly and also serves as an example
     /// on how to properly use the low-level bindings directly, although it's recommended to
@@ -195,308 +238,156 @@ mod tests {
     #[test]
     fn should_create_a_pipeline() {
 
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
-            let sock = unsafe { nn_socket(AF_SP, NN_PULL) };
-
-            assert!(sock >= 0);
-            assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
-
-            loop {
-                let mut buf: *mut u8 = ptr::null_mut();
-                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-                assert!(bytes >= 0);
-                let msg = unsafe { from_buf(buf as *const u8) };
-                assert!(msg.as_slice() == "foobar");
-                unsafe { nn_freemsg(buf as *mut c_void); }
-                unsafe { nn_shutdown(sock, 0); }
-                break;
-            }
-        });
-
         let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_PUSH) };
 
-        assert!(sock >= 0);
-        assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+        let push_sock = test_create_socket(AF_SP, NN_PUSH);
+        let push_endpoint = test_bind(push_sock, url.as_ptr());
 
-        let msg = "foobar".to_c_str();
-        let bytes = unsafe {
-            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
-        };
+        let pull_sock = test_create_socket(AF_SP, NN_PULL);
+        let pull_endpoint = test_connect(pull_sock, url.as_ptr());
 
-        assert!(bytes == 6);
-        unsafe { nn_shutdown(sock, 0) };
+        let push_msg = "foobar";
+        test_send(push_sock, push_msg);
+        test_receive(pull_sock, push_msg);
+
+        unsafe { 
+            nn_shutdown(pull_sock, pull_endpoint); 
+            nn_close(pull_sock);
+            nn_shutdown(push_sock, push_endpoint);
+            nn_close(push_sock);
+        }
     }
 
     #[test]
     fn should_create_a_pair() {
 
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
-            let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
-
-            assert!(sock >= 0);
-            assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
-
-            let to = -1 as c_int;
-            let c_int_size = size_of::<c_int>() as size_t;
-            let setsockopt_res = unsafe {
-                nn_setsockopt (sock, NN_SOL_SOCKET, NN_RCVTIMEO, transmute(&to), c_int_size)
-            };
-            assert!(setsockopt_res >= 0);
-
-            loop {
-                let mut buf: *mut u8 = ptr::null_mut();
-                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-                assert!(bytes >= 0);
-                let msg = unsafe { from_buf(buf as *const u8) };
-                assert!(msg.as_slice() == "foobar");
-                unsafe { nn_freemsg(buf as *mut c_void); }
-
-                let msg = "foobaz".to_c_str();
-                let bytes = unsafe {
-                    nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
-                };
-                assert!(bytes == 6);
-
-                unsafe { nn_shutdown(sock, 0); }
-                break;
-            }
-        });
-
         let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_PAIR) };
+        let left_sock = test_create_socket(AF_SP, NN_PAIR);
+        let left_endpoint = test_bind(left_sock, url.as_ptr());
 
-        assert!(sock >= 0);
-        assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
+        let right_sock = test_create_socket(AF_SP, NN_PAIR);
+        let right_endpoint = test_connect(right_sock, url.as_ptr());
 
-        let msg = "foobar".to_c_str();
-        let bytes = unsafe {
-            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
-        };
-        assert!(bytes == 6);
+        let right_to_left_msg = "foobar";
+        test_send(right_sock, right_to_left_msg);
+        test_receive(left_sock, right_to_left_msg);
 
-        let mut buf: *mut u8 = ptr::null_mut();
-        let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-        assert!(bytes >= 0);
-        let msg = unsafe { from_buf(buf as *const u8) };
-        assert!(msg.as_slice() == "foobaz");
-        unsafe { nn_freemsg(buf as *mut c_void); }
+        let left_to_right_msg = "foobaz";
+        test_send(left_sock, left_to_right_msg);
+        test_receive(right_sock, left_to_right_msg);
 
-        unsafe { nn_shutdown(sock, 0) };
+        unsafe { 
+            nn_shutdown(left_sock, left_endpoint); 
+            nn_close(left_sock);
+            nn_shutdown(right_sock, right_endpoint);
+            nn_close(right_sock);
+        }
     }
 
     #[test]
     fn should_create_a_bus() {
         
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
-            let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
-
-            assert!(sock >= 0);
-            assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
-
-            loop {
-                let mut buf: *mut u8 = ptr::null_mut();
-                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-                assert!(bytes >= 0);
-                let msg = unsafe { from_buf(buf as *const u8) };
-                assert!(msg.as_slice() == "foobar");
-                unsafe { nn_freemsg(buf as *mut c_void); }
-                unsafe { nn_shutdown(sock, 0); }
-                break;
-            }
-        });
-
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
-            let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
-
-            assert!(sock >= 0);
-            assert!(unsafe { nn_connect(sock, url.as_ptr()) } >= 0);
-
-            loop {
-                let mut buf: *mut u8 = ptr::null_mut();
-                let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-                assert!(bytes >= 0);
-                let msg = unsafe { from_buf(buf as *const u8) };
-                assert!(msg.as_slice() == "foobar");
-                unsafe { nn_freemsg(buf as *mut c_void); }
-                unsafe { nn_shutdown(sock, 0); }
-                break;
-            }
-        });
-
         let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_BUS) };
 
-        assert!(sock >= 0);
-        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
-        sleep(Duration::milliseconds(200));
-        // This sleep is required to establish connections.
-        // Taken from example at http://tim.dysinger.net/posts/2013-09-16-getting-started-with-nanomsg.html
+        let sock1 = test_create_socket(AF_SP, NN_BUS);
+        let sock1_write_endpoint = test_bind(sock1, url.as_ptr());
 
-        let msg = "foobar".to_c_str();
-        let bytes = unsafe {
-            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
-        };
-        assert!(bytes == 6);
+        let sock2 = test_create_socket(AF_SP, NN_BUS);
+        let sock2_read_endpoint = test_connect(sock2, url.as_ptr());
 
-        unsafe { nn_shutdown(sock, 0) };
-    }
+        let sock3 = test_create_socket(AF_SP, NN_BUS);
+        let sock3_read_endpoint = test_connect(sock3, url.as_ptr());
 
-    fn subscribe(url: &str, topic: &str, expected: &str) {
+        sleep(Duration::milliseconds(10));
 
-        let url_c_str = url.to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_SUB) };
+        let msg = "foobar";
+        test_send(sock1, msg);
+        test_receive(sock2, msg);
+        test_receive(sock3, msg);
 
-        assert!(sock >= 0);
+        unsafe { 
+            nn_shutdown(sock3, sock3_read_endpoint); 
+            nn_shutdown(sock2, sock2_read_endpoint); 
+            nn_shutdown(sock1, sock1_write_endpoint); 
 
-        // Keeping variables here seems mandatory.
-        // Looks like chaining the calls destroy a buffer too quickly, to be confirmed.
-        let topic_len = topic.len() as size_t;
-        let topic_c_str = topic.to_c_str();
-        let topic_ptr = topic_c_str.as_ptr();
-        let topic_raw_ptr = topic_ptr as *const c_void;
-        assert!(unsafe { nn_setsockopt (sock, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
-
-        assert!(unsafe { nn_connect(sock, url_c_str.as_ptr()) } >= 0);
-
-        loop {
-            let mut buf: *mut u8 = ptr::null_mut();
-            let bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-            assert!(bytes >= 0);
-            let msg = unsafe { from_buf(buf as *const u8) };
-            assert!(msg.as_slice() == expected);
-            unsafe { nn_freemsg(buf as *mut c_void); }
-            unsafe { nn_shutdown(sock, 0); }
-            break;
+            nn_close(sock3);
+            nn_close(sock2);
+            nn_close(sock1);
         }
     }
 
     #[test]
     fn should_create_a_pubsub() {
 
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_pubsub.ipc";
-            let topic = "foo";
-            let expected = "foobar";
-        
-            subscribe(url, topic, expected);
-        });
-
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_pubsub.ipc";
-            let topic = "bar";
-            let expected = "barfoo";
-        
-            subscribe(url, topic, expected);
-        });
-
         let url = "ipc:///tmp/should_create_a_pubsub.ipc".to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_PUB) };
+        let pub_sock = test_create_socket(AF_SP, NN_PUB);
+        let pub_endpoint = test_bind(pub_sock, url.as_ptr());
 
-        assert!(sock >= 0);
+        let sub_sock1 = test_create_socket(AF_SP, NN_SUB);
+        let sub_endpoint1 = test_connect(sub_sock1, url.as_ptr());
+        let topic1 = "foo";
+        test_subscribe(sub_sock1, topic1);
 
-        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
-        sleep(Duration::milliseconds(200));
-        // This sleep is required to establish connections.
-        // Taken from example at http://tim.dysinger.net/posts/2013-09-16-getting-started-with-nanomsg.html
+        let sub_sock2 = test_create_socket(AF_SP, NN_SUB);
+        let sub_endpoint2 = test_connect(sub_sock2, url.as_ptr());
+        let topic2 = "bar";
+        test_subscribe(sub_sock2, topic2);
 
-        let msg = "foobar".to_c_str();
-        let bytes = unsafe {
-            nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
-        };
-        assert!(bytes == 6);
+        sleep(Duration::milliseconds(10));
 
-        let msg2 = "barfoo".to_c_str();
-        let bytes2 = unsafe {
-            nn_send(sock, msg2.as_ptr() as *const c_void, msg2.len() as size_t, 0)
-        };
-        assert!(bytes2 == 6);
+        let msg1 = "foobar";
+        test_send(pub_sock, msg1);
+        test_receive(sub_sock1, msg1);
 
-        unsafe { nn_shutdown(sock, 0) };
-    }
+        let msg2 = "barfoo";
+        test_send(pub_sock, msg2);
+        test_receive(sub_sock2, msg2);
 
-    fn respond_to_survey(url: &str, expected: &str, vote: &str) {
+        unsafe { 
+            nn_shutdown(sub_sock2, sub_endpoint2); 
+            nn_shutdown(sub_sock1, sub_endpoint1); 
+            nn_shutdown(pub_sock, pub_endpoint); 
 
-        let url_c_str = url.to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_RESPONDENT) };
-        assert!(sock >= 0);
-
-        assert!(unsafe { nn_connect(sock, url_c_str.as_ptr()) } >= 0);
-
-        loop {
-            let mut buf: *mut u8 = ptr::null_mut();
-            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-            assert!(survey_bytes > 0);
-            let survey_msg = unsafe { from_buf(buf as *const u8) };
-            assert!(survey_msg.as_slice() == expected);
-            unsafe { nn_freemsg(buf as *mut c_void); }
-
-            let vote_msg = vote.to_c_str();
-            unsafe { nn_send(sock, vote_msg.as_ptr() as *const c_void, vote_msg.len() as size_t, 0) };
-
-            unsafe { nn_shutdown(sock, 0); }
-            break;
-        } 
+            nn_close(sub_sock2);
+            nn_close(sub_sock1);
+            nn_close(pub_sock);
+        }
     }
 
     #[test]
     fn should_create_a_survey() {
-
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_survey.ipc";
-            let expected = "are_you_there";
-            let vote = "yes";
         
-            respond_to_survey(url, expected, vote);
-        });
-
-        spawn(proc() {
-            let url = "ipc:///tmp/should_create_a_survey.ipc";
-            let expected = "are_you_there";
-            let vote = "YES";
-        
-            respond_to_survey(url, expected, vote);
-        });
-
         let url = "ipc:///tmp/should_create_a_survey.ipc".to_c_str();
-        let sock = unsafe { nn_socket(AF_SP, NN_SURVEYOR) };
+        let surv_sock = test_create_socket(AF_SP, NN_SURVEYOR);
+        let surv_endpoint = test_bind(surv_sock, url.as_ptr());
 
-        assert!(sock >= 0);
+        let resp_sock1 = test_create_socket(AF_SP, NN_RESPONDENT);
+        let resp_endpoint1 = test_connect(resp_sock1, url.as_ptr());
 
-        assert!(unsafe { nn_bind(sock, url.as_ptr()) } >= 0);
-        sleep(Duration::milliseconds(200));
+        let resp_sock2 = test_create_socket(AF_SP, NN_RESPONDENT);
+        let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr());
 
-        let msg = "are_you_there".to_c_str();
-        unsafe { nn_send(sock, msg.as_ptr() as *const c_void, msg.len() as size_t, 0) };
+        sleep(Duration::milliseconds(10));
 
-        {
-            let mut buf: *mut u8 = ptr::null_mut();
-            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-            assert!(survey_bytes > 0);
-            let survey_msg = unsafe { from_buf(buf as *const u8) };
-            assert!(
-                survey_msg.as_slice() == "yes".as_slice() ||
-                survey_msg.as_slice() == "YES".as_slice()
-                );
-            unsafe { nn_freemsg(buf as *mut c_void); }
+        let survey = "are_you_there";
+        test_send(surv_sock, survey);
+        test_receive(resp_sock1, survey);
+        test_receive(resp_sock2, survey);
+
+        let vote = "yes";
+        test_send(resp_sock1, vote);
+        test_send(resp_sock2, vote);
+        test_receive(surv_sock, vote);
+        test_receive(surv_sock, vote);
+
+        unsafe { 
+            nn_shutdown(resp_sock2, resp_endpoint2); 
+            nn_shutdown(resp_sock1, resp_endpoint1); 
+            nn_shutdown(surv_sock, surv_endpoint); 
+
+            nn_close(resp_sock2);
+            nn_close(resp_sock1);
+            nn_close(surv_sock);
         }
-
-        {
-            let mut buf: *mut u8 = ptr::null_mut();
-            let survey_bytes = unsafe { nn_recv(sock, transmute(&mut buf), NN_MSG, 0 as c_int) };
-            assert!(survey_bytes > 0);
-            let survey_msg = unsafe { from_buf(buf as *const u8) };
-            assert!(
-                survey_msg.as_slice() == "yes".as_slice() ||
-                survey_msg.as_slice() == "YES".as_slice()
-                );
-            unsafe { nn_freemsg(buf as *mut c_void); }
-        }
-
-        unsafe { nn_shutdown(sock, 0) };
     }
 }
