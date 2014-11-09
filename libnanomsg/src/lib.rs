@@ -195,7 +195,7 @@ extern {
     /// a buffer allocated by nn_allocmsg(3) function set the buf parameter to point to the
     /// pointer to the buffer and len parameter to NN_MSG constant. In this case a successful
     /// call to nn_send will deallocate the buffer. Trying to deallocate it afterwards will
-    /// result in un[cfg(target_os = "windows")] pub constd behaviour.
+    /// result in undefined behaviour.
     ///
     /// Which of the peers the message will be sent to is determined by the particular socket
     /// type."
