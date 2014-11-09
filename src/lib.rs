@@ -542,6 +542,8 @@ mod tests {
     use std::time::duration::Duration;
     use std::io::timer::sleep;
 
+    use std::sync::{Arc, Barrier};
+
     #[test]
     fn initialize_socket() {
         let socket = match Socket::new(Pull) {
@@ -976,5 +978,84 @@ mod tests {
          assert_eq!(libnanomsg::NN_SUB, Sub.to_raw())
          assert_eq!(libnanomsg::NN_SURVEYOR, Surveyor.to_raw())
          assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw())
+    }
+
+    fn client(
+        btc_barrier: Arc<Barrier>,
+        ctw_barrier: Arc<Barrier>,
+        end_barrier: Arc<Barrier>) {
+
+        let mut socket = test_create_socket(Pull);
+
+        // wait for server bind to be done
+        btc_barrier.wait();
+
+        let mut endpoint = test_connect(&mut socket, "tcp://127.0.0.1:5569");
+        sleep(Duration::milliseconds(50));
+        ctw_barrier.wait();
+        let mut buf = [0u8, ..6];
+
+        println!("client trying to read")
+        loop {
+            match socket.read(&mut buf) {
+                Ok(len) => {
+                    println!("client read {} bytes from socket", len)
+                },
+                Err(err) => panic!("{}", err)
+            }
+        }
+
+        println!("client before barrier")
+        end_barrier.wait();
+        println!("client after barrier")
+    }
+
+    fn server(
+        btc_barrier: Arc<Barrier>,
+        ctw_barrier: Arc<Barrier>,
+        end_barrier: Arc<Barrier>) {
+
+        let mut socket = test_create_socket(Push);
+        let mut endpoint = test_bind(&mut socket, "tcp://127.0.0.1:5569");
+
+        // tell the client the bind is done
+        btc_barrier.wait();
+        // wait for the client to connect
+        ctw_barrier.wait();
+        // sleep a little to let connection establish
+        sleep(Duration::milliseconds(50));
+        test_write(&mut socket, b"ok");
+        //test_write(&mut socket, b"");
+        sleep(Duration::milliseconds(50));
+
+        //disconnect from client
+        endpoint.shutdown();
+        sleep(Duration::milliseconds(50));
+        drop(socket);
+
+        println!("server before barrier")
+        end_barrier.wait();
+        println!("server after barrier")
+    }
+
+    #[test]
+    fn what_happens_when_closing_the_server_endpoint() {
+
+        let btc_barrier = Arc::new(Barrier::new(2));
+        let client_btc_barrier = btc_barrier.clone();
+        let server_btc_barrier = btc_barrier.clone();
+
+        let ctw_barrier = Arc::new(Barrier::new(2));
+        let client_ctw_barrier = ctw_barrier.clone();
+        let server_ctw_barrier = ctw_barrier.clone();
+
+        let end_barrier = Arc::new(Barrier::new(3));
+        let client_end_barrier = end_barrier.clone();
+        let server_end_barrier = end_barrier.clone();
+
+        spawn(proc() {client(client_btc_barrier, client_ctw_barrier, client_end_barrier)});
+        spawn(proc() {server(server_btc_barrier, server_ctw_barrier, server_end_barrier)});
+
+        end_barrier.wait()
     }
 }
