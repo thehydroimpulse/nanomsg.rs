@@ -29,16 +29,22 @@ mod endpoint;
 /// (such as only being able to receive messages and not send 'em).
 #[deriving(Show, PartialEq)]
 pub enum Protocol {
-    Req,
-    Rep,
-    Push,
-    Pull,
-    Pair,
-    Bus,
-    Pub,
-    Sub,
-    Surveyor,
-    Respondent
+    Req = (libnanomsg::NN_REQ) as int,
+    Rep = (libnanomsg::NN_REP) as int,
+    Push = (libnanomsg::NN_PUSH) as int,
+    Pull = (libnanomsg::NN_PULL) as int,
+    Pair = (libnanomsg::NN_PAIR) as int,
+    Bus = (libnanomsg::NN_BUS) as int,
+    Pub = (libnanomsg::NN_PUB) as int,
+    Sub = (libnanomsg::NN_SUB) as int,
+    Surveyor = (libnanomsg::NN_SURVEYOR) as int,
+    Respondent = (libnanomsg::NN_RESPONDENT) as int
+}
+
+impl Protocol {
+    fn to_raw(&self) -> c_int{
+        *self as c_int
+    }
 }
 
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
@@ -67,22 +73,8 @@ impl<'a> Socket<'a> {
     /// ```
     #[unstable]
     pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
-
-        let proto = match protocol {
-            Req => libnanomsg::NN_REQ,
-            Rep => libnanomsg::NN_REP,
-            Push => libnanomsg::NN_PUSH,
-            Pull => libnanomsg::NN_PULL,
-            Pair => libnanomsg::NN_PAIR,
-            Bus => libnanomsg::NN_BUS,
-            Pub => libnanomsg::NN_PUB,
-            Sub => libnanomsg::NN_SUB,
-            Surveyor => libnanomsg::NN_SURVEYOR,
-            Respondent => libnanomsg::NN_RESPONDENT
-        };
-
         let socket = unsafe {
-            libnanomsg::nn_socket(libnanomsg::AF_SP, proto)
+            libnanomsg::nn_socket(libnanomsg::AF_SP, protocol.to_raw())
         };
 
         if socket == -1 {
@@ -970,5 +962,19 @@ mod tests {
         }
 
         drop(socket)
+    }
+
+    #[test]
+    fn protcol_matches_raw() {
+         assert_eq!(libnanomsg::NN_REQ, Req.to_raw())
+         assert_eq!(libnanomsg::NN_REP, Rep.to_raw())
+         assert_eq!(libnanomsg::NN_PUSH, Push.to_raw())
+         assert_eq!(libnanomsg::NN_PULL, Pull.to_raw())
+         assert_eq!(libnanomsg::NN_PAIR, Pair.to_raw())
+         assert_eq!(libnanomsg::NN_BUS, Bus.to_raw())
+         assert_eq!(libnanomsg::NN_PUB, Pub.to_raw())
+         assert_eq!(libnanomsg::NN_SUB, Sub.to_raw())
+         assert_eq!(libnanomsg::NN_SURVEYOR, Surveyor.to_raw())
+         assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw())
     }
 }
