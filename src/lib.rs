@@ -65,6 +65,7 @@ impl<'a> Socket<'a> {
     ///     Err(err) => panic!("{}", err)
     /// };
     /// ```
+    #[unstable]
     pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
 
         let proto = match protocol {
@@ -122,6 +123,7 @@ impl<'a> Socket<'a> {
     /// //   Err(err) => panic!("Failed to bind socket: {}", err)
     /// //}
     /// ```
+    #[unstable]
     pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
@@ -132,6 +134,7 @@ impl<'a> Socket<'a> {
         Ok(Endpoint::new(ret, self.socket))
     }
 
+    #[unstable]
     pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
@@ -148,6 +151,7 @@ impl<'a> Socket<'a> {
 
     // TODO set comments according to http://nanomsg.org/v0.4/nn_setsockopt.3.html
     
+    #[unstable]
     pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
         let milliseconds = linger.num_milliseconds();
         let c_linger = milliseconds as c_int;
@@ -168,6 +172,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_send_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         let c_size_in_bytes = size_in_bytes as c_int;
         let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
@@ -187,6 +192,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_receive_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         let c_size_in_bytes = size_in_bytes as c_int;
         let c_size_ptr = &c_size_in_bytes as *const _ as *const c_void;
@@ -206,6 +212,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_send_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         let milliseconds = timeout.num_milliseconds();
         let c_timeout = milliseconds as c_int;
@@ -226,6 +233,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_receive_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         let milliseconds = timeout.num_milliseconds();
         let c_timeout = milliseconds as c_int;
@@ -246,6 +254,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
@@ -266,6 +275,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_max_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
@@ -286,6 +296,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
         let c_priority = priority as c_int;
         let c_priority_ptr = &c_priority as *const _ as *const c_void;
@@ -305,6 +316,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
         let c_priority = priority as c_int;
         let c_priority_ptr = &c_priority as *const _ as *const c_void;
@@ -324,6 +336,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
         let c_ipv4_only = if ipv4_only { 1 as c_int } else { 0 as c_int };
         let option_value_ptr = &c_ipv4_only as *const _ as *const c_void;
@@ -343,6 +356,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
     
+    #[unstable]
     pub fn set_socket_name(&mut self, name: &str) -> NanoResult<()> {
         let name_len = name.len() as size_t;
         let name_c_str = name.to_c_str();
@@ -367,6 +381,7 @@ impl<'a> Socket<'a> {
     // --------------------------------------------------------------------- //
     // TCP transport socket options                                          //
     // --------------------------------------------------------------------- //
+    #[unstable]
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
         let c_tcp_nodelay = if tcp_nodelay { 1 as c_int } else { 0 as c_int };
         let option_value_ptr = &c_tcp_nodelay as *const _ as *const c_void;
@@ -389,6 +404,7 @@ impl<'a> Socket<'a> {
     // --------------------------------------------------------------------- //
     // PubSub protocol socket options                                        //
     // --------------------------------------------------------------------- //
+    #[unstable]
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         let topic_len = topic.len() as size_t;
         let topic_c_str = topic.to_c_str();
@@ -405,6 +421,7 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
+    #[unstable]
     pub fn unsubscribe(&mut self, topic: &str) -> NanoResult<()> {
         let topic_len = topic.len() as size_t;
         let topic_c_str = topic.to_c_str();
@@ -425,6 +442,7 @@ impl<'a> Socket<'a> {
     // Survey protocol socket options                                        //
     // --------------------------------------------------------------------- //
 
+    #[unstable]
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
         let milliseconds = deadline.num_milliseconds();
         let c_deadline = milliseconds as c_int;
@@ -449,6 +467,7 @@ impl<'a> Socket<'a> {
     // Request/reply protocol socket options                                        //
     // --------------------------------------------------------------------- //
 
+    #[unstable]
     pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         let milliseconds = interval.num_milliseconds();
         let c_interval = milliseconds as c_int;
@@ -472,6 +491,7 @@ impl<'a> Socket<'a> {
 }
 
 impl<'a> Reader for Socket<'a> {
+    #[unstable]
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -493,6 +513,7 @@ impl<'a> Reader for Socket<'a> {
 }
 
 impl<'a> Writer for Socket<'a> {
+    #[unstable]
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
