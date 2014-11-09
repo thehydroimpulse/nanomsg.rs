@@ -524,6 +524,7 @@ mod tests {
     extern crate libc;
 
     use super::*;
+    use endpoint::Endpoint;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
@@ -596,16 +597,16 @@ mod tests {
         }
     }
 
-    fn test_bind(socket: &mut Socket, addr: &str) {
+    fn test_bind<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
         match socket.bind(addr) {
-            Ok(_) => {},
+            Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
         }    
     }
 
-    fn test_connect(socket: &mut Socket, addr: &str) {
+    fn test_connect<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
         match socket.connect(addr) {
-            Ok(_) => {},
+            Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
         }    
     }
