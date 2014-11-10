@@ -20,7 +20,6 @@ use std::mem::size_of;
 use std::time::duration::Duration;
 use endpoint::Endpoint;
 use std::kinds::marker::ContravariantLifetime;
-use std::vec;
 use std::vec::Vec;
 use std::c_vec::CVec;
 
@@ -486,7 +485,6 @@ impl<'a> Socket<'a> {
 }
 
 impl<'a> Reader for Socket<'a> {
-    #[unstable]
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -510,8 +508,11 @@ impl<'a> Reader for Socket<'a> {
         let mut mem : *mut u8 = ptr::null_mut();
 
         let ret = unsafe {
-            libnanomsg::nn_recv(self.socket, transmute(&mut mem),
-                libnanomsg::NN_MSG, 0 as c_int)
+            libnanomsg::nn_recv(
+                self.socket, 
+                transmute(&mut mem),
+                libnanomsg::NN_MSG, 
+                0 as c_int)
         };
 
         if ret == -1 {
@@ -523,6 +524,7 @@ impl<'a> Reader for Socket<'a> {
         let mut bytes: Vec<u8> = Vec::with_capacity(len);
 
         bytes.push_all(c_bytes.as_slice());
+
         unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
 
         Ok(bytes)
@@ -530,7 +532,6 @@ impl<'a> Reader for Socket<'a> {
 }
 
 impl<'a> Writer for Socket<'a> {
-    #[unstable]
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -566,8 +567,6 @@ mod tests {
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
-
-    use std::sync::{Arc, Barrier};
 
     #[test]
     fn initialize_socket() {
@@ -668,6 +667,13 @@ mod tests {
             Err(err) => panic!("{}", err)
         }
     }
+
+    fn test_read_to_string(socket: &mut Socket, expected: &str) {
+        match socket.read_to_string() {
+            Ok(text) => assert_eq!(text.as_slice(), expected),
+            Err(err) => panic!("{}", err)
+        }
+    }    
 
     fn test_subscribe(socket: &mut Socket, topic: &str) {
         match socket.subscribe(topic) {
@@ -1005,73 +1011,29 @@ mod tests {
          assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw())
     }
 
-    fn client(
-        btc_barrier: Arc<Barrier>,
-        ctw_barrier: Arc<Barrier>,
-        end_barrier: Arc<Barrier>) {
-
-        let mut socket = test_create_socket(Pull);
-
-        // wait for server bind to be done
-        btc_barrier.wait();
-
-        let mut endpoint = test_connect(&mut socket, "tcp://127.0.0.1:5569");
-        sleep(Duration::milliseconds(50));
-        ctw_barrier.wait();
-
-        loop {
-            match socket.read_to_string() {
-                Ok(text) => {
-                    println!("client read '{}' from socket", text.as_slice())
-                    if text.as_slice() == "not ok".as_slice() {
-                        break;
-                    }
-                },
-                Err(err) => panic!("{}", err)
-            }
-        }
-
-        end_barrier.wait();
-    }
-
-    fn server(
-        btc_barrier: Arc<Barrier>,
-        ctw_barrier: Arc<Barrier>,
-        end_barrier: Arc<Barrier>) {
-
-        let mut socket = test_create_socket(Push);
-        let mut endpoint = test_bind(&mut socket, "tcp://127.0.0.1:5569");
-
-        btc_barrier.wait();
-        ctw_barrier.wait();
-        test_write(&mut socket, b"ok");
-        test_write(&mut socket, b"");
-        test_write(&mut socket, b"not ok");
-
-        endpoint.shutdown();
-        drop(socket);
-
-        end_barrier.wait();
-    }
-
     #[test]
-    fn what_happens_when_closing_the_server_endpoint() {
+    fn test_read_to_end() {
 
-        let btc_barrier = Arc::new(Barrier::new(2));
-        let client_btc_barrier = btc_barrier.clone();
-        let server_btc_barrier = btc_barrier.clone();
+        let url = "ipc:///tmp/read_to_end.ipc";
 
-        let ctw_barrier = Arc::new(Barrier::new(2));
-        let client_ctw_barrier = ctw_barrier.clone();
-        let server_ctw_barrier = ctw_barrier.clone();
+        let mut left_socket = test_create_socket(Pair);
+        test_bind(&mut left_socket, url);
 
-        let end_barrier = Arc::new(Barrier::new(3));
-        let client_end_barrier = end_barrier.clone();
-        let server_end_barrier = end_barrier.clone();
+        let mut right_socket = test_create_socket(Pair);
+        test_connect(&mut right_socket, url);
 
-        spawn(proc() {client(client_btc_barrier, client_ctw_barrier, client_end_barrier)});
-        spawn(proc() {server(server_btc_barrier, server_ctw_barrier, server_end_barrier)});
+        sleep(Duration::milliseconds(10));
 
-        end_barrier.wait()
+        test_write(&mut right_socket, b"ok");
+        test_read_to_string(&mut left_socket, "ok".as_slice());
+
+        test_write(&mut left_socket, b"");
+        test_read_to_string(&mut right_socket, "".as_slice());
+
+        test_write(&mut left_socket, b"not ok");
+        test_read_to_string(&mut right_socket, "not ok".as_slice());
+
+        drop(left_socket);
+        drop(right_socket);
     }
 }
