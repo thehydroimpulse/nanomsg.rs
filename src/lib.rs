@@ -20,6 +20,9 @@ use std::mem::size_of;
 use std::time::duration::Duration;
 use endpoint::Endpoint;
 use std::kinds::marker::ContravariantLifetime;
+use std::vec;
+use std::vec::Vec;
+use std::c_vec::CVec;
 
 mod result;
 mod endpoint;
@@ -501,6 +504,28 @@ impl<'a> Reader for Socket<'a> {
         unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
 
         Ok(ret as uint)
+    }
+
+    fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
+        let mut mem : *mut u8 = ptr::null_mut();
+
+        let ret = unsafe {
+            libnanomsg::nn_recv(self.socket, transmute(&mut mem),
+                libnanomsg::NN_MSG, 0 as c_int)
+        };
+
+        if ret == -1 {
+            return Err(io::standard_error(io::OtherIoError));
+        }
+
+        let len = ret as uint;
+        let c_bytes = unsafe { CVec::new(mem, len) };
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+
+        bytes.push_all(c_bytes.as_slice());
+        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
+
+        Ok(bytes)
     }
 }
 
@@ -993,21 +1018,20 @@ mod tests {
         let mut endpoint = test_connect(&mut socket, "tcp://127.0.0.1:5569");
         sleep(Duration::milliseconds(50));
         ctw_barrier.wait();
-        let mut buf = [0u8, ..6];
 
-        println!("client trying to read")
         loop {
-            match socket.read(&mut buf) {
-                Ok(len) => {
-                    println!("client read {} bytes from socket", len)
+            match socket.read_to_string() {
+                Ok(text) => {
+                    println!("client read '{}' from socket", text.as_slice())
+                    if text.as_slice() == "not ok".as_slice() {
+                        break;
+                    }
                 },
                 Err(err) => panic!("{}", err)
             }
         }
 
-        println!("client before barrier")
         end_barrier.wait();
-        println!("client after barrier")
     }
 
     fn server(
@@ -1018,24 +1042,16 @@ mod tests {
         let mut socket = test_create_socket(Push);
         let mut endpoint = test_bind(&mut socket, "tcp://127.0.0.1:5569");
 
-        // tell the client the bind is done
         btc_barrier.wait();
-        // wait for the client to connect
         ctw_barrier.wait();
-        // sleep a little to let connection establish
-        sleep(Duration::milliseconds(50));
         test_write(&mut socket, b"ok");
-        //test_write(&mut socket, b"");
-        sleep(Duration::milliseconds(50));
+        test_write(&mut socket, b"");
+        test_write(&mut socket, b"not ok");
 
-        //disconnect from client
         endpoint.shutdown();
-        sleep(Duration::milliseconds(50));
         drop(socket);
 
-        println!("server before barrier")
         end_barrier.wait();
-        println!("server after barrier")
     }
 
     #[test]
