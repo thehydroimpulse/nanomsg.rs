@@ -1,6 +1,6 @@
 #![crate_type = "lib"]
 #![license = "MIT/ASL2"]
-#![feature(globs, unsafe_destructor, phase)]
+#![feature(globs, unsafe_destructor, phase, slicing_syntax)]
 
 #[phase(plugin, link)] extern crate log;
 
@@ -528,6 +528,26 @@ impl<'a> Reader for Socket<'a> {
         unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
 
         Ok(bytes)
+    }
+
+    fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
+        if min > buf.len() {
+            return Err(io::standard_error(io::InvalidInput));
+        }
+        let mut read = 0;
+        while read < min {
+            loop {
+                let write_buf = buf[mut read..];
+                match self.read(write_buf) {
+                    Ok(n) => {
+                        read += std::cmp::min(n, write_buf.len());
+                        break;
+                    }
+                    err@Err(_) => return err
+                }
+            }
+        }
+        Ok(read)
     }
 }
 
