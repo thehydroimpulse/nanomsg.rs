@@ -583,7 +583,6 @@ mod tests {
     extern crate libc;
 
     use super::*;
-    use endpoint::Endpoint;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
