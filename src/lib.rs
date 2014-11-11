@@ -9,6 +9,7 @@ extern crate libc;
 extern crate libnanomsg;
 
 pub use result::{NanoResult, NanoError};
+pub use endpoint::{Endpoint};
 
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
@@ -18,7 +19,6 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
-use endpoint::Endpoint;
 use std::kinds::marker::ContravariantLifetime;
 use std::vec::Vec;
 use std::c_vec::CVec;
