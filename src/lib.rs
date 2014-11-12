@@ -1,6 +1,6 @@
 #![crate_type = "lib"]
 #![license = "MIT/ASL2"]
-#![feature(globs, unsafe_destructor, phase)]
+#![feature(globs, unsafe_destructor, phase, slicing_syntax)]
 
 #[phase(plugin, link)] extern crate log;
 
@@ -9,6 +9,7 @@ extern crate libc;
 extern crate libnanomsg;
 
 pub use result::{NanoResult, NanoError};
+pub use endpoint::{Endpoint};
 
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
@@ -18,8 +19,9 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
-use endpoint::Endpoint;
 use std::kinds::marker::ContravariantLifetime;
+use std::vec::Vec;
+use std::c_vec::CVec;
 
 mod result;
 mod endpoint;
@@ -483,7 +485,6 @@ impl<'a> Socket<'a> {
 }
 
 impl<'a> Reader for Socket<'a> {
-    #[unstable]
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -502,10 +503,55 @@ impl<'a> Reader for Socket<'a> {
 
         Ok(ret as uint)
     }
+
+    fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
+        let mut mem : *mut u8 = ptr::null_mut();
+
+        let ret = unsafe {
+            libnanomsg::nn_recv(
+                self.socket, 
+                transmute(&mut mem),
+                libnanomsg::NN_MSG, 
+                0 as c_int)
+        };
+
+        if ret == -1 {
+            return Err(io::standard_error(io::OtherIoError));
+        }
+
+        let len = ret as uint;
+        let c_bytes = unsafe { CVec::new(mem, len) };
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+
+        bytes.push_all(c_bytes.as_slice());
+
+        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
+
+        Ok(bytes)
+    }
+
+    fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
+        if min > buf.len() {
+            return Err(io::standard_error(io::InvalidInput));
+        }
+        let mut read = 0;
+        while read < min {
+            loop {
+                let write_buf = buf[mut read..];
+                match self.read(write_buf) {
+                    Ok(n) => {
+                        read += std::cmp::min(n, write_buf.len());
+                        break;
+                    }
+                    err@Err(_) => return err
+                }
+            }
+        }
+        Ok(read)
+    }
 }
 
 impl<'a> Writer for Socket<'a> {
-    #[unstable]
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -537,7 +583,6 @@ mod tests {
     extern crate libc;
 
     use super::*;
-    use endpoint::Endpoint;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
@@ -641,6 +686,13 @@ mod tests {
             Err(err) => panic!("{}", err)
         }
     }
+
+    fn test_read_to_string(socket: &mut Socket, expected: &str) {
+        match socket.read_to_string() {
+            Ok(text) => assert_eq!(text.as_slice(), expected),
+            Err(err) => panic!("{}", err)
+        }
+    }    
 
     fn test_subscribe(socket: &mut Socket, topic: &str) {
         match socket.subscribe(topic) {
@@ -976,5 +1028,31 @@ mod tests {
          assert_eq!(libnanomsg::NN_SUB, Sub.to_raw())
          assert_eq!(libnanomsg::NN_SURVEYOR, Surveyor.to_raw())
          assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw())
+    }
+
+    #[test]
+    fn test_read_to_end() {
+
+        let url = "ipc:///tmp/read_to_end.ipc";
+
+        let mut left_socket = test_create_socket(Pair);
+        test_bind(&mut left_socket, url);
+
+        let mut right_socket = test_create_socket(Pair);
+        test_connect(&mut right_socket, url);
+
+        sleep(Duration::milliseconds(10));
+
+        test_write(&mut right_socket, b"ok");
+        test_read_to_string(&mut left_socket, "ok".as_slice());
+
+        test_write(&mut left_socket, b"");
+        test_read_to_string(&mut right_socket, "".as_slice());
+
+        test_write(&mut left_socket, b"not ok");
+        test_read_to_string(&mut right_socket, "not ok".as_slice());
+
+        drop(left_socket);
+        drop(right_socket);
     }
 }
