@@ -33,7 +33,7 @@ use nanomsg::Nanomsg;
 
 * Pipeline
 
-```
+```rust
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
@@ -77,8 +77,7 @@ fn main() {
 
 ## Contributors
 
-(I
-n arbitrary order):
+(In arbitrary order):
 
 * Jason E. Aten ([@glycerine](https://github.com/glycerine))
 * David C. Bishop ([@dcbishop](https://github.com/dcbishop))
