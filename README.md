@@ -33,9 +33,7 @@ use nanomsg::Nanomsg;
 
 * Pipeline
 
-*** Code
-
-    #+begin_src rust :tangle ./pipeline.rs
+```
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
@@ -75,11 +73,12 @@ fn main() {
 	    client();
 	}
 }
-    #+end_src
+```
 
 ## Contributors
 
-(In arbitrary order):
+(I
+n arbitrary order):
 
 * Jason E. Aten ([@glycerine](https://github.com/glycerine))
 * David C. Bishop ([@dcbishop](https://github.com/dcbishop))
