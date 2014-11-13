@@ -33,6 +33,7 @@ use nanomsg::Nanomsg;
 
 * Pipeline
 
+### Code
 ```rust
 extern crate nanomsg;
 
@@ -47,9 +48,6 @@ fn server() {
 
 		println!("Server received '{}'.", msg.as_slice());
 	}
-
-	endpoint.shutdown();
-	drop(socket)
 }
 
 fn client() {
@@ -65,16 +63,29 @@ fn client() {
 fn main() {
 	let args = std::os::args();
 
+	if args.len() < 2 {
+		println!("Usage: pipeline server, pipeline client")
+		return
+	}
 	if args[1].as_slice() == "server".as_slice() {
 	    server();
 	}
-
-	if args[1].as_slice() == "client".as_slice() {
+	else if args[1].as_slice() == "client".as_slice() {
 	    client();
 	}
 }
 ```
-
+### Run
+```Shell
+./cargo run server &
+./cargo run client
+```
+### Result
+```Shell
+  Running `target/pipeline server`
+  Running `target/pipeline client`
+Server received 'message in a bottle'.
+```
 ## Contributors
 
 (In arbitrary order):

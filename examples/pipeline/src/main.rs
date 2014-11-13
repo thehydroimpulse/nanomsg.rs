@@ -11,9 +11,6 @@ fn server() {
 
 		println!("Server received '{}'.", msg.as_slice());
 	}
-
-	endpoint.shutdown();
-	drop(socket)
 }
 
 fn client() {
@@ -29,11 +26,14 @@ fn client() {
 fn main() {
 	let args = std::os::args();
 
+	if args.len() < 2 {
+		println!("Usage: pipeline server, pipeline client")
+		return
+	}
 	if args[1].as_slice() == "server".as_slice() {
 	    server();
 	}
-
-	if args[1].as_slice() == "client".as_slice() {
+	else if args[1].as_slice() == "client".as_slice() {
 	    client();
 	}
 }
