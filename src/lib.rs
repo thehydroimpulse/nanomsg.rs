@@ -486,20 +486,15 @@ impl<'a> Socket<'a> {
 
 impl<'a> Reader for Socket<'a> {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
-        let mut mem : *mut u8 = ptr::null_mut();
 
-        let ret = unsafe {
-            libnanomsg::nn_recv(self.socket, transmute(&mut mem),
-                libnanomsg::NN_MSG, 0 as c_int)
-        };
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_mut_ptr();
+        let c_buf_ptr = buf_ptr as *mut c_void;
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, 0 as c_int) };
 
         if ret == -1 {
             return Err(io::standard_error(io::OtherIoError));
         }
-
-        unsafe { ptr::copy_memory(buf.as_mut_ptr(), mem as *const u8, buf.len() as uint) };
-
-        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
 
         Ok(ret as uint)
     }
