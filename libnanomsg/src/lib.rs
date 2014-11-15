@@ -237,6 +237,12 @@ extern {
 
     /// http://nanomsg.org/v0.4/nn_strerror.3.html
     pub fn nn_strerror(errnum: c_int) -> *const c_char;
+
+    /// http://nanomsg.org/v0.4/nn_term.3.html
+    pub fn nn_term() -> c_void;
+
+    /// http://nanomsg.org/v0.4/nn_device.3.html
+    pub fn nn_device(socket1: c_int, socket2: c_int) -> c_int;
 }
 
 #[cfg(test)]

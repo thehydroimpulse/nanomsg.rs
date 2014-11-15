@@ -75,15 +75,24 @@ impl<'a> Socket<'a> {
     /// ```
     #[unstable]
     pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
+        Socket::create_socket(libnanomsg::AF_SP, protocol)
+    }
+
+    #[unstable]
+    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket<'a>> {
+        Socket::create_socket(libnanomsg::AF_SP_RAW, protocol)
+    }
+
+    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket<'a>> {
         let socket = unsafe {
-            libnanomsg::nn_socket(libnanomsg::AF_SP, protocol.to_raw())
+            libnanomsg::nn_socket(domain, protocol.to_raw())
         };
 
         if socket == -1 {
             return Err(NanoError::new("Failed to create a new nanomsg socket. Error: {}", SocketInitializationError));
         }
 
-        debug!("Initialized a new raw socket");
+        debug!("Initialized a new socket");
 
         Ok(Socket {
             socket: socket,
@@ -137,6 +146,22 @@ impl<'a> Socket<'a> {
         }
 
         Ok(Endpoint::new(ret, self.socket))
+    }
+
+    #[unstable]
+    pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
+        let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
+
+        if ret == -1 {
+            return Err(NanoError::new(format!("Failed to create a device from: {}, {}", socket1.socket, socket2.socket), SocketInitializationError));
+        }
+
+        Ok(())
+    }
+
+    #[unstable]
+    pub fn terminate() {
+        unsafe { libnanomsg::nn_term() };
     }
 
     // --------------------------------------------------------------------- //
