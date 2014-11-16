@@ -16,8 +16,34 @@ pub enum ErrorKind {
 
 #[deriving(Show, Clone, PartialEq, FromPrimitive)]
 pub enum NanoErrorKind {
-    NotSupported = libnanomsg::ENOTSUP as int,
-    ProtocolNotSupported = libnanomsg::EPROTONOSUPPORT as int
+    OperationNotSupported = libnanomsg::ENOTSUP as int,
+    ProtocolNotSupported = libnanomsg::EPROTONOSUPPORT as int,
+    NoBufferSpace = libnanomsg::ENOBUFS as int,
+    NetworkDown = libnanomsg::ENETDOWN as int,
+    AddressInUse = libnanomsg::EADDRINUSE as int,
+    AddressNotAvailable = libnanomsg::EADDRNOTAVAIL as int,
+    ConnectionRefused = libnanomsg::ECONNREFUSED as int,
+    OperationNowInProgress = libnanomsg::EINPROGRESS as int,
+    NotSocket = libnanomsg::ENOTSOCK as int,
+    AddressFamilyNotSupported = libnanomsg::EAFNOSUPPORT as int,
+    WrongProtocol = libnanomsg::EPROTO as int,
+    TryAgain = libnanomsg::EAGAIN as int,
+    BadFileDescriptor = libnanomsg::EBADF as int,
+    InvalidArgument = libnanomsg::EINVAL as int,
+    TooManyOpenFiles = libnanomsg::EMFILE as int,
+    BadAddress = libnanomsg::EFAULT as int,
+    PermisionDenied = libnanomsg::EACCESS as int,
+    NetworkReset = libnanomsg::ENETRESET as int,
+    NetworkUnreachable = libnanomsg::ENETUNREACH as int,
+    HostUnreachable = libnanomsg::EHOSTUNREACH as int,
+    NotConnected = libnanomsg::ENOTCONN as int,
+    MessageTooLong = libnanomsg::EMSGSIZE as int,
+    Timeout = libnanomsg::ETIMEDOUT as int,
+    ConnectionAbort = libnanomsg::ECONNABORTED as int,
+    ConnectionReset = libnanomsg::ECONNRESET as int,
+    ProtocolNotAvailable = libnanomsg::ENOPROTOOPT as int,
+    AlreadyConnected = libnanomsg::EISCONN as int,
+    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
 }
 
 #[deriving(Show, PartialEq)]
@@ -61,7 +87,7 @@ mod tests {
 
     #[test]
     fn can_convert_error_code_to_error_kind() {
-        assert_convert_error_code_to_error_kind(libnanomsg::ENOTSUP, NotSupported);
+        assert_convert_error_code_to_error_kind(libnanomsg::ENOTSUP, OperationNotSupported);
         assert_convert_error_code_to_error_kind(libnanomsg::EPROTONOSUPPORT, ProtocolNotSupported);
     }
 
