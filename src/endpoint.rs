@@ -1,6 +1,6 @@
 use libc::{c_int};
 use std::kinds::marker::ContravariantLifetime;
-use result::{NanoResult, NanoError, ShutdownError};
+use result::{NanoResult, last_nano_error};
 
 use libnanomsg;
 
@@ -28,7 +28,7 @@ impl<'a> Endpoint<'a> {
         let ret = unsafe { libnanomsg::nn_shutdown(self.socket, self.value) };
 
         if ret == -1 as c_int {
-            return Err(NanoError::new("Failed to shutdown an endpoint.", ShutdownError));
+            return Err(last_nano_error());
         }
 
         Ok(())

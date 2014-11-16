@@ -62,6 +62,10 @@ pub const NN_TCP_NODELAY: c_int = 1;
 
 // error codes
 pub const NN_HAUSNUMERO: c_int = 156384712;
+pub const ETERM: c_int = NN_HAUSNUMERO + 53;
+pub const EFSM: c_int = NN_HAUSNUMERO + 54;
+
+
 #[cfg(not(target_os = "windows"))] pub const ENOTSUP: c_int = 95;
 #[cfg(not(target_os = "windows"))] pub const EPROTONOSUPPORT: c_int = 93;
 #[cfg(not(target_os = "windows"))] pub const ENOBUFS: c_int = 105;
@@ -91,8 +95,6 @@ pub const NN_HAUSNUMERO: c_int = 156384712;
 #[cfg(not(target_os = "windows"))] pub const EISCONN: c_int = 106;
 #[cfg(not(target_os = "windows"))] pub const ESOCKTNOSUPPORT: c_int = 94;
 
-pub const ETERM: c_int = NN_HAUSNUMERO + 53;
-pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 
 #[cfg(target_os = "windows")] pub const ENOTSUP: c_int = NN_HAUSNUMERO + 1;
 #[cfg(target_os = "windows")] pub const EPROTONOSUPPORT: c_int = NN_HAUSNUMERO + 2;
@@ -237,6 +239,12 @@ extern {
 
     /// http://nanomsg.org/v0.4/nn_strerror.3.html
     pub fn nn_strerror(errnum: c_int) -> *const c_char;
+
+    /// http://nanomsg.org/v0.4/nn_term.3.html
+    pub fn nn_term() -> c_void;
+
+    /// http://nanomsg.org/v0.4/nn_device.3.html
+    pub fn nn_device(socket1: c_int, socket2: c_int) -> c_int;
 }
 
 #[cfg(test)]
