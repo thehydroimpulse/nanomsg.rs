@@ -8,13 +8,13 @@ extern crate libc;
 
 extern crate libnanomsg;
 
-pub use result::{NanoResult, NanoError};
+pub use result::{NanoResult, NanoError, NanoErrorKind};
 pub use endpoint::{Endpoint};
 
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
-use result::{SocketInitializationError, SocketBindError, SocketOptionError};
+use result::*;
 use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
@@ -89,7 +89,7 @@ impl<'a> Socket<'a> {
         };
 
         if socket == -1 {
-            return Err(NanoError::new("Failed to create a new nanomsg socket. Error: {}", SocketInitializationError));
+            return Err(last_nano_error());
         }
 
         debug!("Initialized a new socket");
@@ -131,7 +131,7 @@ impl<'a> Socket<'a> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to bind the socket to the address: {}", addr), SocketBindError));
+            return Err(last_nano_error());
         }
 
         Ok(Endpoint::new(ret, self.socket))
@@ -142,7 +142,7 @@ impl<'a> Socket<'a> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to connect the socket to the address: {}", addr), SocketBindError));
+            return Err(last_nano_error());
         }
 
         Ok(Endpoint::new(ret, self.socket))
@@ -153,7 +153,7 @@ impl<'a> Socket<'a> {
         let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
 
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to create a device from: {}, {}", socket1.socket, socket2.socket), SocketInitializationError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -185,7 +185,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set linger to {}", linger), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -205,7 +205,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set send buffer size to {}", size_in_bytes), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -225,7 +225,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set receive buffer size to {}", size_in_bytes), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -246,7 +246,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set send timeout to {}", timeout), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -267,7 +267,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set receive timeout to {}", timeout), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -288,7 +288,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set reconnect interval to {}", interval), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -309,7 +309,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set max reconnect interval to {}", interval), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -329,7 +329,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set send priority to {}", priority), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -349,7 +349,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set receive priority to {}", priority), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -369,7 +369,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set ipv4 only to {}", ipv4_only), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -391,7 +391,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set the socket name to: {}", name), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -414,7 +414,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set tcp nodelay to {}", tcp_nodelay), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -434,7 +434,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to subscribe to the topic: {}", topic), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -451,7 +451,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to unsubscribe from the topic: {}", topic), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -476,7 +476,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set survey deadline to {}", deadline), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())
@@ -501,7 +501,7 @@ impl<'a> Socket<'a> {
         };
  
         if ret == -1 {
-            return Err(NanoError::new(format!("Failed to set request resend interval to {}", interval), SocketOptionError));
+            return Err(last_nano_error());
         }
 
         Ok(())

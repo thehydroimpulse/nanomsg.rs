@@ -1,21 +1,15 @@
 extern crate libnanomsg;
+extern crate libc;
+extern crate core;
 
 use std::str::SendStr;
+use std::c_str::CString;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[deriving(Show, Clone, PartialEq)]
-pub enum ErrorKind {
-    Unknown,
-    SocketInitializationError,
-    SocketBindError,
-    SocketBufferError,
-    SocketOptionError,
-    ShutdownError
-}
-
 #[deriving(Show, Clone, PartialEq, FromPrimitive)]
 pub enum NanoErrorKind {
+    Unknown = 0i,
     OperationNotSupported = libnanomsg::ENOTSUP as int,
     ProtocolNotSupported = libnanomsg::EPROTONOSUPPORT as int,
     NoBufferSpace = libnanomsg::ENOBUFS as int,
@@ -49,11 +43,11 @@ pub enum NanoErrorKind {
 #[deriving(Show, PartialEq)]
 pub struct NanoError {
     description: SendStr,
-    kind: ErrorKind
+    kind: NanoErrorKind
 }
 
 impl<T: IntoMaybeOwned<'static>> NanoError {
-    pub fn new(description: T, kind: ErrorKind) -> NanoError {
+    pub fn new(description: T, kind: NanoErrorKind) -> NanoError {
         NanoError {
             description: description.into_maybe_owned(),
             kind: kind
@@ -63,6 +57,30 @@ impl<T: IntoMaybeOwned<'static>> NanoError {
     pub fn to_str(&self) -> String {
         format!("An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
     }
+}
+
+pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
+    let maybe_error_kind = FromPrimitive::from_i64(nn_errno as i64);
+    let error_kind = match maybe_error_kind {
+        Some(error_kind) => error_kind,
+        None => Unknown
+    };
+
+    let c_desc_ptr = unsafe { libnanomsg::nn_strerror(nn_errno) };
+    let c_desc = unsafe { CString::new(c_desc_ptr, false) };
+    let maybe_desc = c_desc.as_str();
+    let desc = match maybe_desc {
+        Some(desc) => desc,
+        None => ""
+    };
+
+    NanoError::new(String::from_str(desc), error_kind)
+}
+
+pub fn last_nano_error() -> NanoError {
+    let nn_errno = unsafe { libnanomsg::nn_errno() };
+
+    from_nn_errno(nn_errno)
 }
 
 #[cfg(test)]
@@ -89,6 +107,8 @@ mod tests {
     fn can_convert_error_code_to_error_kind() {
         assert_convert_error_code_to_error_kind(libnanomsg::ENOTSUP, OperationNotSupported);
         assert_convert_error_code_to_error_kind(libnanomsg::EPROTONOSUPPORT, ProtocolNotSupported);
+        assert_convert_error_code_to_error_kind(libnanomsg::EADDRINUSE, AddressInUse);
+        assert_convert_error_code_to_error_kind(libnanomsg::EHOSTUNREACH, HostUnreachable);
     }
 
 }
