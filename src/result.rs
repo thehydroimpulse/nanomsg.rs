@@ -2,8 +2,8 @@ extern crate libnanomsg;
 extern crate libc;
 extern crate core;
 
-use std::str::SendStr;
-use std::c_str::CString;
+use std::str;
+use std::fmt;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
@@ -40,47 +40,43 @@ pub enum NanoErrorKind {
     SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
 }
 
-#[deriving(Show, PartialEq)]
+#[deriving(PartialEq)]
 pub struct NanoError {
-    description: SendStr,
+    description: &'static str,
     kind: NanoErrorKind
 }
 
-impl<T: IntoMaybeOwned<'static>> NanoError {
-    pub fn new(description: T, kind: NanoErrorKind) -> NanoError {
+impl NanoError {
+    pub fn new(description: &'static str, kind: NanoErrorKind) -> NanoError {
         NanoError {
-            description: description.into_maybe_owned(),
+            description: description,
             kind: kind
         }
     }
 
-    pub fn to_str(&self) -> String {
-        format!("An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
+    pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
+        let maybe_error_kind = FromPrimitive::from_i64(nn_errno as i64);
+        let error_kind = maybe_error_kind.unwrap_or(Unknown);
+
+        unsafe {
+            let c_desc = libnanomsg::nn_strerror(nn_errno);
+            let desc = str::raw::c_str_to_static_slice(c_desc);
+
+            NanoError::new(desc, error_kind)
+        }
     }
 }
 
-pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
-    let maybe_error_kind = FromPrimitive::from_i64(nn_errno as i64);
-    let error_kind = match maybe_error_kind {
-        Some(error_kind) => error_kind,
-        None => Unknown
-    };
-
-    let c_desc_ptr = unsafe { libnanomsg::nn_strerror(nn_errno) };
-    let c_desc = unsafe { CString::new(c_desc_ptr, false) };
-    let maybe_desc = c_desc.as_str();
-    let desc = match maybe_desc {
-        Some(desc) => desc,
-        None => ""
-    };
-
-    NanoError::new(String::from_str(desc), error_kind)
+impl fmt::Show for NanoError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
+    }
 }
 
 pub fn last_nano_error() -> NanoError {
     let nn_errno = unsafe { libnanomsg::nn_errno() };
 
-    from_nn_errno(nn_errno)
+    NanoError::from_nn_errno(nn_errno)
 }
 
 #[cfg(test)]
