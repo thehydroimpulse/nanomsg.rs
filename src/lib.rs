@@ -163,12 +163,6 @@ impl<'a> Socket<'a> {
     pub fn terminate() {
         unsafe { libnanomsg::nn_term() };
     }
-
-    // --------------------------------------------------------------------- //
-    // Generic socket options                                                //
-    // --------------------------------------------------------------------- //
-
-    // TODO set comments according to http://nanomsg.org/v0.4/nn_setsockopt.3.html
     
     #[unstable]
     pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
@@ -397,9 +391,6 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
-    // --------------------------------------------------------------------- //
-    // TCP transport socket options                                          //
-    // --------------------------------------------------------------------- //
     #[unstable]
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
         let c_tcp_nodelay = if tcp_nodelay { 1 as c_int } else { 0 as c_int };
@@ -419,10 +410,7 @@ impl<'a> Socket<'a> {
 
         Ok(())
     }
-
-    // --------------------------------------------------------------------- //
-    // PubSub protocol socket options                                        //
-    // --------------------------------------------------------------------- //
+    
     #[unstable]
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         let topic_len = topic.len() as size_t;
@@ -457,10 +445,6 @@ impl<'a> Socket<'a> {
         Ok(())
     }
 
-    // --------------------------------------------------------------------- //
-    // Survey protocol socket options                                        //
-    // --------------------------------------------------------------------- //
-
     #[unstable]
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
         let milliseconds = deadline.num_milliseconds();
@@ -481,10 +465,6 @@ impl<'a> Socket<'a> {
 
         Ok(())
     }
-
-    // --------------------------------------------------------------------- //
-    // Request/reply protocol socket options                                        //
-    // --------------------------------------------------------------------- //
 
     #[unstable]
     pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {

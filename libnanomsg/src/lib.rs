@@ -211,7 +211,7 @@ extern {
     /// Alternatively, nanomsg can allocate the buffer for you. To do so, let the buf parameter
     /// be a pointer to a void* variable (pointer to pointer) to the receive buffer and set the
     /// len parameter to NN_MSG. If the call is successful the user is responsible for
-    /// deallocating the message using the nn_freemsg(3) function."
+   /// deallocating the message using the nn_freemsg(3) function."
     ///
     /// http://nanomsg.org/v0.4/nn_recv.3.html
     pub fn nn_recv(socket: c_int, buf: *mut c_void, len: size_t, flags: c_int) -> c_int;
