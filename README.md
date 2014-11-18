@@ -25,67 +25,53 @@ Now you can use the crate after you include it:
 
 ```rust
 extern crate nanomsg;
-
-use nanomsg::Nanomsg;
 ```
 
-## Examples
+## Creating a Socket (Push/Pull)
 
-* Pipeline
+The basis of Nanomsg is a `Socket`. Each socket can be of a certain type. The type of a socket defines it's behaviour and limitations (such as only being able to send and not receive).
 
-### Code
 ```rust
-extern crate nanomsg;
+use nanomsg::{Socket, Protocol, NanoResult};
 
-use nanomsg::{Socket, Protocol};
+fn initialize() -> NanoResult<()> {
+    let mut socket = try!(Socket::new(Protocol::Pull));
+    let mut endpoint = try!(socket.bind("ipc:///tmp/pipeline.ipc"));
 
-fn server() {
-	let mut socket = Socket::new(Protocol::Pull).unwrap();
-	let mut endpoint = socket.bind("ipc:///tmp/pipeline.ipc").unwrap();
-
-	loop {
-		let msg = socket.read_to_string().unwrap();
-
-		println!("Server received '{}'.", msg.as_slice());
-	}
-}
-
-fn client() {
-	let mut socket = Socket::new(Protocol::Push).unwrap();
-	let mut endpoint = socket.connect("ipc:///tmp/pipeline.ipc").unwrap();
-
-	socket.write(b"message in a bottle");
-
-	endpoint.shutdown();
-	drop(socket)
+    loop {
+        let msg = try!(socket.read_to_string());
+        println!("We got a message: {}", msg.as_slice());
+    }
 }
 
 fn main() {
-	let args = std::os::args();
-
-	if args.len() < 2 {
-		println!("Usage: pipeline server, pipeline client")
-		return
-	}
-	if args[1].as_slice() == "server".as_slice() {
-	    server();
-	}
-	else if args[1].as_slice() == "client".as_slice() {
-	    client();
-	}
+    initialize();
 }
 ```
-### Run
-```Shell
-./cargo run server &
-./cargo run client
+
+As you can see, we bind a socket to an endpoint. These resources are destroyed correctly at the end of their lifetime, closing the bound socket.
+
+We can also create a client to that socket. The `Pull` protocol is one that can only receive (push/pull), so we need the accompanying socket `Push` for this to work correctly (or to get a message in the end).
+
+(For now, we'll create them as separate binaries because of some threading issues with nanomsg)
+
+```rust
+use nanomsg::{Socket, Protocol, NanoResult};
+
+fn initialize() -> NanoResult<()> {
+    let mut socket = try!(Socket::new(Protocol::Push));
+    let mut endpoint = try!(socket.connect("ipc:///tmp/pipeline.ipc"));
+
+    socket.write(b"message in a bottle");
+
+    endpoint.shutdown();
+}
+
+fn main() {
+    initialize();
+}
 ```
-### Result
-```Shell
-  Running `target/pipeline server`
-  Running `target/pipeline client`
-Server received 'message in a bottle'.
-```
+
 ## Contributors
 
 (In arbitrary order):
