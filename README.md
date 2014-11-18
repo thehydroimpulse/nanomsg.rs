@@ -1,13 +1,11 @@
 # Rust Nanomsg [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs)
 
-## Nanomsg
-
-nanomsg is a modern messaging library that is the successor to ZeroMQ, written in C by Martin Sustrik and colleagues. The nanomsg library is licensed under MIT/X11 license. "nanomsg" is a trademark of 250bpm s.r.o.
+Nanomsg is a modern messaging library that is the successor to ZeroMQ, written in C by Martin Sustrik and colleagues. The nanomsg library is licensed under MIT/X11 license. "nanomsg" is a trademark of 250bpm s.r.o.
 
 - http://nanomsg.org/
 - https://github.com/nanomsg/nanomsg
 
-## Requirements
+### Requirements
 
 You'll need to have nanomsg installed beforehand.
 
