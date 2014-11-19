@@ -2,18 +2,18 @@ extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
 
-fn server() {
+fn worker() {
 	let mut socket = Socket::new(Protocol::Pull).unwrap();
 	let mut endpoint = socket.bind("ipc:///tmp/pipeline.ipc").unwrap();
 
 	loop {
 		let msg = socket.read_to_string().unwrap();
 
-		println!("Server received '{}'.", msg.as_slice());
+		println!("Worker received '{}'.", msg.as_slice());
 	}
 }
 
-fn client() {
+fn feeder() {
 	let mut socket = Socket::new(Protocol::Push).unwrap();
 	let mut endpoint = socket.connect("ipc:///tmp/pipeline.ipc").unwrap();
 
@@ -27,13 +27,13 @@ fn main() {
 	let args = std::os::args();
 
 	if args.len() < 2 {
-		println!("Usage: pipeline server, pipeline client")
+		println!("Usage: pipeline worker, pipeline feeder")
 		return
 	}
-	if args[1].as_slice() == "server".as_slice() {
-	    server();
+	if args[1].as_slice() == "worker".as_slice() {
+	    worker();
 	}
-	else if args[1].as_slice() == "client".as_slice() {
-	    client();
+	else if args[1].as_slice() == "feeder".as_slice() {
+	    feeder();
 	}
 }
