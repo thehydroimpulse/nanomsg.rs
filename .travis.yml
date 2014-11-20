@@ -1,5 +1,9 @@
 language: rust
 
+env:
+  global:
+    - secure: hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ=
+
 install:
   - make deps
 
@@ -7,3 +11,8 @@ script:
   - rustc -v
   - cargo test
   - cd libnanomsg && cargo test
+  - cargo doc
+  
+after_script:
+    - mv target/doc doc
+    - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
