@@ -5,6 +5,8 @@ extern crate core;
 use std::str;
 use std::fmt;
 
+pub use self::NanoErrorKind::*;
+
 pub type NanoResult<T> = Result<T, NanoError>;
 
 #[deriving(Show, Clone, PartialEq, FromPrimitive)]

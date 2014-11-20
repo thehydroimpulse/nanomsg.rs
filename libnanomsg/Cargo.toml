@@ -5,4 +5,4 @@ version = "0.0.1"
 authors = ["Daniel Fagnan <dnfagnan@gmail.com>"]
 
 [dependencies.link-config]
-git = "https://github.com/alexcrichton/link-config"
+git = "https://github.com/blabaere/link-config"
