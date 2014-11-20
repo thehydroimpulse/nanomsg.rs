@@ -7,7 +7,7 @@ extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char};
 
-link_config!("libnanomsg", ["system_static"])
+link_config!("libnanomsg", ["only_static"])
 
 pub const AF_SP: c_int = 1;
 pub const AF_SP_RAW: c_int = 2;
