@@ -583,6 +583,7 @@ mod tests {
     extern crate libc;
 
     use super::*;
+    use super::Protocol::*;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
