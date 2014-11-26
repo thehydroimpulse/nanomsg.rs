@@ -191,6 +191,24 @@ impl<'a> Socket<'a> {
     }
 
     #[unstable]
+    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+        let len = buf.len();
+        let ret = unsafe {
+            libnanomsg::nn_send(
+                self.socket, 
+                buf.as_ptr() as *const c_void,
+                len as size_t, 
+                libnanomsg::NN_DONTWAIT)
+        };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        Ok(())
+    }
+
+    #[unstable]
     pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
 
@@ -1163,6 +1181,23 @@ mod tests {
         }
 
         drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn nb_write_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_write_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        match push_socket.nb_write(b"barfoo") {
+            Ok(_) => panic!("Nothing should have been sent !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
         drop(push_socket);
     }
 }
