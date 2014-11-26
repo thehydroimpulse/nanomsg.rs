@@ -149,6 +149,48 @@ impl<'a> Socket<'a> {
     }
 
     #[unstable]
+    pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
+
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_mut_ptr();
+        let c_buf_ptr = buf_ptr as *mut c_void;
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        Ok(ret as uint)
+    }
+
+    #[unstable]
+    pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
+        let mut mem : *mut u8 = ptr::null_mut();
+
+        let ret = unsafe {
+            libnanomsg::nn_recv(
+                self.socket, 
+                transmute(&mut mem),
+                libnanomsg::NN_MSG, 
+                libnanomsg::NN_DONTWAIT)
+        };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        let len = ret as uint;
+        let c_bytes = unsafe { CVec::new(mem, len) };
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+
+        bytes.push_all(c_bytes.as_slice());
+
+        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
+
+        Ok(bytes)
+    }
+
+    #[unstable]
     pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
 
@@ -584,6 +626,7 @@ mod tests {
 
     use super::*;
     use super::Protocol::*;
+    use super::result::NanoErrorKind::*;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
@@ -1055,5 +1098,71 @@ mod tests {
 
         drop(left_socket);
         drop(right_socket);
+    }
+
+    #[test]
+    fn nb_read_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_read_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        let mut buf = [0u8, ..6];
+        match pull_socket.nb_read(&mut buf) {
+            Ok(_) => panic!("Nothing should have been received !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
+        test_write(&mut push_socket, b"foobar");
+        sleep(Duration::milliseconds(10));
+
+        let mut buf = [0u8, ..6];
+        match pull_socket.nb_read(&mut buf) {
+            Ok(len) => {
+                assert_eq!(len, 6);
+                assert_eq!(buf.as_slice(), b"foobar")
+            },
+            Err(err) => panic!("{}", err)
+        }
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn nb_read_to_end_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_read_to_end_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        match pull_socket.nb_read_to_end() {
+            Ok(_) => panic!("Nothing should have been received !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
+        test_write(&mut push_socket, b"foobar");
+        sleep(Duration::milliseconds(10));
+
+        match pull_socket.nb_read_to_end() {
+            Ok(buf) => {
+                assert_eq!(buf.len(), 6);
+                assert_eq!(buf.as_slice(), b"foobar")
+            },
+            Err(err) => panic!("{}", err)
+        }
+
+        drop(pull_socket);
+        drop(push_socket);
     }
 }
