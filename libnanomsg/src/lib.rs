@@ -62,6 +62,7 @@ pub const NN_TCP_NODELAY: c_int = 1;
 
 pub const NN_POLLIN: c_short = 1;
 pub const NN_POLLOUT: c_short = 2;
+pub const NN_POLL_IN_AND_OUT: c_short = NN_POLLIN + NN_POLLOUT;
 
 // error codes
 pub const NN_HAUSNUMERO: c_int = 156384712;
@@ -133,6 +134,39 @@ pub struct nn_pollfd  {
     fd: c_int,
     events: c_short,
     revents: c_short
+}
+
+impl nn_pollfd {
+    pub fn new (socket: c_int, pollin: bool, pollout: bool) -> nn_pollfd {
+        let ev = match (pollin, pollout) {
+            (true, true) => NN_POLL_IN_AND_OUT,
+            (false, true) => NN_POLLOUT,
+            (true, false) => NN_POLLIN,
+            (false, false) => 0 as c_short
+        };
+
+        nn_pollfd { fd: socket, events: ev , revents: 0i16 as c_short }
+    }
+
+    pub fn pollin_result(&self) -> bool {
+        match self.revents {
+            0 => false,
+            NN_POLLIN => true,
+            NN_POLLOUT => false,
+            NN_POLL_IN_AND_OUT => true,
+            _ => false
+        }
+    }
+
+    pub fn pollout_result(&self) -> bool {
+        match self.revents {
+            0 => false,
+            NN_POLLIN => false,
+            NN_POLLOUT => true,
+            NN_POLL_IN_AND_OUT => true,
+           _ => false
+         }
+    }
 }
 
 extern {
@@ -479,10 +513,10 @@ mod tests {
         let pollfd1 = nn_pollfd { fd: s1, events: 3i16 as c_short, revents: 0i16 as c_short };
         let pollfd2 = nn_pollfd { fd: s2, events: 3i16 as c_short, revents: 0i16 as c_short };
         let mut fd_vector: Vec<nn_pollfd> = vec![pollfd1, pollfd2];
-        let mut fd_slice = fd_vector.as_mut_slice();
-        let fd_ptr = fd_slice.as_mut_ptr();
+        let fd_ptr = fd_vector.as_mut_ptr();
 
         let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as int };
+        let fd_slice = fd_vector.as_mut_slice();
         assert_eq!(0, poll_result);
         assert_eq!(0, fd_slice[0].revents);
         assert_eq!(0, fd_slice[1].revents);
