@@ -1,8 +1,15 @@
 [package]
 
 name = "libnanomsg"
-version = "0.0.1"
-authors = ["Daniel Fagnan <dnfagnan@gmail.com>"]
+version = "0.1.0"
+authors = [
+  "Daniel Fagnan <dnfagnan@gmail.com>",
+  "Benoît Labaere"
+]
 
-[dependencies.link-config]
-git = "https://github.com/blabaere/link-config"
+license = "MIT"
+description = "The low-level bindings that is used by the nanomsg library."
+keywords = ["binding", "nanomsg"]
+
+[dependencies]
+link-config = "^0.1.0"

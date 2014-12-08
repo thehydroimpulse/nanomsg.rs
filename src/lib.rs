@@ -1,5 +1,3 @@
-#![crate_type = "lib"]
-#![license = "MIT/ASL2"]
 #![feature(globs, unsafe_destructor, phase, slicing_syntax)]
 
 #[phase(plugin, link)] extern crate log;

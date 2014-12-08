@@ -62,7 +62,7 @@ impl NanoError {
 
         unsafe {
             let c_desc = libnanomsg::nn_strerror(nn_errno);
-            let desc = str::raw::c_str_to_static_slice(c_desc);
+            let desc = str::raw::from_c_str(c_desc);
 
             NanoError::new(desc, error_kind)
         }

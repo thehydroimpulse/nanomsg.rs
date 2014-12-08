@@ -1,14 +1,24 @@
 [project]
 name = "nanomsg"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
   "David C. Bishop",
   "Dennis Lawler",
   "Zachary Tong",
-  "Dan Burkert"
+  "Dan Burkert",
+  "Benoît Labaere"
 ]
 
+description = "A high-level, Rust idiomatic wrapper around nanomsg."
+homepage = "https://github.com/thehydroimpulse/nanomsg.rs"
+documentation = "https://github.com/thehydroimpulse/nanomsg.rs"
+repository = "https://github.com/thehydroimpulse/nanomsg.rs"
+readme = "./README.md"
+keywords = ["nanomsg", "binding", "network", "pub", "sub"]
+license = "MIT"
+
 [dependencies.libnanomsg]
-path = "libnanomsg"
+path = "./libnanomsg"
+version = "0.1.0"
