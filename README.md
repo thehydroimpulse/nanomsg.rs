@@ -18,8 +18,8 @@ This library is Cargo supported! Simply add a new cargo dependency and
 away you go!
 
 ```toml
-[dependencies.nanomsg]
-git = "https://github.com/thehydroimpulse/nanomsg.rs"
+[dependencies]
+nanomsg = "^0.3.0"
 ```
 
 Now you can use the crate after you include it:
@@ -46,7 +46,10 @@ fn initialize() -> NanoResult<()> {
 }
 
 fn main() {
-    initialize();
+    match initialize() {
+        Ok(_) => {},
+        Err(err) => panic!("Something horrible went wrong: {}", err)
+    }
 }
 ```
 
@@ -69,7 +72,10 @@ fn initialize() -> NanoResult<()> {
 }
 
 fn main() {
-    initialize();
+    match initialize() {
+        Ok(_) => {},
+        Err(err) => panic!("Something horrible went wrong: {}", err)
+    }
 }
 ```
 
@@ -77,21 +83,20 @@ fn main() {
 
 (In arbitrary order):
 
+* Daniel Fagnan ([@TheHydroImpulse](https://github.com/thehydroimpulse))
 * Jason E. Aten ([@glycerine](https://github.com/glycerine))
 * David C. Bishop ([@dcbishop](https://github.com/dcbishop))
 * Dennis Lawler ([@evenodder](https://github.com/evenodder))
-* Daniel Fagnan ([@TheHydroImpulse](https://github.com/thehydroimpulse))
 * Zachary Tong ([@polyfractal](https://github.com/polyfractal))
 * Dan Burkert ([@danburkert](https://github.com/danburkert))
 * Benoît Labaere ([@blabaere](https://github.com/blabaere))
 
 ## License
 
-This project is under the same license as Rust. Dual MIT and Apache 2.
-
 The MIT License (MIT)
 
 * Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
+* Copyright (c) 2014 Daniel Fagnan [@thehydroimpulse](https://github.com/thehydroimpulse)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
