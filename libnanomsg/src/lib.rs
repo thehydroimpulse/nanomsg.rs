@@ -5,7 +5,7 @@
 extern crate "link-config" as link_config;
 extern crate libc;
 
-use libc::{c_int, c_void, size_t, c_char};
+use libc::{c_int, c_void, size_t, c_char, c_short};
 
 link_config!("libnanomsg", ["only_static"])
 
@@ -59,6 +59,10 @@ pub const NN_DONTWAIT: c_int = 1;
 pub const NN_TCP: c_int = -3;
 
 pub const NN_TCP_NODELAY: c_int = 1;
+
+pub const NN_POLLIN: c_short = 1;
+pub const NN_POLLOUT: c_short = 2;
+pub const NN_POLL_IN_AND_OUT: c_short = NN_POLLIN + NN_POLLOUT;
 
 // error codes
 pub const NN_HAUSNUMERO: c_int = 156384712;
@@ -124,6 +128,46 @@ pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 #[cfg(target_os = "windows")] pub const ENOPROTOOPT: c_int = NN_HAUSNUMERO + 26;
 #[cfg(target_os = "windows")] pub const EISCONN: c_int = NN_HAUSNUMERO + 27;
 #[cfg(target_os = "windows")] pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
+
+#[repr(C)]
+pub struct nn_pollfd  {
+    fd: c_int,
+    events: c_short,
+    revents: c_short
+}
+
+impl nn_pollfd {
+    pub fn new (socket: c_int, pollin: bool, pollout: bool) -> nn_pollfd {
+        let ev = match (pollin, pollout) {
+            (true, true) => NN_POLL_IN_AND_OUT,
+            (false, true) => NN_POLLOUT,
+            (true, false) => NN_POLLIN,
+            (false, false) => 0 as c_short
+        };
+
+        nn_pollfd { fd: socket, events: ev , revents: 0i16 as c_short }
+    }
+
+    pub fn pollin_result(&self) -> bool {
+        match self.revents {
+            0 => false,
+            NN_POLLIN => true,
+            NN_POLLOUT => false,
+            NN_POLL_IN_AND_OUT => true,
+            _ => false
+        }
+    }
+
+    pub fn pollout_result(&self) -> bool {
+        match self.revents {
+            0 => false,
+            NN_POLLIN => false,
+            NN_POLLOUT => true,
+            NN_POLL_IN_AND_OUT => true,
+           _ => false
+         }
+    }
+}
 
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
@@ -232,7 +276,7 @@ extern {
     pub fn nn_freemsg(msg: *mut c_void) -> c_int;
 
     /// http://nanomsg.org/v0.4/nn_poll.3.html
-    pub fn nn_poll(fds: *mut c_void, nfds: c_int, timeout: c_int) -> c_int;
+    pub fn nn_poll(fds: *mut nn_pollfd, nfds: c_int, timeout: c_int) -> c_int;
 
     /// http://nanomsg.org/v0.4/nn_errno.3.html
     pub fn nn_errno() -> c_int;
@@ -250,10 +294,9 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_int, c_void, size_t, c_char};
+    use libc::{c_int, c_void, size_t, c_char, c_short};
     use std::ptr;
     use std::mem::transmute;
-    use std::string::raw::from_buf;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
@@ -289,7 +332,7 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        let msg = unsafe { from_buf(buf as *const u8) };
+        let msg = unsafe { String::from_raw_buf(buf as *const u8) };
         assert!(msg.as_slice() == expected);
         unsafe { nn_freemsg(buf as *mut c_void); }
     }
@@ -459,6 +502,46 @@ mod tests {
             nn_close(resp_sock2);
             nn_close(resp_sock1);
             nn_close(surv_sock);
+        }
+    }
+
+    #[test]
+    fn poll_should_work() {
+        let url = "ipc:///tmp/poll_should_work.ipc".to_c_str();
+        let s1 = test_create_socket(AF_SP, NN_PAIR);
+        let s2 = test_create_socket(AF_SP, NN_PAIR);
+        let pollfd1 = nn_pollfd { fd: s1, events: 3i16 as c_short, revents: 0i16 as c_short };
+        let pollfd2 = nn_pollfd { fd: s2, events: 3i16 as c_short, revents: 0i16 as c_short };
+        let mut fd_vector: Vec<nn_pollfd> = vec![pollfd1, pollfd2];
+        let fd_ptr = fd_vector.as_mut_ptr();
+
+        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as int };
+        let fd_slice = fd_vector.as_mut_slice();
+        assert_eq!(0, poll_result);
+        assert_eq!(0, fd_slice[0].revents);
+        assert_eq!(0, fd_slice[1].revents);
+
+        test_bind(s1, url.as_ptr());
+        test_connect(s2, url.as_ptr());
+        sleep(Duration::milliseconds(10));
+
+        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        assert_eq!(2, poll_result2);
+        assert_eq!(NN_POLLOUT, fd_slice[0].revents);
+        assert_eq!(NN_POLLOUT, fd_slice[1].revents);
+
+        let msg = "foobar";
+        test_send(s2, msg);
+        sleep(Duration::milliseconds(10));
+
+        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        assert_eq!(2, poll_result3);
+        assert_eq!(NN_POLLOUT + NN_POLLIN, fd_slice[0].revents);
+        assert_eq!(NN_POLLOUT, fd_slice[1].revents);
+
+        unsafe {
+            nn_close(s1);
+            nn_close(s2);
         }
     }
 }
