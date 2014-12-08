@@ -44,8 +44,8 @@ pub enum NanoErrorKind {
 
 #[deriving(PartialEq)]
 pub struct NanoError {
-    description: &'static str,
-    kind: NanoErrorKind
+    pub description: &'static str,
+    pub kind: NanoErrorKind
 }
 
 impl NanoError {

@@ -9,6 +9,8 @@ extern crate libnanomsg;
 pub use result::{NanoResult, NanoError, NanoErrorKind};
 pub use endpoint::{Endpoint};
 
+use libnanomsg::nn_pollfd;
+
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
@@ -55,6 +57,64 @@ pub struct Socket<'a> {
     marker: ContravariantLifetime<'a>
 }
 
+pub struct PollFd {
+    socket: c_int,
+    check_pollin: bool,
+    check_pollout: bool,
+    check_pollin_result: bool,
+    check_pollout_result: bool
+}
+
+impl PollFd {
+
+    fn convert(&self) -> nn_pollfd {
+        nn_pollfd::new(self.socket, self.check_pollin, self.check_pollout)
+    }
+
+    pub fn can_read(&self) -> bool {
+        self.check_pollin_result
+    }
+
+    pub fn can_write(&self) -> bool {
+        self.check_pollout_result
+    }
+
+}
+
+pub struct PollRequest<'a> {
+    fds: &'a mut [PollFd],
+    nn_fds: Vec<nn_pollfd>
+}
+
+impl<'a> PollRequest<'a> {
+    pub fn new(fds: &'a mut [PollFd]) -> PollRequest<'a> {
+        let len = fds.len();
+        let nn_fds = Vec::from_fn(len, |idx| fds[idx].convert());
+        PollRequest { fds: fds, nn_fds: nn_fds }
+    }
+
+    fn len(&self) -> uint {
+        self.fds.len()
+    }
+
+    pub fn get_fds(&'a self) -> &'a [PollFd] {
+        self.fds
+    }
+
+    fn get_nn_fds(&mut self) -> *mut nn_pollfd {
+        self.nn_fds.as_mut_ptr()
+    }
+
+    fn copy_poll_result(&mut self, count: uint) {
+ 
+        for x in range(0, count) {
+            self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
+            self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
+        }
+
+    }
+}
+
 impl<'a> Socket<'a> {
 
     /// Allocate and initialize a new Nanomsg socket which returns
@@ -64,9 +124,9 @@ impl<'a> Socket<'a> {
     /// Usage:
     ///
     /// ```rust
-    /// use nanomsg::{Socket, Pull};
+    /// use nanomsg::{Socket, Protocol};
     ///
-    /// let mut socket = match Socket::new(Pull) {
+    /// let mut socket = match Socket::new(Protocol::Pull) {
     ///     Ok(socket) => socket,
     ///     Err(err) => panic!("{}", err)
     /// };
@@ -111,9 +171,9 @@ impl<'a> Socket<'a> {
     /// Usage:
     ///
     /// ```rust
-    /// use nanomsg::{Socket, Pull};
+    /// use nanomsg::{Socket, Protocol};
     ///
-    /// let mut socket = match Socket::new(Pull) {
+    /// let mut socket = match Socket::new(Protocol::Pull) {
     ///     Ok(socket) => socket,
     ///     Err(err) => panic!("{}", err)
     /// };
@@ -144,6 +204,97 @@ impl<'a> Socket<'a> {
         }
 
         Ok(Endpoint::new(ret, self.socket))
+    }
+
+    #[unstable]
+    pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
+
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_mut_ptr();
+        let c_buf_ptr = buf_ptr as *mut c_void;
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        Ok(ret as uint)
+    }
+
+    #[unstable]
+    pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
+        let mut mem : *mut u8 = ptr::null_mut();
+
+        let ret = unsafe {
+            libnanomsg::nn_recv(
+                self.socket, 
+                transmute(&mut mem),
+                libnanomsg::NN_MSG, 
+                libnanomsg::NN_DONTWAIT)
+        };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        let len = ret as uint;
+        let c_bytes = unsafe { CVec::new(mem, len) };
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+
+        bytes.push_all(c_bytes.as_slice());
+
+        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
+
+        Ok(bytes)
+    }
+
+    #[unstable]
+    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+        let len = buf.len();
+        let ret = unsafe {
+            libnanomsg::nn_send(
+                self.socket, 
+                buf.as_ptr() as *const c_void,
+                len as size_t, 
+                libnanomsg::NN_DONTWAIT)
+        };
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        Ok(())
+    }
+
+    #[unstable]
+    pub fn new_pollfd(&self, pollin: bool , pollout: bool) -> PollFd {
+        PollFd {
+            socket: self.socket,
+            check_pollin: pollin,
+            check_pollout: pollout,
+            check_pollin_result: false,
+            check_pollout_result: false
+        }
+    }
+
+    #[unstable]
+    pub fn poll(request: &mut PollRequest, timeout: &Duration) -> NanoResult<int> {
+        let nn_fds = request.get_nn_fds();
+        let len = request.len() as c_int;
+        let millis = timeout.num_milliseconds() as c_int;
+        let ret = unsafe { libnanomsg::nn_poll(nn_fds, len, millis) } as int;
+
+        if ret == -1 {
+            return Err(last_nano_error());
+        }
+
+        if ret == 0 {
+            return Err(NanoError::new("Timeout", NanoErrorKind::Timeout));
+        }
+
+        request.copy_poll_result(ret as uint);
+
+        Ok(ret)
     }
 
     #[unstable]
@@ -582,6 +733,7 @@ mod tests {
 
     use super::*;
     use super::Protocol::*;
+    use super::result::NanoErrorKind::*;
 
     use std::time::duration::Duration;
     use std::io::timer::sleep;
@@ -1053,5 +1205,141 @@ mod tests {
 
         drop(left_socket);
         drop(right_socket);
+    }
+
+    #[test]
+    fn nb_read_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_read_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        let mut buf = [0u8, ..6];
+        match pull_socket.nb_read(&mut buf) {
+            Ok(_) => panic!("Nothing should have been received !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
+        test_write(&mut push_socket, b"foobar");
+        sleep(Duration::milliseconds(10));
+
+        let mut buf = [0u8, ..6];
+        match pull_socket.nb_read(&mut buf) {
+            Ok(len) => {
+                assert_eq!(len, 6);
+                assert_eq!(buf.as_slice(), b"foobar")
+            },
+            Err(err) => panic!("{}", err)
+        }
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn nb_read_to_end_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_read_to_end_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        match pull_socket.nb_read_to_end() {
+            Ok(_) => panic!("Nothing should have been received !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
+        test_write(&mut push_socket, b"foobar");
+        sleep(Duration::milliseconds(10));
+
+        match pull_socket.nb_read_to_end() {
+            Ok(buf) => {
+                assert_eq!(buf.len(), 6);
+                assert_eq!(buf.as_slice(), b"foobar")
+            },
+            Err(err) => panic!("{}", err)
+        }
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn nb_write_works_in_both_cases() {
+
+        let url = "ipc:///tmp/nb_write_works_in_both_cases.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        test_bind(&mut push_socket, url);
+        sleep(Duration::milliseconds(10));
+
+        match push_socket.nb_write(b"barfoo") {
+            Ok(_) => panic!("Nothing should have been sent !"),
+            Err(err) => assert_eq!(err.kind, TryAgain)
+        }
+
+        drop(push_socket);
+    }
+
+    #[test]
+    fn poll_works() {
+        let url = "ipc:///tmp/poll_works_.ipc";
+
+        let mut left_socket = test_create_socket(Pair);
+        test_bind(&mut left_socket, url);
+
+        let mut right_socket = test_create_socket(Pair);
+        test_connect(&mut right_socket, url);
+
+        sleep(Duration::milliseconds(10));
+
+        let pollfd1 = left_socket.new_pollfd(true, true);
+        let pollfd2 = right_socket.new_pollfd(true, true);
+
+        // TODO : find some simpler/shorter/better way to intialize a poll request
+        let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
+        let mut pollreq_slice = pollreq_vector.as_mut_slice();
+        let mut request = PollRequest::new(pollreq_slice);
+        let timeout = Duration::milliseconds(10);
+        {
+            let poll_result = Socket::poll(&mut request, &timeout);
+        
+            match poll_result {
+                Ok(count) => assert_eq!(2, count),
+                Err(err) => panic!("Failed to poll: {}", err)
+            }
+    
+            let fds = request.get_fds();
+            assert_eq!(true, fds[0].can_write());
+            assert_eq!(false, fds[0].can_read());
+            assert_eq!(true, fds[1].can_write());
+            assert_eq!(false, fds[1].can_read());
+        }
+
+        test_write(&mut right_socket, b"foobar");
+        sleep(Duration::milliseconds(10));
+        {
+            let poll_result = Socket::poll(&mut request, &timeout);
+        
+            match poll_result {
+                Ok(count) => assert_eq!(2, count),
+                Err(err) => panic!("Failed to poll: {}", err)
+            }
+    
+            let fds = request.get_fds();
+            assert_eq!(true, fds[0].can_write());
+            assert_eq!(true, fds[0].can_read()); // and now right socket can read the msg sent by left
+            assert_eq!(true, fds[1].can_write());
+            assert_eq!(false, fds[1].can_read());
+        }
     }
 }
