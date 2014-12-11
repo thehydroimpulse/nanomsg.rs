@@ -9,7 +9,6 @@ use std::io::timer::sleep;
 
 fn collector() {
     let mut socket = Socket::new(Protocol::Pull).unwrap();
-
     socket.bind("ipc:///tmp/pipeline_collector.ipc");
 
     loop {
@@ -54,35 +53,38 @@ fn feeder() {
     loop {
         let msg = format!("Message #{}", count);
         let msg_bytes = msg.as_bytes();
-        let write_res = socket.write(msg_bytes);
-
-        if write_res.is_err() {
-            break;
+        match socket.write(msg_bytes) {
+            Ok(_) => {
+                sleep(sleep_duration);
+                count += 1;
+            }
+            Err(err) => {
+                println!("Feeder failed '{}'.", err);
+                break
+            }
         }
-
-        sleep(sleep_duration);
-        count = count + 1;
     }
 
     endpoint.shutdown();
+}
+
+fn usage() {
+    println!("Usage: pipeline [feeder|worker|collector]")
+    println!("  Try running several workers")
+    println!("  And also try killing and restarting")
 }
 
 fn main() {
     let args = std::os::args();
 
     if args.len() < 2 {
-        println!("Usage: pipeline feeder, pipeline worker, pipeline collector")
-        println!("  Try running several workers")
-        println!("  And also try killing and restarting")
-        return
+        return usage()
     }
-    if args[1].as_slice() == "worker".as_slice() {
-        worker();
-    }
-    else if args[1].as_slice() == "feeder".as_slice() {
-        feeder();
-    }
-    else if args[1].as_slice() == "collector".as_slice() {
-        collector();
+
+    match args[1].as_slice() {
+        "worker" => worker(),
+        "feeder" => feeder(),
+        "collector" => collector(),
+        _ => usage()
     }
 }
