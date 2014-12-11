@@ -3,18 +3,17 @@
 #[phase(plugin, link)] extern crate log;
 
 extern crate libc;
-
 extern crate libnanomsg;
 
 pub use result::{NanoResult, NanoError, NanoErrorKind};
-pub use endpoint::{Endpoint};
+pub use endpoint::Endpoint;
 
 use libnanomsg::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
-use result::*;
+use result::last_nano_error;
 use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
@@ -726,12 +725,8 @@ impl<'a> Drop for Socket<'a> {
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
-    #[phase(plugin, link)]
-    extern crate log;
-    extern crate libnanomsg;
-    extern crate libc;
-
-    use super::*;
+    use {Socket, Protocol, PollRequest, PollFd, Endpoint};
+    use libnanomsg;
     use super::Protocol::*;
     use super::result::NanoErrorKind::*;
 
