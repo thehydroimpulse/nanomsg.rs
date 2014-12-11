@@ -69,6 +69,8 @@ pub const NN_HAUSNUMERO: c_int = 156384712;
 pub const ETERM: c_int = NN_HAUSNUMERO + 53;
 pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 
+#[cfg(not(any(target_os = "windows", target_os = "macos")))] pub const EAGAIN: c_int = 11;
+#[cfg(target_os = "macos")] pub const EAGAIN: c_int = 35;
 
 #[cfg(not(target_os = "windows"))] pub const ENOTSUP: c_int = 95;
 #[cfg(not(target_os = "windows"))] pub const EPROTONOSUPPORT: c_int = 93;
@@ -81,7 +83,7 @@ pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 #[cfg(not(target_os = "windows"))] pub const ENOTSOCK: c_int = 88;
 #[cfg(not(target_os = "windows"))] pub const EAFNOSUPPORT: c_int = 97;
 #[cfg(not(target_os = "windows"))] pub const EPROTO: c_int = 71;
-#[cfg(not(target_os = "windows"))] pub const EAGAIN: c_int = 11;
+
 #[cfg(not(target_os = "windows"))] pub const EBADF: c_int = 9;
 #[cfg(not(target_os = "windows"))] pub const EINVAL: c_int = 22;
 #[cfg(not(target_os = "windows"))] pub const EMFILE: c_int = 24;
