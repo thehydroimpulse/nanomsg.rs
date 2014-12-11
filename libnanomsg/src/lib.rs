@@ -309,7 +309,7 @@ mod tests {
         let sock = unsafe { nn_socket(domain, protocol) };
         assert!(sock >= 0);
         sock
-    } 
+    }
 
     fn test_bind(socket: c_int, addr: *const c_char) -> c_int {
         let endpoint = unsafe { nn_bind(socket, addr) };
@@ -368,8 +368,8 @@ mod tests {
         test_send(push_sock, push_msg);
         test_receive(pull_sock, push_msg);
 
-        unsafe { 
-            nn_shutdown(pull_sock, pull_endpoint); 
+        unsafe {
+            nn_shutdown(pull_sock, pull_endpoint);
             nn_close(pull_sock);
             nn_shutdown(push_sock, push_endpoint);
             nn_close(push_sock);
@@ -394,8 +394,8 @@ mod tests {
         test_send(left_sock, left_to_right_msg);
         test_receive(right_sock, left_to_right_msg);
 
-        unsafe { 
-            nn_shutdown(left_sock, left_endpoint); 
+        unsafe {
+            nn_shutdown(left_sock, left_endpoint);
             nn_close(left_sock);
             nn_shutdown(right_sock, right_endpoint);
             nn_close(right_sock);
@@ -404,7 +404,7 @@ mod tests {
 
     #[test]
     fn should_create_a_bus() {
-        
+
         let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
 
         let sock1 = test_create_socket(AF_SP, NN_BUS);
@@ -423,10 +423,10 @@ mod tests {
         test_receive(sock2, msg);
         test_receive(sock3, msg);
 
-        unsafe { 
-            nn_shutdown(sock3, sock3_read_endpoint); 
-            nn_shutdown(sock2, sock2_read_endpoint); 
-            nn_shutdown(sock1, sock1_write_endpoint); 
+        unsafe {
+            nn_shutdown(sock3, sock3_read_endpoint);
+            nn_shutdown(sock2, sock2_read_endpoint);
+            nn_shutdown(sock1, sock1_write_endpoint);
 
             nn_close(sock3);
             nn_close(sock2);
@@ -461,10 +461,10 @@ mod tests {
         test_send(pub_sock, msg2);
         test_receive(sub_sock2, msg2);
 
-        unsafe { 
-            nn_shutdown(sub_sock2, sub_endpoint2); 
-            nn_shutdown(sub_sock1, sub_endpoint1); 
-            nn_shutdown(pub_sock, pub_endpoint); 
+        unsafe {
+            nn_shutdown(sub_sock2, sub_endpoint2);
+            nn_shutdown(sub_sock1, sub_endpoint1);
+            nn_shutdown(pub_sock, pub_endpoint);
 
             nn_close(sub_sock2);
             nn_close(sub_sock1);
@@ -474,7 +474,7 @@ mod tests {
 
     #[test]
     fn should_create_a_survey() {
-        
+
         let url = "ipc:///tmp/should_create_a_survey.ipc".to_c_str();
         let surv_sock = test_create_socket(AF_SP, NN_SURVEYOR);
         let surv_endpoint = test_bind(surv_sock, url.as_ptr());
@@ -498,10 +498,10 @@ mod tests {
         test_receive(surv_sock, vote);
         test_receive(surv_sock, vote);
 
-        unsafe { 
-            nn_shutdown(resp_sock2, resp_endpoint2); 
-            nn_shutdown(resp_sock1, resp_endpoint1); 
-            nn_shutdown(surv_sock, surv_endpoint); 
+        unsafe {
+            nn_shutdown(resp_sock2, resp_endpoint2);
+            nn_shutdown(resp_sock1, resp_endpoint1);
+            nn_shutdown(surv_sock, surv_endpoint);
 
             nn_close(resp_sock2);
             nn_close(resp_sock1);
