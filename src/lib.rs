@@ -19,8 +19,6 @@ use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use std::kinds::marker::ContravariantLifetime;
-use std::vec::Vec;
-use std::c_vec::CVec;
 
 mod result;
 mod endpoint;
@@ -87,8 +85,8 @@ pub struct PollRequest<'a> {
 
 impl<'a> PollRequest<'a> {
     pub fn new(fds: &'a mut [PollFd]) -> PollRequest<'a> {
-        let len = fds.len();
-        let nn_fds = Vec::from_fn(len, |idx| fds[idx].convert());
+        let nn_fds = fds.iter().map(|fd| fd.convert()).collect();
+
         PollRequest { fds: fds, nn_fds: nn_fds }
     }
 
@@ -237,14 +235,11 @@ impl<'a> Socket<'a> {
         }
 
         let len = ret as uint;
-        let c_bytes = unsafe { CVec::new(mem, len) };
-        let mut bytes: Vec<u8> = Vec::with_capacity(len);
-
-        bytes.push_all(c_bytes.as_slice());
-
-        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
-
-        Ok(bytes)
+        unsafe {
+            let bytes = Vec::from_raw_buf(mem as *const _, len);
+            libnanomsg::nn_freemsg(mem as *mut c_void);
+            Ok(bytes)
+        }
     }
 
     #[unstable]
@@ -668,14 +663,11 @@ impl<'a> Reader for Socket<'a> {
         }
 
         let len = ret as uint;
-        let c_bytes = unsafe { CVec::new(mem, len) };
-        let mut bytes: Vec<u8> = Vec::with_capacity(len);
-
-        bytes.push_all(c_bytes.as_slice());
-
-        unsafe { libnanomsg::nn_freemsg(mem as *mut c_void) };
-
-        Ok(bytes)
+        unsafe {
+            let bytes = Vec::from_raw_buf(mem as *const _, len);
+            libnanomsg::nn_freemsg(mem as *mut c_void);
+            Ok(bytes)
+        }
     }
 
     fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
