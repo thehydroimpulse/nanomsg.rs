@@ -738,6 +738,8 @@ mod tests {
     use std::time::duration::Duration;
     use std::io::timer::sleep;
 
+    use std::sync::{Arc, Barrier};
+
     #[test]
     fn initialize_socket() {
         let socket = match Socket::new(Pull) {
@@ -870,6 +872,44 @@ mod tests {
 
         drop(pull_socket);
         drop(push_socket);
+    }
+
+    fn test_multithread_pipeline(url: &'static str) {
+
+        // this is required to stop the test main task only when children tasks are done
+        let finish_line = Arc::new(Barrier::new(3));
+        let finish_line_pull = finish_line.clone();
+        let finish_line_push = finish_line.clone();
+
+        spawn(proc() {
+            let mut push_socket = test_create_socket(Push);
+            
+            test_bind(&mut push_socket, url);
+            test_write(&mut push_socket, b"foobar");
+
+            finish_line_push.wait();
+        });
+
+        spawn(proc() {
+            let mut pull_socket = test_create_socket(Pull);
+
+            test_connect(&mut pull_socket, url);
+            test_read(&mut pull_socket, b"foobar");
+
+            finish_line_pull.wait();
+        });
+
+        finish_line.wait();
+    }
+
+    #[test]
+    fn pipeline_mt1() {
+        test_multithread_pipeline("ipc:///tmp/pipeline_mt1.ipc")
+    }
+    
+    #[test]
+    fn pipeline_mt2() {
+        test_multithread_pipeline("ipc:///tmp/pipeline_mt2.ipc")
     }
 
     #[test]
