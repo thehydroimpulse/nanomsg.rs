@@ -1,4 +1,4 @@
-#![feature(globs, unsafe_destructor, phase, slicing_syntax)]
+#![feature(globs, unsafe_destructor, phase, slicing_syntax, macro_rules)]
 
 #[phase(plugin, link)] extern crate log;
 
@@ -108,9 +108,16 @@ impl<'a> PollRequest<'a> {
             self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
             self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
         }
-
     }
 }
+
+macro_rules! error_guard(
+    ($ret:ident) => (
+        if $ret == -1 {
+            return Err(last_nano_error())
+        }
+    )
+)
 
 impl<'a> Socket<'a> {
 
@@ -143,9 +150,7 @@ impl<'a> Socket<'a> {
             libnanomsg::nn_socket(domain, protocol.to_raw())
         };
 
-        if socket == -1 {
-            return Err(last_nano_error());
-        }
+        error_guard!(socket)
 
         debug!("Initialized a new socket");
 
@@ -185,10 +190,7 @@ impl<'a> Socket<'a> {
     pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
-
+        error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
     }
 
@@ -196,10 +198,7 @@ impl<'a> Socket<'a> {
     pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
-
+        error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
     }
 
@@ -211,10 +210,7 @@ impl<'a> Socket<'a> {
         let c_buf_ptr = buf_ptr as *mut c_void;
         let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
-
+        error_guard!(ret);
         Ok(ret as uint)
     }
 
@@ -230,9 +226,7 @@ impl<'a> Socket<'a> {
                 libnanomsg::NN_DONTWAIT)
         };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
+        error_guard!(ret);
 
         let len = ret as uint;
         unsafe {
@@ -253,10 +247,7 @@ impl<'a> Socket<'a> {
                 libnanomsg::NN_DONTWAIT)
         };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
-
+        error_guard!(ret);
         Ok(())
     }
 
@@ -278,9 +269,7 @@ impl<'a> Socket<'a> {
         let millis = timeout.num_milliseconds() as c_int;
         let ret = unsafe { libnanomsg::nn_poll(nn_fds, len, millis) } as int;
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
+        error_guard!(ret);
 
         if ret == 0 {
             return Err(NanoError::new("Timeout", NanoErrorKind::Timeout));
@@ -295,10 +284,7 @@ impl<'a> Socket<'a> {
     pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
 
-        if ret == -1 {
-            return Err(last_nano_error());
-        }
-
+        error_guard!(ret);
         Ok(())
     }
 
@@ -318,11 +304,8 @@ impl<'a> Socket<'a> {
                                       size_of::<c_int>() as size_t)
         };
 
-        if ret == -1 {
-            Err(last_nano_error())
-        } else {
-            Ok(())
-        }
+        error_guard!(ret);
+        Ok(())
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
@@ -336,11 +319,8 @@ impl<'a> Socket<'a> {
                                       val.len() as size_t)
         };
 
-        if ret == -1 {
-            Err(last_nano_error())
-        } else {
-            Ok(())
-        }
+        error_guard!(ret);
+        Ok(())
     }
 
     #[unstable]
