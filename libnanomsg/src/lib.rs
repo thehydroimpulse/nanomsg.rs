@@ -132,6 +132,7 @@ pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 #[cfg(target_os = "windows")] pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
 
 #[repr(C)]
+#[deriving(Copy)]
 pub struct nn_pollfd  {
     fd: c_int,
     events: c_short,

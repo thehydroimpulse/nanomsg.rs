@@ -26,7 +26,7 @@ mod endpoint;
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
-#[deriving(Show, PartialEq)]
+#[deriving(Show, PartialEq, Copy)]
 pub enum Protocol {
     Req = (libnanomsg::NN_REQ) as int,
     Rep = (libnanomsg::NN_REP) as int,
@@ -54,6 +54,7 @@ pub struct Socket<'a> {
     marker: ContravariantLifetime<'a>
 }
 
+#[deriving(Copy)]
 pub struct PollFd {
     socket: c_int,
     check_pollin: bool,

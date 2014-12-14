@@ -8,7 +8,7 @@ pub use self::NanoErrorKind::*;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[deriving(Show, Clone, PartialEq, FromPrimitive)]
+#[deriving(Show, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
     Unknown = 0i,
     OperationNotSupported = libnanomsg::ENOTSUP as int,
@@ -41,7 +41,7 @@ pub enum NanoErrorKind {
     SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
 }
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Copy)]
 pub struct NanoError {
     pub description: &'static str,
     pub kind: NanoErrorKind
