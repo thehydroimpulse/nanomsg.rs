@@ -2,7 +2,10 @@
 
 name = "pipeline"
 version = "0.0.1"
-authors = ["blabaere <benoit.labaere@gmail.com>"]
+authors = [
+  "blabaere <benoit.labaere@gmail.com>",
+  "Daniel Fagnan <dnfagnan@gmail.com>"
+]
 
 [dependencies.nanomsg]
-git = "https://github.com/thehydroimpulse/nanomsg.rs"
+path = "../.."

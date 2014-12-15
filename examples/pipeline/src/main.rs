@@ -1,39 +1,40 @@
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
+use nanomsg::result::NanoResult;
 
-fn worker() {
-	let mut socket = Socket::new(Protocol::Pull).unwrap();
-	let mut endpoint = socket.bind("ipc:///tmp/pipeline.ipc").unwrap();
+fn worker() -> NanoResult<()> {
+	let mut socket = try!(Socket::new(Protocol::Pull));
+	let mut endpoint = try!(socket.bind("ipc:///tmp/pipeline.ipc"));
 
 	loop {
-		let msg = socket.read_to_string().unwrap();
-
-		println!("Worker received '{}'.", msg.as_slice());
+		let msg = try!(socket.read_to_string());
+		println!("Worker received '{}'.", &*msg);
 	}
+
+    Ok(())
 }
 
-fn feeder() {
-	let mut socket = Socket::new(Protocol::Push).unwrap();
-	let mut endpoint = socket.connect("ipc:///tmp/pipeline.ipc").unwrap();
+fn feeder() -> NanoResult<()> {
+	let mut socket = try!(Socket::new(Protocol::Push));
+	let mut endpoint = try!(socket.connect("ipc:///tmp/pipeline.ipc"));
 
 	socket.write(b"message in a bottle");
-
 	endpoint.shutdown();
-	drop(socket)
+    Ok(())
 }
 
 fn main() {
-	let args = std::os::args();
+    // Spawn the receiver
+    spawn(proc() {
+        match worker() {
+            Ok(_) => {},
+            Err(err) => panic!("The worker failed: {}", err)
+        }
+    });
 
-	if args.len() < 2 {
-		println!("Usage: pipeline worker, pipeline feeder")
-		return
-	}
-	if args[1].as_slice() == "worker".as_slice() {
-	    worker();
-	}
-	else if args[1].as_slice() == "feeder".as_slice() {
-	    feeder();
-	}
+    match feeder() {
+        Ok(_) => {},
+        Err(err) => panic!("The feeder has failed: {}", err)
+    }
 }
