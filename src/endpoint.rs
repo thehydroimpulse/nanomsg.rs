@@ -1,8 +1,8 @@
-use libc::{c_int};
-use std::kinds::marker::ContravariantLifetime;
-use result::{NanoResult, last_nano_error};
-
+use libc::c_int;
 use libnanomsg;
+use std::kinds::marker::ContravariantLifetime;
+use result::{NanoResult,last_nano_error};
+
 
 /// An endpoint created for a specific socket. Each endpoint is identified
 /// by a unique return value that can be further passed to a shutdown
@@ -25,12 +25,13 @@ impl<'a> Endpoint<'a> {
     }
 
     pub fn shutdown(&'a mut self) -> NanoResult<()> {
+
         let ret = unsafe { libnanomsg::nn_shutdown(self.socket, self.value) };
 
         if ret == -1 as c_int {
-            return Err(last_nano_error());
+            Err(last_nano_error())
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 }
