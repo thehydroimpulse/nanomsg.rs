@@ -30,4 +30,5 @@ target/
 *.rlib
 *.tar.gz
 nanomsg-0.4-beta
+nanomsg-0.5-beta
 Cargo.lock

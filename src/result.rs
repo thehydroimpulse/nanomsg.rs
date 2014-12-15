@@ -4,6 +4,8 @@ extern crate core;
 
 use std::str;
 use std::fmt;
+use std::error::FromError;
+use std::io;
 
 pub use self::NanoErrorKind::*;
 
@@ -66,6 +68,12 @@ impl NanoError {
 
             NanoError::new(desc, error_kind)
         }
+    }
+}
+
+impl FromError<io::IoError> for NanoError {
+    fn from_error(err: io::IoError) -> NanoError {
+        NanoError::new("", TryAgain)
     }
 }
 
