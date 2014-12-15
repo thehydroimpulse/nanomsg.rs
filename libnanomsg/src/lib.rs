@@ -552,11 +552,11 @@ mod tests {
     }
 
     fn finish_child_task(checkin: Arc<Barrier>, socket: c_int, endpoint: c_int, checkout: Arc<Barrier>) {
-        
+
         checkin.wait();
 
-        unsafe { 
-            nn_shutdown(socket, endpoint); 
+        unsafe {
+            nn_shutdown(socket, endpoint);
             nn_close(socket);
         }
 
@@ -580,7 +580,7 @@ mod tests {
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
             let push_endpoint = test_bind(push_sock, url.as_ptr());
-    
+
             test_send(push_sock, push_msg);
 
             finish_child_task(drop_after_use_push, push_sock, push_endpoint, finish_line_push);
@@ -591,7 +591,7 @@ mod tests {
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);
             let pull_endpoint = test_connect(pull_sock, url.as_ptr());
-            
+
             test_receive(pull_sock, pull_msg);
 
             finish_child_task(drop_after_use_pull, pull_sock, pull_endpoint, finish_line_pull);
@@ -608,5 +608,5 @@ mod tests {
     #[test]
     fn should_create_a_pipeline_mt2() {
         test_multithread_pipeline("ipc:///tmp/should_create_a_pipeline_mt2.ipc")
-    }    
+    }
 }
