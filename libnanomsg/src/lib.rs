@@ -6,6 +6,7 @@ extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char, c_short};
+pub use posix_consts::*;
 
 link_config!("libnanomsg", ["only_static"])
 
@@ -65,71 +66,70 @@ pub const NN_POLLOUT: c_short = 2;
 pub const NN_POLL_IN_AND_OUT: c_short = NN_POLLIN + NN_POLLOUT;
 
 // error codes
-pub const NN_HAUSNUMERO: c_int = 156384712;
 pub const ETERM: c_int = NN_HAUSNUMERO + 53;
 pub const EFSM: c_int = NN_HAUSNUMERO + 54;
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))] pub const EAGAIN: c_int = 11;
-#[cfg(target_os = "macos")] pub const EAGAIN: c_int = 35;
+#[cfg(not(windows))]
+mod posix_consts {
+    use libc::c_int;
+    pub use libc::consts::os::posix88::*;
 
-#[cfg(not(target_os = "windows"))] pub const ENOTSUP: c_int = 95;
-#[cfg(not(target_os = "windows"))] pub const EPROTONOSUPPORT: c_int = 93;
-#[cfg(not(target_os = "windows"))] pub const ENOBUFS: c_int = 105;
-#[cfg(not(target_os = "windows"))] pub const ENETDOWN: c_int = 100;
-#[cfg(not(target_os = "windows"))] pub const EADDRINUSE: c_int = 98;
-#[cfg(not(target_os = "windows"))] pub const EADDRNOTAVAIL: c_int = 99;
-#[cfg(not(target_os = "windows"))] pub const ECONNREFUSED: c_int = 111;
-#[cfg(not(target_os = "windows"))] pub const EINPROGRESS: c_int = 115;
-#[cfg(not(target_os = "windows"))] pub const ENOTSOCK: c_int = 88;
-#[cfg(not(target_os = "windows"))] pub const EAFNOSUPPORT: c_int = 97;
-#[cfg(not(target_os = "windows"))] pub const EPROTO: c_int = 71;
+    // NOTE:
+    // If the platform you are compiling for fails to implement the posix
+    // constant, then add an exception below
+    // If this fails to compile, then remove it from this re-export, and add
+    // an exception below, similar to the macos exceptions already added. If
+    // a feature is not implemented on your system, then use an offset to
+    // NN_HAUSNUMERO, which nanomsg uses for undefined constants.
+    //
+    // Use the value from the windows definitions if an override is required.
+    pub const NN_HAUSNUMERO: c_int = 156384712;
 
-#[cfg(not(target_os = "windows"))] pub const EBADF: c_int = 9;
-#[cfg(not(target_os = "windows"))] pub const EINVAL: c_int = 22;
-#[cfg(not(target_os = "windows"))] pub const EMFILE: c_int = 24;
-#[cfg(not(target_os = "windows"))] pub const EFAULT: c_int = 14;
-#[cfg(not(target_os = "windows"))] pub const EACCESS: c_int = 13;
-#[cfg(not(target_os = "windows"))] pub const ENETRESET: c_int = 102;
-#[cfg(not(target_os = "windows"))] pub const ENETUNREACH: c_int = 101;
-#[cfg(not(target_os = "windows"))] pub const EHOSTUNREACH: c_int = 113;
-#[cfg(not(target_os = "windows"))] pub const ENOTCONN: c_int = 107;
-#[cfg(not(target_os = "windows"))] pub const EMSGSIZE: c_int = 90;
-#[cfg(not(target_os = "windows"))] pub const ETIMEDOUT: c_int = 110;
-#[cfg(not(target_os = "windows"))] pub const ECONNABORTED: c_int = 103;
-#[cfg(not(target_os = "windows"))] pub const ECONNRESET: c_int = 104;
-#[cfg(not(target_os = "windows"))] pub const ENOPROTOOPT: c_int = 92;
-#[cfg(not(target_os = "windows"))] pub const EISCONN: c_int = 106;
-#[cfg(not(target_os = "windows"))] pub const ESOCKTNOSUPPORT: c_int = 94;
+    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+    pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
 
+    #[cfg(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "macos", target_os = "ios")))]
+    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
 
-#[cfg(target_os = "windows")] pub const ENOTSUP: c_int = NN_HAUSNUMERO + 1;
-#[cfg(target_os = "windows")] pub const EPROTONOSUPPORT: c_int = NN_HAUSNUMERO + 2;
-#[cfg(target_os = "windows")] pub const ENOBUFS: c_int = NN_HAUSNUMERO + 3;
-#[cfg(target_os = "windows")] pub const ENETDOWN: c_int = NN_HAUSNUMERO + 4;
-#[cfg(target_os = "windows")] pub const EADDRINUSE: c_int = NN_HAUSNUMERO + 5;
-#[cfg(target_os = "windows")] pub const EADDRNOTAVAIL: c_int = NN_HAUSNUMERO + 6;
-#[cfg(target_os = "windows")] pub const ECONNREFUSED: c_int = NN_HAUSNUMERO + 7;
-#[cfg(target_os = "windows")] pub const EINPROGRESS: c_int = NN_HAUSNUMERO + 8;
-#[cfg(target_os = "windows")] pub const ENOTSOCK: c_int = NN_HAUSNUMERO + 9;
-#[cfg(target_os = "windows")] pub const EAFNOSUPPORT: c_int = NN_HAUSNUMERO + 10;
-#[cfg(target_os = "windows")] pub const EPROTO: c_int = NN_HAUSNUMERO + 11;
-#[cfg(target_os = "windows")] pub const EAGAIN: c_int = NN_HAUSNUMERO + 12;
-#[cfg(target_os = "windows")] pub const EBADF: c_int = NN_HAUSNUMERO + 13;
-#[cfg(target_os = "windows")] pub const EINVAL: c_int = NN_HAUSNUMERO + 14;
-#[cfg(target_os = "windows")] pub const EMFILE: c_int = NN_HAUSNUMERO + 15;
-#[cfg(target_os = "windows")] pub const EFAULT: c_int = NN_HAUSNUMERO + 16;
-#[cfg(target_os = "windows")] pub const EACCESS: c_int = NN_HAUSNUMERO + 17;
-#[cfg(target_os = "windows")] pub const ENETRESET: c_int = NN_HAUSNUMERO + 18;
-#[cfg(target_os = "windows")] pub const ENETUNREACH: c_int = NN_HAUSNUMERO + 19;
-#[cfg(target_os = "windows")] pub const EHOSTUNREACH: c_int = NN_HAUSNUMERO + 20;
-#[cfg(target_os = "windows")] pub const ENOTCONN: c_int = NN_HAUSNUMERO + 21;
-#[cfg(target_os = "windows")] pub const EMSGSIZE: c_int = NN_HAUSNUMERO + 22;
-#[cfg(target_os = "windows")] pub const ETIMEDOUT: c_int = NN_HAUSNUMERO + 23;
-#[cfg(target_os = "windows")] pub const ECONNABORTED: c_int = NN_HAUSNUMERO + 24;
-#[cfg(target_os = "windows")] pub const ECONNRESET: c_int = NN_HAUSNUMERO + 25;
-#[cfg(target_os = "windows")] pub const ENOPROTOOPT: c_int = NN_HAUSNUMERO + 26;
-#[cfg(target_os = "windows")] pub const EISCONN: c_int = NN_HAUSNUMERO + 27;
-#[cfg(target_os = "windows")] pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
+    // nanomsg uses EACCESS as an alias for EACCES
+    pub const EACCESS: c_int = ::libc::consts::os::posix88::EACCES;
+}
+
+#[cfg(windows)]
+mod posix_consts {
+    use libc::c_int;
+
+    pub const NN_HAUSNUMERO: c_int = 156384712;
+
+    pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
+    pub const EPROTONOSUPPORT: c_int = NN_HAUSNUMERO + 2;
+    pub const ENOBUFS: c_int = NN_HAUSNUMERO + 3;
+    pub const ENETDOWN: c_int = NN_HAUSNUMERO + 4;
+    pub const EADDRINUSE: c_int = NN_HAUSNUMERO + 5;
+    pub const EADDRNOTAVAIL: c_int = NN_HAUSNUMERO + 6;
+    pub const ECONNREFUSED: c_int = NN_HAUSNUMERO + 7;
+    pub const EINPROGRESS: c_int = NN_HAUSNUMERO + 8;
+    pub const ENOTSOCK: c_int = NN_HAUSNUMERO + 9;
+    pub const EAFNOSUPPORT: c_int = NN_HAUSNUMERO + 10;
+    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
+    pub const EAGAIN: c_int = NN_HAUSNUMERO + 12;
+    pub const EBADF: c_int = NN_HAUSNUMERO + 13;
+    pub const EINVAL: c_int = NN_HAUSNUMERO + 14;
+    pub const EMFILE: c_int = NN_HAUSNUMERO + 15;
+    pub const EFAULT: c_int = NN_HAUSNUMERO + 16;
+    pub const EACCESS: c_int = NN_HAUSNUMERO + 17;
+    pub const ENETRESET: c_int = NN_HAUSNUMERO + 18;
+    pub const ENETUNREACH: c_int = NN_HAUSNUMERO + 19;
+    pub const EHOSTUNREACH: c_int = NN_HAUSNUMERO + 20;
+    pub const ENOTCONN: c_int = NN_HAUSNUMERO + 21;
+    pub const EMSGSIZE: c_int = NN_HAUSNUMERO + 22;
+    pub const ETIMEDOUT: c_int = NN_HAUSNUMERO + 23;
+    pub const ECONNABORTED: c_int = NN_HAUSNUMERO + 24;
+    pub const ECONNRESET: c_int = NN_HAUSNUMERO + 25;
+    pub const ENOPROTOOPT: c_int = NN_HAUSNUMERO + 26;
+    pub const EISCONN: c_int = NN_HAUSNUMERO + 27;
+    pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
+}
 
 #[repr(C)]
 #[deriving(Copy)]
