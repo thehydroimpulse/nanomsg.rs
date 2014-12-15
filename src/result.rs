@@ -1,6 +1,5 @@
-extern crate libnanomsg;
-extern crate libc;
-extern crate core;
+use libc;
+use libnanomsg;
 
 use std::str;
 use std::fmt;
@@ -11,7 +10,7 @@ pub use self::NanoErrorKind::*;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[deriving(Show, Clone, PartialEq, FromPrimitive)]
+#[deriving(Show, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
     Unknown = 0i,
     OperationNotSupported = libnanomsg::ENOTSUP as int,
@@ -44,7 +43,7 @@ pub enum NanoErrorKind {
     SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
 }
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Copy)]
 pub struct NanoError {
     pub description: &'static str,
     pub kind: NanoErrorKind
@@ -90,14 +89,12 @@ pub fn last_nano_error() -> NanoError {
 }
 
 #[cfg(test)]
+#[allow(unused_must_use)]
 mod tests {
-    #![allow(unused_must_use)]
-    #[phase(plugin, link)]
-    extern crate log;
-    extern crate libnanomsg;
-    extern crate libc;
-
-    use super::*;
+    use libnanomsg;
+    use libc;
+    use super::NanoErrorKind::*;
+    use super::NanoErrorKind;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
         let i64_error_code = error_code as i64;
@@ -116,5 +113,4 @@ mod tests {
         assert_convert_error_code_to_error_kind(libnanomsg::EADDRINUSE, AddressInUse);
         assert_convert_error_code_to_error_kind(libnanomsg::EHOSTUNREACH, HostUnreachable);
     }
-
 }
