@@ -337,8 +337,9 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        let msg = unsafe { String::from_raw_buf(buf as *const u8) };
-        assert!(msg.as_slice() == expected);
+        assert!(buf.is_not_null())
+        let msg = unsafe { String::from_raw_buf_len(buf as *const u8, bytes as uint) };
+        assert_eq!(msg.as_slice(), expected);
         unsafe { nn_freemsg(buf as *mut c_void); }
     }
 
