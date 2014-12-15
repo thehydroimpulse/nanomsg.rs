@@ -11,72 +11,87 @@ Nanomsg is a modern messaging library that is the successor to ZeroMQ, written i
 
 ### Requirements
 
-You'll need to have nanomsg installed beforehand.
+* Nanomsg 0.5.0
 
-## Getting Started
+Installing nanomsg:
 
-This library is Cargo supported! Simply add a new cargo dependency and
-away you go!
+```
+make deps
+```
+
+## Installation
 
 ```toml
 [dependencies]
 nanomsg = "^0.3.0"
 ```
 
-Now you can use the crate after you include it:
+Simply import the crate to use it:
 
 ```rust
 extern crate nanomsg;
 ```
 
-## Creating a Socket (Push/Pull)
+## Creating a Socket
 
 The basis of Nanomsg is a `Socket`. Each socket can be of a certain type. The type of a socket defines it's behaviour and limitations (such as only being able to send and not receive).
 
 ```rust
-use nanomsg::{Socket, Protocol, NanoResult};
+use nanomsg::{Socket, NanoResult, Protocol};
 
-fn initialize() -> NanoResult<()> {
+/// Creating a new `Pull` socket type. Pull sockets can only receive messages
+/// from a `Push` socket type.
+fn create_socket() -> NanoResult<()> {
     let mut socket = try!(Socket::new(Protocol::Pull));
-    let mut endpoint = try!(socket.bind("ipc:///tmp/pipeline.ipc"));
-
-    loop {
-        let msg = try!(socket.read_to_string());
-        println!("We got a message: {}", msg.as_slice());
-    }
-}
-
-fn main() {
-    match initialize() {
-        Ok(_) => {},
-        Err(err) => panic!("Something horrible went wrong: {}", err)
-    }
+    Ok(())
 }
 ```
 
-As you can see, we bind a socket to an endpoint. These resources are destroyed correctly at the end of their lifetime, closing the bound socket.
+Now, each socket that is created can be bound to *multiple* endpoints. Each binding can return an error, so
+we'll take advantage of the `try!` macro.
 
-We can also create a client to that socket. The `Pull` protocol is one that can only receive (push/pull), so we need the accompanying socket `Push` for this to work correctly (or to get a message in the end).
+```rust
+use nanomsg::{Socket, NanoResult, Protocol};
 
-(For now, we'll create them as separate binaries because of some threading issues with nanomsg)
+/// Creating a new `Pull` socket type. Pull sockets can only receive messages
+/// from a `Push` socket type.
+fn create_socket() -> NanoResult<()> {
+    let mut socket = try!(Socket::new(Protocol::Pull));
+    
+    // Create a new endpoint bound to the following protocol string. This returns
+    // a new `Endpoint` that lives at-most the lifetime of the original socket.
+    let mut endpoint = try!(socket.bind("ipc:///tmp/pipeline.ipc"));
+
+    Ok(())
+}
+```
+
+The socket is ready to be used now!
+
+Because this is a `Pull` socket, we'll implement reading any messages we receive.
+
+```rust
+// ... After the endpoint we created, we'll start reading some data.
+loop {
+    let msg = try!(socket.read_to_string());
+    println!("We got a message: {}", &*msg);
+}
+// ...
+```
+
+That's awesome! But... we have no packets being sent to the socket, so we'll read nothing. To fix this, let's implement
+the accompanying pair `Push` socket.
 
 ```rust
 use nanomsg::{Socket, Protocol, NanoResult};
 
-fn initialize() -> NanoResult<()> {
+fn pusher() -> NanoResult<()> {
     let mut socket = try!(Socket::new(Protocol::Push));
     let mut endpoint = try!(socket.connect("ipc:///tmp/pipeline.ipc"));
 
     socket.write(b"message in a bottle");
 
     endpoint.shutdown();
-}
-
-fn main() {
-    match initialize() {
-        Ok(_) => {},
-        Err(err) => panic!("Something horrible went wrong: {}", err)
-    }
 }
 ```
 
