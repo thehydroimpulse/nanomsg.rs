@@ -575,7 +575,7 @@ mod tests {
         let drop_after_use_pull = drop_after_use.clone();
         let drop_after_use_push = drop_after_use.clone();
 
-        spawn(proc() {
+        spawn(move || {
             let url = name.to_c_str();
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
@@ -586,7 +586,7 @@ mod tests {
             finish_child_task(drop_after_use_push, push_sock, push_endpoint, finish_line_push);
         });
 
-        spawn(proc() {
+        spawn(move || {
             let url = name.to_c_str();
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);

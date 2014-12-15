@@ -681,7 +681,7 @@ mod tests {
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        spawn(proc() {
+        spawn(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -690,7 +690,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        spawn(proc() {
+        spawn(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
