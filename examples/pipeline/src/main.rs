@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
