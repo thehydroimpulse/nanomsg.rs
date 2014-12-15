@@ -23,7 +23,7 @@ use std::kinds::marker::ContravariantLifetime;
 use std::vec::Vec;
 use std::c_vec::CVec;
 
-mod result;
+pub mod result;
 mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
