@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `NanoErrorKind` enum in crate `nanomsg`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, NanoErrorKind">
+
+    <title>nanomsg::result::NanoErrorKind - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>nanomsg</a>::<wbr><a href='index.html'>result</a></p><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.NanoError.html'>NanoError</a></div><div class='block enum'><h2>Enums</h2><a class='enum current' href='enum.NanoErrorKind.html'>NanoErrorKind</a></div><div class='block fn'><h2>Functions</h2><a class='fn ' href='fn.last_nano_error.html'>last_nano_error</a></div>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>nanomsg</a>::<wbr><a href='index.html'>result</a>::<wbr><a class='enum' href=''>NanoErrorKind</a><wbr></span><span class='out-of-band'><span id='render-detail'>
+            <a id="collapse-all" href="#">[-]
+            </a>&nbsp;<a id="expand-all" href="#">[+]</a>
+        </span><a id='src-46' href='../../src/nanomsg/result.rs.html#14-44'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum NanoErrorKind {
+    Unknown,
+    OperationNotSupported,
+    ProtocolNotSupported,
+    NoBufferSpace,
+    NetworkDown,
+    AddressInUse,
+    AddressNotAvailable,
+    ConnectionRefused,
+    OperationNowInProgress,
+    NotSocket,
+    AddressFamilyNotSupported,
+    WrongProtocol,
+    TryAgain,
+    BadFileDescriptor,
+    InvalidArgument,
+    TooManyOpenFiles,
+    BadAddress,
+    PermisionDenied,
+    NetworkReset,
+    NetworkUnreachable,
+    HostUnreachable,
+    NotConnected,
+    MessageTooLong,
+    Timeout,
+    ConnectionAbort,
+    ConnectionReset,
+    ProtocolNotAvailable,
+    AlreadyConnected,
+    SocketTypeNotSupported,
+}</pre><h2 class='variants'>Variants</h2>
+<table><tr><td id='variant.Unknown'><a class='stability Unmarked' title='No stability level'></a><code>Unknown</code></td><td></td></tr><tr><td id='variant.OperationNotSupported'><a class='stability Unmarked' title='No stability level'></a><code>OperationNotSupported</code></td><td></td></tr><tr><td id='variant.ProtocolNotSupported'><a class='stability Unmarked' title='No stability level'></a><code>ProtocolNotSupported</code></td><td></td></tr><tr><td id='variant.NoBufferSpace'><a class='stability Unmarked' title='No stability level'></a><code>NoBufferSpace</code></td><td></td></tr><tr><td id='variant.NetworkDown'><a class='stability Unmarked' title='No stability level'></a><code>NetworkDown</code></td><td></td></tr><tr><td id='variant.AddressInUse'><a class='stability Unmarked' title='No stability level'></a><code>AddressInUse</code></td><td></td></tr><tr><td id='variant.AddressNotAvailable'><a class='stability Unmarked' title='No stability level'></a><code>AddressNotAvailable</code></td><td></td></tr><tr><td id='variant.ConnectionRefused'><a class='stability Unmarked' title='No stability level'></a><code>ConnectionRefused</code></td><td></td></tr><tr><td id='variant.OperationNowInProgress'><a class='stability Unmarked' title='No stability level'></a><code>OperationNowInProgress</code></td><td></td></tr><tr><td id='variant.NotSocket'><a class='stability Unmarked' title='No stability level'></a><code>NotSocket</code></td><td></td></tr><tr><td id='variant.AddressFamilyNotSupported'><a class='stability Unmarked' title='No stability level'></a><code>AddressFamilyNotSupported</code></td><td></td></tr><tr><td id='variant.WrongProtocol'><a class='stability Unmarked' title='No stability level'></a><code>WrongProtocol</code></td><td></td></tr><tr><td id='variant.TryAgain'><a class='stability Unmarked' title='No stability level'></a><code>TryAgain</code></td><td></td></tr><tr><td id='variant.BadFileDescriptor'><a class='stability Unmarked' title='No stability level'></a><code>BadFileDescriptor</code></td><td></td></tr><tr><td id='variant.InvalidArgument'><a class='stability Unmarked' title='No stability level'></a><code>InvalidArgument</code></td><td></td></tr><tr><td id='variant.TooManyOpenFiles'><a class='stability Unmarked' title='No stability level'></a><code>TooManyOpenFiles</code></td><td></td></tr><tr><td id='variant.BadAddress'><a class='stability Unmarked' title='No stability level'></a><code>BadAddress</code></td><td></td></tr><tr><td id='variant.PermisionDenied'><a class='stability Unmarked' title='No stability level'></a><code>PermisionDenied</code></td><td></td></tr><tr><td id='variant.NetworkReset'><a class='stability Unmarked' title='No stability level'></a><code>NetworkReset</code></td><td></td></tr><tr><td id='variant.NetworkUnreachable'><a class='stability Unmarked' title='No stability level'></a><code>NetworkUnreachable</code></td><td></td></tr><tr><td id='variant.HostUnreachable'><a class='stability Unmarked' title='No stability level'></a><code>HostUnreachable</code></td><td></td></tr><tr><td id='variant.NotConnected'><a class='stability Unmarked' title='No stability level'></a><code>NotConnected</code></td><td></td></tr><tr><td id='variant.MessageTooLong'><a class='stability Unmarked' title='No stability level'></a><code>MessageTooLong</code></td><td></td></tr><tr><td id='variant.Timeout'><a class='stability Unmarked' title='No stability level'></a><code>Timeout</code></td><td></td></tr><tr><td id='variant.ConnectionAbort'><a class='stability Unmarked' title='No stability level'></a><code>ConnectionAbort</code></td><td></td></tr><tr><td id='variant.ConnectionReset'><a class='stability Unmarked' title='No stability level'></a><code>ConnectionReset</code></td><td></td></tr><tr><td id='variant.ProtocolNotAvailable'><a class='stability Unmarked' title='No stability level'></a><code>ProtocolNotAvailable</code></td><td></td></tr><tr><td id='variant.AlreadyConnected'><a class='stability Unmarked' title='No stability level'></a><code>AlreadyConnected</code></td><td></td></tr><tr><td id='variant.SocketTypeNotSupported'><a class='stability Unmarked' title='No stability level'></a><code>SocketTypeNotSupported</code></td><td></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/kinds/trait.Copy.html' title='core::kinds::Copy'>Copy</a> for <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h3><div class='impl-items'></div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/num/trait.FromPrimitive.html' title='core::num::FromPrimitive'>FromPrimitive</a> for <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h3><div class='impl-items'><h4 id='method.from_i64' class='method'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#method.from_i64' class='fnname'>from_i64</a>(__arg_0: <a href='http://doc.rust-lang.org/nightly/std/primitive.i64.html'>i64</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>&gt;</code></h4>
+<h4 id='method.from_u64' class='method'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#method.from_u64' class='fnname'>from_u64</a>(__arg_0: <a href='http://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>&gt;</code></h4>
+<h4 id='method.from_int' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_int' class='fnname'>from_int</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_i8' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_i8' class='fnname'>from_i8</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.i8.html'>i8</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_i16' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_i16' class='fnname'>from_i16</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.i16.html'>i16</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_i32' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_i32' class='fnname'>from_i32</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_uint' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_uint' class='fnname'>from_uint</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_u8' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_u8' class='fnname'>from_u8</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_u16' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_u16' class='fnname'>from_u16</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_u32' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_u32' class='fnname'>from_u32</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_f32' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_f32' class='fnname'>from_f32</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+<h4 id='method.from_f64' class='tymethod'><a class='stability Experimental' title='Experimental: trait is likely to be removed'></a><code>fn <a href='#tymethod.from_f64' class='fnname'>from_f64</a>(n: <a href='http://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;Self&gt;</code></h4>
+</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>fn <a href='#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.ne' class='method'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>fn <a href='#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h4>
+<h4 id='method.clone_from' class='tymethod'><a class='stability Experimental' title='Experimental: this function is mostly unused'></a><code>fn <a href='#tymethod.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Show.html' title='core::fmt::Show'>Show</a> for <a class='enum' href='../../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "nanomsg";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>
