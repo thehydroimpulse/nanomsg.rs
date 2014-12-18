@@ -2,7 +2,7 @@
 
 rev=$(git rev-parse --short HEAD)
 
-cd target/doc
+cd target/doc/nanomsg
 
 git init
 git config user.name "Daniel Fagnan"
