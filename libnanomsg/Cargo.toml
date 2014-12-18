@@ -12,4 +12,4 @@ description = "The low-level bindings that is used by the nanomsg library."
 keywords = ["binding", "nanomsg"]
 
 [dependencies]
-link-config = "^0.1.0"
+link-config = "^0.1.1"
