@@ -126,7 +126,7 @@ impl<'a> Socket<'a> {
     /// a new file descriptor behind the scene. The safe interface doesn't
     /// expose any of the underlying file descriptors and such.
     ///
-    /// Usage:
+    /// # Example:
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -141,6 +141,20 @@ impl<'a> Socket<'a> {
         Socket::create_socket(libnanomsg::AF_SP, protocol)
     }
 
+    /// Allocate and initialize a new Nanomsg socket meant to be used in a device
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    ///
+    /// let mut s1 = Socket::new_for_device(Protocol::Req).unwrap();
+    /// let mut s2 = Socket::new_for_device(Protocol::Rep).unwrap();
+    /// let ep1 = s1.bind("ipc://localhost:5555").unwrap();
+    /// let ep2 = s2.bind("ipc://localhost:5556").unwrap();
+    /// 
+    /// //let ret = Socket::device(&s1, &s2);
+    /// ```
     #[unstable]
     pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket<'a>> {
         Socket::create_socket(libnanomsg::AF_SP_RAW, protocol)
@@ -171,21 +185,21 @@ impl<'a> Socket<'a> {
     /// Note: This does **not** block the current task. That job
     /// is up to the user of the library by entering a loop.
     ///
-    /// Usage:
+    /// # Example:
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
     ///
-    /// let mut socket = match Socket::new(Protocol::Pull) {
+    /// let mut socket = match Socket::new(Protocol::Push) {
     ///     Ok(socket) => socket,
     ///     Err(err) => panic!("{}", err)
     /// };
     ///
     /// // Bind the newly created socket to the following address:
-    /// //match socket.bind("ipc:///tmp/pipeline.ipc") {
-    /// //    Ok(_) => {},
-    /// //   Err(err) => panic!("Failed to bind socket: {}", err)
-    /// //}
+    /// match socket.bind("ipc:///tmp/pipeline.ipc") {
+    ///     Ok(_) => {},
+    ///     Err(err) => panic!("Failed to bind socket: {}", err)
+    /// }
     /// ```
     #[unstable]
     pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
@@ -195,6 +209,24 @@ impl<'a> Socket<'a> {
         Ok(Endpoint::new(ret, self.socket))
     }
 
+    /// Connects the socket to a remote endpoint.
+    /// Returns the endpoint on success.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    ///
+    /// let mut socket = match Socket::new(Protocol::Pull) {
+    ///     Ok(socket) => socket,
+    ///     Err(err) => panic!("{}", err)
+    /// };
+    ///
+    /// let endpoint = match socket.connect("ipc:///tmp/pipeline.ipc") {
+    ///     Ok(ep) => ep,
+    ///     Err(err) => panic!("Failed to connect socket: {}", err)
+    /// };    
+    /// ```        
     #[unstable]
     pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
@@ -204,6 +236,8 @@ impl<'a> Socket<'a> {
     }
 
     #[unstable]
+    /// Non-blocking version of the `read` function.
+    /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -216,6 +250,8 @@ impl<'a> Socket<'a> {
     }
 
     #[unstable]
+    /// Non-blocking version of the `read_to_end` function.
+    /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
     pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -238,6 +274,8 @@ impl<'a> Socket<'a> {
     }
 
     #[unstable]
+    /// Non-blocking version of the `write` function.
+    /// An error with the `NanoErrorKind::TryAgain` kind is returned if the message cannot be sent at the moment.
     pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
         let len = buf.len();
         let ret = unsafe {

@@ -71,7 +71,7 @@ impl NanoError {
 }
 
 impl FromError<io::IoError> for NanoError {
-    fn from_error(err: io::IoError) -> NanoError {
+    fn from_error(_: io::IoError) -> NanoError {
         NanoError::new("", TryAgain)
     }
 }
