@@ -1,4 +1,4 @@
-#![feature(globs, unsafe_destructor, phase, slicing_syntax, macro_rules)]
+#![feature(globs, phase, slicing_syntax, macro_rules)]
 
 #[phase(plugin, link)] extern crate log;
 
@@ -18,10 +18,10 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
-use std::kinds::marker::ContravariantLifetime;
+use std::kinds::marker::NoCopy;
 
 pub mod result;
-mod endpoint;
+pub mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
@@ -49,9 +49,9 @@ impl Protocol {
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
-pub struct Socket<'a> {
+pub struct Socket {
     socket: c_int,
-    marker: ContravariantLifetime<'a>
+    no_copy_marker: NoCopy
 }
 
 #[deriving(Copy)]
@@ -120,7 +120,7 @@ macro_rules! error_guard(
     )
 );
 
-impl<'a> Socket<'a> {
+impl Socket {
 
     /// Allocate and initialize a new Nanomsg socket which returns
     /// a new file descriptor behind the scene. The safe interface doesn't
@@ -137,7 +137,7 @@ impl<'a> Socket<'a> {
     /// };
     /// ```
     #[unstable]
-    pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
+    pub fn new(protocol: Protocol) -> NanoResult<Socket> {
         Socket::create_socket(libnanomsg::AF_SP, protocol)
     }
 
@@ -156,21 +156,17 @@ impl<'a> Socket<'a> {
     /// //let ret = Socket::device(&s1, &s2);
     /// ```
     #[unstable]
-    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket<'a>> {
+    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket> {
         Socket::create_socket(libnanomsg::AF_SP_RAW, protocol)
     }
 
-    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket<'a>> {
+    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket> {
         let socket = unsafe {
             libnanomsg::nn_socket(domain, protocol.to_raw())
         };
 
         error_guard!(socket);
-
-        Ok(Socket {
-            socket: socket,
-            marker: ContravariantLifetime::<'a>
-        })
+        Ok(Socket { socket: socket, no_copy_marker: NoCopy })
     }
 
     /// Creating a new socket through `Socket::new` does **not**
@@ -200,7 +196,7 @@ impl<'a> Socket<'a> {
     /// }
     /// ```
     #[unstable]
-    pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
+    pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         error_guard!(ret);
@@ -226,7 +222,7 @@ impl<'a> Socket<'a> {
     /// };    
     /// ```        
     #[unstable]
-    pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
+    pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         error_guard!(ret);
@@ -474,7 +470,7 @@ impl<'a> Socket<'a> {
 
 }
 
-impl<'a> Reader for Socket<'a> {
+impl Reader for Socket {
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -533,7 +529,7 @@ impl<'a> Reader for Socket<'a> {
     }
 }
 
-impl<'a> Writer for Socket<'a> {
+impl Writer for Socket {
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -549,8 +545,7 @@ impl<'a> Writer for Socket<'a> {
     }
 }
 
-#[unsafe_destructor]
-impl<'a> Drop for Socket<'a> {
+impl Drop for Socket {
     fn drop(&mut self) {
         unsafe { libnanomsg::nn_close(self.socket); }
     }
@@ -638,21 +633,21 @@ mod tests {
         drop(socket);
     }
 
-    fn test_create_socket<'a>(protocol: Protocol) -> Socket<'a> {
+    fn test_create_socket(protocol: Protocol) -> Socket {
         match Socket::new(protocol) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         }
     }
 
-    fn test_bind<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
+    fn test_bind(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.bind(addr) {
             Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
         }
     }
 
-    fn test_connect<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
+    fn test_connect(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.connect(addr) {
             Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
@@ -697,7 +692,7 @@ mod tests {
         let url = "ipc:///tmp/pipeline.ipc";
 
         let mut push_socket = test_create_socket(Push);
-        test_bind(&mut push_socket, url);
+        let mut push_endpoint = test_bind(&mut push_socket, url);
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
@@ -706,6 +701,8 @@ mod tests {
 
         test_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
+
+        push_endpoint.shutdown();
 
         drop(pull_socket);
         drop(push_socket);
@@ -1048,7 +1045,7 @@ mod tests {
     }
 
     #[test]
-    fn protcol_matches_raw() {
+    fn protocol_matches_raw() {
          assert_eq!(libnanomsg::NN_REQ, Req.to_raw());
          assert_eq!(libnanomsg::NN_REP, Rep.to_raw());
          assert_eq!(libnanomsg::NN_PUSH, Push.to_raw());
