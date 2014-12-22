@@ -118,7 +118,7 @@ macro_rules! error_guard(
             return Err(last_nano_error())
         }
     )
-)
+);
 
 impl<'a> Socket<'a> {
 
@@ -165,9 +165,7 @@ impl<'a> Socket<'a> {
             libnanomsg::nn_socket(domain, protocol.to_raw())
         };
 
-        error_guard!(socket)
-
-        debug!("Initialized a new socket");
+        error_guard!(socket);
 
         Ok(Socket {
             socket: socket,
@@ -1047,16 +1045,16 @@ mod tests {
 
     #[test]
     fn protcol_matches_raw() {
-         assert_eq!(libnanomsg::NN_REQ, Req.to_raw())
-         assert_eq!(libnanomsg::NN_REP, Rep.to_raw())
-         assert_eq!(libnanomsg::NN_PUSH, Push.to_raw())
-         assert_eq!(libnanomsg::NN_PULL, Pull.to_raw())
-         assert_eq!(libnanomsg::NN_PAIR, Pair.to_raw())
-         assert_eq!(libnanomsg::NN_BUS, Bus.to_raw())
-         assert_eq!(libnanomsg::NN_PUB, Pub.to_raw())
-         assert_eq!(libnanomsg::NN_SUB, Sub.to_raw())
-         assert_eq!(libnanomsg::NN_SURVEYOR, Surveyor.to_raw())
-         assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw())
+         assert_eq!(libnanomsg::NN_REQ, Req.to_raw());
+         assert_eq!(libnanomsg::NN_REP, Rep.to_raw());
+         assert_eq!(libnanomsg::NN_PUSH, Push.to_raw());
+         assert_eq!(libnanomsg::NN_PULL, Pull.to_raw());
+         assert_eq!(libnanomsg::NN_PAIR, Pair.to_raw());
+         assert_eq!(libnanomsg::NN_BUS, Bus.to_raw());
+         assert_eq!(libnanomsg::NN_PUB, Pub.to_raw());
+         assert_eq!(libnanomsg::NN_SUB, Sub.to_raw());
+         assert_eq!(libnanomsg::NN_SURVEYOR, Surveyor.to_raw());
+         assert_eq!(libnanomsg::NN_RESPONDENT, Respondent.to_raw());
     }
 
     #[test]

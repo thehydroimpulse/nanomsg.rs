@@ -69,9 +69,9 @@ fn feeder() {
 }
 
 fn usage() {
-    println!("Usage: pipeline [feeder|worker|collector]")
-    println!("  Try running several workers")
-    println!("  And also try killing and restarting")
+    println!("Usage: pipeline [feeder|worker|collector]");
+    println!("  Try running several workers");
+    println!("  And also try killing and restarting");
 }
 
 fn main() {
