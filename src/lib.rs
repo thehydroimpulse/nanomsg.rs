@@ -569,6 +569,7 @@ mod tests {
     use std::io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
+    use std::thread::Thread;
 
     #[test]
     fn bool_to_c_int_sanity() {
@@ -712,12 +713,12 @@ mod tests {
 
     fn test_multithread_pipeline(url: &'static str) {
 
-        // this is required to stop the test main task only when children tasks are done
+        // this is required to prevent the sender from being dropped too early
         let finish_line = Arc::new(Barrier::new(3));
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        spawn(move || {
+        let push_thread = Thread::spawn(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -726,7 +727,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        spawn(move|| {
+        let pull_thread = Thread::spawn(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
@@ -736,6 +737,9 @@ mod tests {
         });
 
         finish_line.wait();
+
+        assert!(push_thread.join().is_ok());
+        assert!(pull_thread.join().is_ok());
     }
 
     #[test]
