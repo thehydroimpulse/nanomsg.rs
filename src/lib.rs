@@ -150,8 +150,8 @@ impl<'a> Socket<'a> {
     ///
     /// let mut s1 = Socket::new_for_device(Protocol::Req).unwrap();
     /// let mut s2 = Socket::new_for_device(Protocol::Rep).unwrap();
-    /// let ep1 = s1.bind("ipc://localhost:5555").unwrap();
-    /// let ep2 = s2.bind("ipc://localhost:5556").unwrap();
+    /// let ep1 = s1.bind("ipc:///tmp/new_for_device1.ipc").unwrap();
+    /// let ep2 = s2.bind("ipc:///tmp/new_for_device2.ipc").unwrap();
     /// 
     /// //let ret = Socket::device(&s1, &s2);
     /// ```
