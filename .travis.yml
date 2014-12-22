@@ -9,7 +9,7 @@ install:
   - make deps
 
 script:
-  - rustc -v
+  - rustc --version
   - cargo test
   - cd libnanomsg && cargo test
   - cargo doc

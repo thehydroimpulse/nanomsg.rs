@@ -8,7 +8,7 @@ extern crate libc;
 use libc::{c_int, c_void, size_t, c_char, c_short};
 pub use posix_consts::*;
 
-link_config!("libnanomsg", ["only_static"])
+link_config!("libnanomsg", ["only_static"]);
 
 pub const AF_SP: c_int = 1;
 pub const AF_SP_RAW: c_int = 2;
@@ -337,7 +337,7 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        assert!(buf.is_not_null())
+        assert!(buf.is_not_null());
         let msg = unsafe { String::from_raw_buf_len(buf as *const u8, bytes as uint) };
         assert_eq!(msg.as_slice(), expected);
         unsafe { nn_freemsg(buf as *mut c_void); }
