@@ -13,6 +13,7 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
+    #[unstable]
     pub fn new(value: c_int, socket: c_int) -> Endpoint {
         Endpoint {
             value: value,
@@ -21,6 +22,11 @@ impl Endpoint {
         }
     }
 
+    /// Removes an endpoint from the socket that created it (via `bind` or `connect`).
+    /// The call will return immediately, however, 
+    /// the library will try to deliver any outstanding outbound messages to the endpoint 
+    /// for the time specified by `Socket::set_linger`.
+    #[unstable]
     pub fn shutdown(&mut self) -> NanoResult<()> {
 
         let ret = unsafe { libnanomsg::nn_shutdown(self.socket, self.value) };

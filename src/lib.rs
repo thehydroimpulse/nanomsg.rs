@@ -28,15 +28,55 @@ pub mod endpoint;
 /// (such as only being able to receive messages and not send 'em).
 #[deriving(Show, PartialEq, Copy)]
 pub enum Protocol {
+    /// Used to implement the client application that sends requests and receives replies.
+    ///
+    /// **See also:** `Socket::set_request_resend_interval`
     Req = (libnanomsg::NN_REQ) as int,
+
+    /// Used to implement the stateless worker that receives requests and sends replies.
     Rep = (libnanomsg::NN_REP) as int,
+
+    /// This socket is used to send messages to a cluster of load-balanced nodes. 
+    /// Receive operation is not implemented on this socket type.
     Push = (libnanomsg::NN_PUSH) as int,
+
+    /// This socket is used to receive a message from a cluster of nodes.
+    /// Send operation is not implemented on this socket type.
     Pull = (libnanomsg::NN_PULL) as int,
+
+    /// Socket for communication with exactly one peer.
+    /// Each party can send messages at any time. 
+    /// If the peer is not available or send buffer is full subsequent calls to `write`
+    /// will block until it’s possible to send the message.
     Pair = (libnanomsg::NN_PAIR) as int,
+
+    /// Sent messages are distributed to all nodes in the topology.
+    /// Incoming messages from all other nodes in the topology are fair-queued in the socket.
     Bus = (libnanomsg::NN_BUS) as int,
+
+    /// This socket is used to distribute messages to multiple destinations.
+    /// Receive operation is not defined.
     Pub = (libnanomsg::NN_PUB) as int,
+
+    /// Receives messages from the publisher.
+    /// Only messages that the socket is subscribed to are received.
+    /// When the socket is created there are no subscriptions and thus no messages will be received.
+    /// Send operation is not defined on this socket.
+    ///
+    /// **See also:** `Socket::subscribe` and `Socket::unsubscribe`.
     Sub = (libnanomsg::NN_SUB) as int,
+
+    /// Used to send the survey.
+    /// The survey is delivered to all the connected respondents.
+    /// Once the query is sent, the socket can be used to receive the responses.
+    /// When the survey deadline expires, receive will return Timeout error.
+    /// 
+    /// **See also:** `Socket::set_survey_deadline`
     Surveyor = (libnanomsg::NN_SURVEYOR) as int,
+
+    /// Use to respond to the survey. 
+    /// Survey is received using receive function, response is sent using send function
+    /// This socket can be connected to at most one peer.
     Respondent = (libnanomsg::NN_RESPONDENT) as int
 }
 
@@ -231,7 +271,7 @@ impl Socket {
 
     /// Non-blocking version of the `read` function.
     /// Returns the number of read bytes on success.
-    /// Any bytes exceeding the length of the specified buffer argument will be truncated.
+    /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
     /// # Example:
@@ -496,6 +536,9 @@ impl Socket {
                                     name)
     }
 
+    /// This option, when set to `true`, disables Nagle’s algorithm.
+    /// It also disables delaying of TCP acknowledgments.
+    /// Using this option improves latency at the expense of throughput.
     #[unstable]
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_TCP,
@@ -503,6 +546,10 @@ impl Socket {
                                       tcp_nodelay as c_int)
     }
 
+    /// Defined on full `Sub` socket.
+    /// Subscribes for a particular topic.
+    /// Type of the option is string.
+    /// A single `Sub` socket can handle multiple subscriptions.
     #[unstable]
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         self.set_socket_options_str(libnanomsg::NN_SUB,
@@ -510,6 +557,7 @@ impl Socket {
                                     topic)
     }
 
+    /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
     #[unstable]
     pub fn unsubscribe(&mut self, topic: &str) -> NanoResult<()> {
         self.set_socket_options_str(libnanomsg::NN_SUB,
@@ -517,6 +565,9 @@ impl Socket {
                                     topic)
     }
 
+    /// Specifies how long to wait for responses to the survey.
+    /// Once the deadline expires, receive function will return `Timeout` error and all subsequent responses to the survey will be silently dropped.
+    /// The deadline is measured in milliseconds. Default value is 1 second.
     #[unstable]
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SURVEYOR,
@@ -524,6 +575,9 @@ impl Socket {
                                       deadline.num_milliseconds() as c_int)
     }
 
+    /// This option is defined on the full `Req` socket.
+    /// If reply is not received in specified amount of milliseconds, the request will be automatically resent.
+    /// The type of this option is int. Default value is 1 minute.
     #[unstable]
     pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_REQ,
@@ -534,6 +588,27 @@ impl Socket {
 }
 
 impl Reader for Socket {
+    /// Receive a message from the socket and store it in the buf argument.
+    /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
+    /// Returns the number of bytes in the message on success.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut ep = socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
+    ///
+    /// match socket.nb_read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the `count` bytes of the message stored in `buffer`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -548,6 +623,24 @@ impl Reader for Socket {
         Ok(ret as uint)
     }
 
+    /// Receive a message from the socket. Returns a message allocated by nanomsg on success.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut ep = socket.connect("ipc:///tmp/read_to_end.ipc").unwrap();
+    ///
+    /// match socket.read_to_end() {
+    ///     Ok(msg) => { 
+    ///         println!("Read {} bytes !", msg.as_slice().len()); 
+    ///         // here we can process the the message stored in `msg`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
     fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -593,6 +686,28 @@ impl Reader for Socket {
 }
 
 impl Writer for Socket {
+    /// The function will send a message containing the data from buffer pointed to by buf parameter to the socket. 
+    /// Which of the peers the message will be sent to is determined by the particular socket type.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    /// use std::io::timer::sleep;
+    ///
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
+    /// ```
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
