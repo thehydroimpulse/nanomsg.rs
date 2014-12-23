@@ -305,6 +305,7 @@ mod tests {
     use std::io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
+    use std::thread::Thread;
 
     fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
         let sock = unsafe { nn_socket(domain, protocol) };
@@ -551,7 +552,7 @@ mod tests {
         }
     }
 
-    fn finish_child_task(checkin: Arc<Barrier>, socket: c_int, endpoint: c_int, checkout: Arc<Barrier>) {
+    fn finish_child_task(checkin: Arc<Barrier>, socket: c_int, endpoint: c_int) {
 
         checkin.wait();
 
@@ -559,23 +560,16 @@ mod tests {
             nn_shutdown(socket, endpoint);
             nn_close(socket);
         }
-
-        checkout.wait();
     }
 
     fn test_multithread_pipeline(name: &'static str) {
-
-        // this is required to stop the test main task only when children tasks are done
-        let finish_line = Arc::new(Barrier::new(3));
-        let finish_line_pull = finish_line.clone();
-        let finish_line_push = finish_line.clone();
 
         // this is required to prevent the sender from being closed before the receiver gets the message
         let drop_after_use = Arc::new(Barrier::new(2));
         let drop_after_use_pull = drop_after_use.clone();
         let drop_after_use_push = drop_after_use.clone();
 
-        spawn(move || {
+        let push_thread = Thread::spawn(move || {
             let url = name.to_c_str();
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
@@ -583,10 +577,10 @@ mod tests {
 
             test_send(push_sock, push_msg);
 
-            finish_child_task(drop_after_use_push, push_sock, push_endpoint, finish_line_push);
+            finish_child_task(drop_after_use_push, push_sock, push_endpoint);
         });
 
-        spawn(move || {
+        let pull_thread = Thread::spawn(move || {
             let url = name.to_c_str();
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);
@@ -594,10 +588,11 @@ mod tests {
 
             test_receive(pull_sock, pull_msg);
 
-            finish_child_task(drop_after_use_pull, pull_sock, pull_endpoint, finish_line_pull);
+            finish_child_task(drop_after_use_pull, pull_sock, pull_endpoint);
         });
 
-        finish_line.wait();
+        assert!(push_thread.join().is_ok());
+        assert!(pull_thread.join().is_ok());
     }
 
     #[test]

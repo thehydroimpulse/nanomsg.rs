@@ -1,4 +1,4 @@
-#![feature(globs, unsafe_destructor, phase, slicing_syntax, macro_rules)]
+#![feature(globs, phase, slicing_syntax, macro_rules)]
 
 #[phase(plugin, link)] extern crate log;
 
@@ -18,25 +18,65 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
-use std::kinds::marker::ContravariantLifetime;
+use std::kinds::marker::NoCopy;
 
 pub mod result;
-mod endpoint;
+pub mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
 #[deriving(Show, PartialEq, Copy)]
 pub enum Protocol {
+    /// Used to implement the client application that sends requests and receives replies.
+    ///
+    /// **See also:** `Socket::set_request_resend_interval`
     Req = (libnanomsg::NN_REQ) as int,
+
+    /// Used to implement the stateless worker that receives requests and sends replies.
     Rep = (libnanomsg::NN_REP) as int,
+
+    /// This socket is used to send messages to a cluster of load-balanced nodes. 
+    /// Receive operation is not implemented on this socket type.
     Push = (libnanomsg::NN_PUSH) as int,
+
+    /// This socket is used to receive a message from a cluster of nodes.
+    /// Send operation is not implemented on this socket type.
     Pull = (libnanomsg::NN_PULL) as int,
+
+    /// Socket for communication with exactly one peer.
+    /// Each party can send messages at any time. 
+    /// If the peer is not available or send buffer is full subsequent calls to `write`
+    /// will block until it’s possible to send the message.
     Pair = (libnanomsg::NN_PAIR) as int,
+
+    /// Sent messages are distributed to all nodes in the topology.
+    /// Incoming messages from all other nodes in the topology are fair-queued in the socket.
     Bus = (libnanomsg::NN_BUS) as int,
+
+    /// This socket is used to distribute messages to multiple destinations.
+    /// Receive operation is not defined.
     Pub = (libnanomsg::NN_PUB) as int,
+
+    /// Receives messages from the publisher.
+    /// Only messages that the socket is subscribed to are received.
+    /// When the socket is created there are no subscriptions and thus no messages will be received.
+    /// Send operation is not defined on this socket.
+    ///
+    /// **See also:** `Socket::subscribe` and `Socket::unsubscribe`.
     Sub = (libnanomsg::NN_SUB) as int,
+
+    /// Used to send the survey.
+    /// The survey is delivered to all the connected respondents.
+    /// Once the query is sent, the socket can be used to receive the responses.
+    /// When the survey deadline expires, receive will return Timeout error.
+    /// 
+    /// **See also:** `Socket::set_survey_deadline`
     Surveyor = (libnanomsg::NN_SURVEYOR) as int,
+
+    /// Use to respond to the survey. 
+    /// Survey is received using receive function, response is sent using send function
+    /// This socket can be connected to at most one peer.
     Respondent = (libnanomsg::NN_RESPONDENT) as int
 }
 
@@ -49,9 +89,9 @@ impl Protocol {
 /// A type-safe socket wrapper around nanomsg's own socket implementation. This
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
-pub struct Socket<'a> {
+pub struct Socket {
     socket: c_int,
-    marker: ContravariantLifetime<'a>
+    no_copy_marker: NoCopy
 }
 
 #[deriving(Copy)]
@@ -120,13 +160,13 @@ macro_rules! error_guard(
     )
 );
 
-impl<'a> Socket<'a> {
+impl Socket {
 
     /// Allocate and initialize a new Nanomsg socket which returns
     /// a new file descriptor behind the scene. The safe interface doesn't
     /// expose any of the underlying file descriptors and such.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -136,41 +176,44 @@ impl<'a> Socket<'a> {
     ///     Err(err) => panic!("{}", err)
     /// };
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `AddressFamilyNotSupported` : Specified address family is not supported.
+    /// - `InvalidArgument` : Unknown protocol.
+    /// - `TooManyOpenFiles` : The limit on the total number of open SP sockets or OS limit for file descriptors has been reached.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn new(protocol: Protocol) -> NanoResult<Socket<'a>> {
+    pub fn new(protocol: Protocol) -> NanoResult<Socket> {
         Socket::create_socket(libnanomsg::AF_SP, protocol)
     }
 
     /// Allocate and initialize a new Nanomsg socket meant to be used in a device
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
     ///
     /// let mut s1 = Socket::new_for_device(Protocol::Req).unwrap();
     /// let mut s2 = Socket::new_for_device(Protocol::Rep).unwrap();
-    /// let ep1 = s1.bind("ipc://localhost:5555").unwrap();
-    /// let ep2 = s2.bind("ipc://localhost:5556").unwrap();
+    /// let ep1 = s1.bind("ipc:///tmp/new_for_device1.ipc").unwrap();
+    /// let ep2 = s2.bind("ipc:///tmp/new_for_device2.ipc").unwrap();
     /// 
-    /// //let ret = Socket::device(&s1, &s2);
+    /// // And now `Socket::device(&s1, &s2)` can be called to create the device.
     /// ```
     #[unstable]
-    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket<'a>> {
+    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket> {
         Socket::create_socket(libnanomsg::AF_SP_RAW, protocol)
     }
 
-    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket<'a>> {
+    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket> {
         let socket = unsafe {
             libnanomsg::nn_socket(domain, protocol.to_raw())
         };
 
         error_guard!(socket);
-
-        Ok(Socket {
-            socket: socket,
-            marker: ContravariantLifetime::<'a>
-        })
+        Ok(Socket { socket: socket, no_copy_marker: NoCopy })
     }
 
     /// Creating a new socket through `Socket::new` does **not**
@@ -183,7 +226,7 @@ impl<'a> Socket<'a> {
     /// Note: This does **not** block the current task. That job
     /// is up to the user of the library by entering a loop.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -194,13 +237,25 @@ impl<'a> Socket<'a> {
     /// };
     ///
     /// // Bind the newly created socket to the following address:
-    /// match socket.bind("ipc:///tmp/pipeline.ipc") {
+    /// match socket.bind("ipc:///tmp/bind_doc.ipc") {
     ///     Ok(_) => {},
     ///     Err(err) => panic!("Failed to bind socket: {}", err)
     /// }
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `TooManyOpenFiles` : Maximum number of active endpoints was reached.
+    /// - `InvalidArgument` : The syntax of the supplied address is invalid.
+    /// - `NameTooLong` : The supplied address is too long.
+    /// - `ProtocolNotSupported` : The requested transport protocol is not supported.
+    /// - `AddressNotAvailable` : The requested endpoint is not local.
+    /// - `NoDevice` : Address specifies a nonexistent interface.
+    /// - `AddressInUse` : The requested local endpoint is already in use.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn bind<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
+    pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         error_guard!(ret);
@@ -220,22 +275,56 @@ impl<'a> Socket<'a> {
     ///     Err(err) => panic!("{}", err)
     /// };
     ///
-    /// let endpoint = match socket.connect("ipc:///tmp/pipeline.ipc") {
+    /// let endpoint = match socket.connect("ipc:///tmp/connect_doc.ipc") {
     ///     Ok(ep) => ep,
     ///     Err(err) => panic!("Failed to connect socket: {}", err)
     /// };    
     /// ```        
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `TooManyOpenFiles` : Maximum number of active endpoints was reached.
+    /// - `InvalidArgument` : The syntax of the supplied address is invalid.
+    /// - `NameTooLong` : The supplied address is too long.
+    /// - `ProtocolNotSupported` : The requested transport protocol is not supported.
+    /// - `NoDevice` : Address specifies a nonexistent interface.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn connect<'b, 'a: 'b>(&mut self, addr: &str) -> NanoResult<Endpoint<'b>> {
+    pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
     }
 
-    #[unstable]
     /// Non-blocking version of the `read` function.
+    /// Returns the number of read bytes on success.
+    /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_doc.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
+    ///
+    /// match socket.nb_read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the message stored in `buffer`
+    ///     },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Nothing to be read for the moment ...");
+    ///         // here we can use the CPU for something else and try again later
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```        
+    #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -247,9 +336,31 @@ impl<'a> Socket<'a> {
         Ok(ret as uint)
     }
 
-    #[unstable]
     /// Non-blocking version of the `read_to_end` function.
+    /// Returns a message allocated by nanomsg on success.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end_doc.ipc").unwrap();
+    ///
+    /// match socket.nb_read_to_end() {
+    ///     Ok(msg) => { 
+    ///         println!("Read message {} !", msg.as_slice()); 
+    ///         // here we can process the message stored in `msg`
+    ///     },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Nothing to be read for the moment ...");
+    ///         // here we can use the CPU for something else and try again later
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```        
+    #[unstable]
     pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -274,6 +385,23 @@ impl<'a> Socket<'a> {
     #[unstable]
     /// Non-blocking version of the `write` function.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if the message cannot be sent at the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_write_doc.ipc").unwrap();
+    ///
+    /// match socket.nb_write(b"foobar") {
+    ///     Ok(_) => { println!("Message sent !"); },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Receiver not ready, message can't be sent for the moment ...");
+    ///     },
+    ///     Err(err) => panic!("Problem while writing: {}", err)
+    /// };
+    /// ```        
     pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -437,6 +565,9 @@ impl<'a> Socket<'a> {
                                     name)
     }
 
+    /// This option, when set to `true`, disables Nagle’s algorithm.
+    /// It also disables delaying of TCP acknowledgments.
+    /// Using this option improves latency at the expense of throughput.
     #[unstable]
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_TCP,
@@ -444,6 +575,10 @@ impl<'a> Socket<'a> {
                                       tcp_nodelay as c_int)
     }
 
+    /// Defined on full `Sub` socket.
+    /// Subscribes for a particular topic.
+    /// Type of the option is string.
+    /// A single `Sub` socket can handle multiple subscriptions.
     #[unstable]
     pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
         self.set_socket_options_str(libnanomsg::NN_SUB,
@@ -451,6 +586,7 @@ impl<'a> Socket<'a> {
                                     topic)
     }
 
+    /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
     #[unstable]
     pub fn unsubscribe(&mut self, topic: &str) -> NanoResult<()> {
         self.set_socket_options_str(libnanomsg::NN_SUB,
@@ -458,6 +594,9 @@ impl<'a> Socket<'a> {
                                     topic)
     }
 
+    /// Specifies how long to wait for responses to the survey.
+    /// Once the deadline expires, receive function will return `Timeout` error and all subsequent responses to the survey will be silently dropped.
+    /// The deadline is measured in milliseconds. Default value is 1 second.
     #[unstable]
     pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SURVEYOR,
@@ -465,6 +604,9 @@ impl<'a> Socket<'a> {
                                       deadline.num_milliseconds() as c_int)
     }
 
+    /// This option is defined on the full `Req` socket.
+    /// If reply is not received in specified amount of milliseconds, the request will be automatically resent.
+    /// The type of this option is int. Default value is 1 minute.
     #[unstable]
     pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_REQ,
@@ -474,7 +616,40 @@ impl<'a> Socket<'a> {
 
 }
 
-impl<'a> Reader for Socket<'a> {
+impl Reader for Socket {
+    /// Receive a message from the socket and store it in the buf argument.
+    /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
+    /// Returns the number of bytes in the message on success.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
+    ///
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
+    ///
+    /// match pull_socket.read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the `count` bytes of the message stored in `buffer`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -489,6 +664,36 @@ impl<'a> Reader for Socket<'a> {
         Ok(ret as uint)
     }
 
+    /// Receive a message from the socket. Returns a message allocated by nanomsg on success.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
+    ///
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
+    ///
+    /// match pull_socket.read_to_end() {
+    ///     Ok(msg) => { 
+    ///         println!("Read {} bytes !", msg.as_slice().len()); 
+    ///         // here we can process the the message stored in `msg`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
     fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -512,6 +717,12 @@ impl<'a> Reader for Socket<'a> {
         }
     }
 
+    /// Reads at least `min` bytes and places them in `buf`.
+    /// Returns the number of bytes read.
+    ///
+    /// This will continue to call `read` until at least `min` bytes have been
+    ///
+    /// If an error occurs at any point, that error is returned, and no further bytes are read.
     fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
         if min > buf.len() {
             return Err(io::standard_error(io::InvalidInput));
@@ -533,7 +744,40 @@ impl<'a> Reader for Socket<'a> {
     }
 }
 
-impl<'a> Writer for Socket<'a> {
+impl Writer for Socket {
+    /// The function will send a message containing the data from the buf parameter to the socket. 
+    /// Which of the peers the message will be sent to is determined by the particular socket type.
+    ///
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
+    ///
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
+    ///
+    /// match pull_socket.read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the `count` bytes of the message stored in `buffer`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -549,8 +793,7 @@ impl<'a> Writer for Socket<'a> {
     }
 }
 
-#[unsafe_destructor]
-impl<'a> Drop for Socket<'a> {
+impl Drop for Socket {
     fn drop(&mut self) {
         unsafe { libnanomsg::nn_close(self.socket); }
     }
@@ -569,6 +812,7 @@ mod tests {
     use std::io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
+    use std::thread::Thread;
 
     #[test]
     fn bool_to_c_int_sanity() {
@@ -637,21 +881,21 @@ mod tests {
         drop(socket);
     }
 
-    fn test_create_socket<'a>(protocol: Protocol) -> Socket<'a> {
+    fn test_create_socket(protocol: Protocol) -> Socket {
         match Socket::new(protocol) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         }
     }
 
-    fn test_bind<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
+    fn test_bind(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.bind(addr) {
             Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
         }
     }
 
-    fn test_connect<'b, 'a: 'b>(socket: &mut Socket<'a>, addr: &str) -> Endpoint<'b> {
+    fn test_connect(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.connect(addr) {
             Ok(endpoint) => endpoint,
             Err(err) => panic!("{}", err)
@@ -696,7 +940,7 @@ mod tests {
         let url = "ipc:///tmp/pipeline.ipc";
 
         let mut push_socket = test_create_socket(Push);
-        test_bind(&mut push_socket, url);
+        let mut push_endpoint = test_bind(&mut push_socket, url);
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
@@ -706,18 +950,20 @@ mod tests {
         test_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
 
+        push_endpoint.shutdown();
+
         drop(pull_socket);
         drop(push_socket);
     }
 
     fn test_multithread_pipeline(url: &'static str) {
 
-        // this is required to stop the test main task only when children tasks are done
+        // this is required to prevent the sender from being dropped too early
         let finish_line = Arc::new(Barrier::new(3));
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        spawn(move || {
+        let push_thread = Thread::spawn(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -726,7 +972,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        spawn(move|| {
+        let pull_thread = Thread::spawn(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
@@ -736,6 +982,9 @@ mod tests {
         });
 
         finish_line.wait();
+
+        assert!(push_thread.join().is_ok());
+        assert!(pull_thread.join().is_ok());
     }
 
     #[test]
@@ -1044,7 +1293,7 @@ mod tests {
     }
 
     #[test]
-    fn protcol_matches_raw() {
+    fn protocol_matches_raw() {
          assert_eq!(libnanomsg::NN_REQ, Req.to_raw());
          assert_eq!(libnanomsg::NN_REP, Rep.to_raw());
          assert_eq!(libnanomsg::NN_PUSH, Push.to_raw());

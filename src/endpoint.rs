@@ -1,30 +1,33 @@
 use libc::c_int;
 use libnanomsg;
-use std::kinds::marker::ContravariantLifetime;
 use result::{NanoResult,last_nano_error};
-
+use std::kinds::marker::NoCopy;
 
 /// An endpoint created for a specific socket. Each endpoint is identified
 /// by a unique return value that can be further passed to a shutdown
-/// function. The shutdown is done through the endpoint itself and not
-/// the Socket. However, the `Endpoint` doesn't live longer than the socket
-/// itself. This is done through phantom lifetimes.
-pub struct Endpoint<'a> {
+/// function. The shutdown is done through the endpoint itself and not the Socket
+pub struct Endpoint {
     value: c_int,
     socket: c_int,
-    marker: ContravariantLifetime<'a>
+    no_copy_marker: NoCopy
 }
 
-impl<'a> Endpoint<'a> {
-    pub fn new(value: c_int, socket: c_int) -> Endpoint<'a> {
+impl Endpoint {
+    #[unstable]
+    pub fn new(value: c_int, socket: c_int) -> Endpoint {
         Endpoint {
             value: value,
             socket: socket,
-            marker: ContravariantLifetime::<'a>
+            no_copy_marker: NoCopy
         }
     }
 
-    pub fn shutdown(&'a mut self) -> NanoResult<()> {
+    /// Removes an endpoint from the socket that created it (via `bind` or `connect`).
+    /// The call will return immediately, however, 
+    /// the library will try to deliver any outstanding outbound messages to the endpoint 
+    /// for the time specified by `Socket::set_linger`.
+    #[unstable]
+    pub fn shutdown(&mut self) -> NanoResult<()> {
 
         let ret = unsafe { libnanomsg::nn_shutdown(self.socket, self.value) };
 

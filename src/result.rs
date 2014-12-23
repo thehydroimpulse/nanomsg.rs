@@ -40,7 +40,10 @@ pub enum NanoErrorKind {
     ConnectionReset = libnanomsg::ECONNRESET as int,
     ProtocolNotAvailable = libnanomsg::ENOPROTOOPT as int,
     AlreadyConnected = libnanomsg::EISCONN as int,
-    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
+    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int,
+    Terminating = libnanomsg::ETERM as int,
+    NameTooLong = libnanomsg::ENAMETOOLONG as int,
+    NoDevice = libnanomsg::ENODEV as int
 }
 
 #[deriving(PartialEq, Copy)]
@@ -50,6 +53,7 @@ pub struct NanoError {
 }
 
 impl NanoError {
+    #[unstable]
     pub fn new(description: &'static str, kind: NanoErrorKind) -> NanoError {
         NanoError {
             description: description,
@@ -57,6 +61,7 @@ impl NanoError {
         }
     }
 
+    #[unstable]
     pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
         let maybe_error_kind = FromPrimitive::from_i64(nn_errno as i64);
         let error_kind = maybe_error_kind.unwrap_or(Unknown);
