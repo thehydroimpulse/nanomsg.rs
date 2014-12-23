@@ -265,7 +265,7 @@ impl Socket {
     /// Connects the socket to a remote endpoint.
     /// Returns the endpoint on success.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -303,7 +303,7 @@ impl Socket {
     /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
@@ -323,7 +323,16 @@ impl Socket {
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
-    /// ```        
+    /// ```  
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
 
@@ -360,6 +369,15 @@ impl Socket {
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
     /// ```        
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
@@ -402,6 +420,15 @@ impl Socket {
     ///     Err(err) => panic!("Problem while writing: {}", err)
     /// };
     /// ```        
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -427,6 +454,46 @@ impl Socket {
         }
     }
 
+    /// Checks a set of sockets and reports whether it’s possible to send a message to the socket and/or receive a message from each socket.
+    /// Upon successful completion, the number of `PollFd` structures with events signaled is returned. 
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, PollFd, PollRequest};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
+    ///
+    /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
+    /// let mut left_ep = left_socket.bind("ipc:///tmp/poll_doc.ipc").unwrap();
+    /// 
+    /// let mut right_socket = Socket::new(Protocol::Pair).unwrap();
+    /// let mut right_ep = right_socket.connect("ipc:///tmp/poll_doc.ipc").unwrap();
+    /// 
+    /// sleep(Duration::milliseconds(10));
+    ///
+    /// // Here some messages may have been sent ...
+    ///
+    /// let mut pollfd_vec: Vec<PollFd> = vec![left_socket.new_pollfd(true, true), right_socket.new_pollfd(true, true)];
+    /// let mut poll_req = PollRequest::new(pollfd_vec.as_mut_slice());
+    /// let timeout = Duration::milliseconds(10);
+    /// let poll_result = Socket::poll(&mut poll_req, &timeout);
+    ///
+    /// if poll_req.get_fds()[0].can_write() {
+    ///     // left_socket socket can send a message ...
+    /// }
+    ///
+    /// if poll_req.get_fds()[1].can_read() {
+    ///     // right_socket socket is ready to receive a message ...
+    /// }
+    /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : Some of the provided sockets are invalid.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Timeout` : No event was signaled before the specified timeout.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn poll(request: &mut PollRequest, timeout: &Duration) -> NanoResult<int> {
         let nn_fds = request.get_nn_fds();
@@ -453,6 +520,14 @@ impl Socket {
         Ok(())
     }
 
+    /// Notify all sockets about process termination.
+    /// To help with shutdown of multi-threaded programs nanomsg provides the `terminate` function 
+    /// which informs all the open sockets that process termination is underway.
+    /// If a socket is blocked inside a blocking function, such as `read`,
+    /// it will be unblocked and `Terminating` error will be returned to the user. 
+    /// Similarly, any subsequent attempt to invoke a socket function other than `drop` after `terminate` was called will result in `Terminating` error.
+    /// If waiting inside a polling function, the call will unblock with both read and write signaled.
+    /// The `terminate` function itself is non-blocking.
     #[unstable]
     pub fn terminate() {
         unsafe { libnanomsg::nn_term() };
@@ -621,7 +696,7 @@ impl Reader for Socket {
     /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
     /// Returns the number of bytes in the message on success.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -650,6 +725,16 @@ impl Reader for Socket {
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
+    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -694,6 +779,15 @@ impl Reader for Socket {
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -723,6 +817,15 @@ impl Reader for Socket {
     /// This will continue to call `read` until at least `min` bytes have been
     ///
     /// If an error occurs at any point, that error is returned, and no further bytes are read.
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
         if min > buf.len() {
             return Err(io::standard_error(io::InvalidInput));
@@ -778,6 +881,15 @@ impl Writer for Socket {
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {

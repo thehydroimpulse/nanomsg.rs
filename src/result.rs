@@ -43,7 +43,9 @@ pub enum NanoErrorKind {
     SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int,
     Terminating = libnanomsg::ETERM as int,
     NameTooLong = libnanomsg::ENAMETOOLONG as int,
-    NoDevice = libnanomsg::ENODEV as int
+    NoDevice = libnanomsg::ENODEV as int,
+    FileStateMismatch = libnanomsg::EFSM as int,
+    Interrupted = libnanomsg::EINTR as int
 }
 
 #[deriving(PartialEq, Copy)]
