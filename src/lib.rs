@@ -190,7 +190,7 @@ impl Socket {
     /// };
     ///
     /// // Bind the newly created socket to the following address:
-    /// match socket.bind("ipc:///tmp/pipeline.ipc") {
+    /// match socket.bind("ipc:///tmp/bind_doc.ipc") {
     ///     Ok(_) => {},
     ///     Err(err) => panic!("Failed to bind socket: {}", err)
     /// }
@@ -216,7 +216,7 @@ impl Socket {
     ///     Err(err) => panic!("{}", err)
     /// };
     ///
-    /// let endpoint = match socket.connect("ipc:///tmp/pipeline.ipc") {
+    /// let endpoint = match socket.connect("ipc:///tmp/connect_doc.ipc") {
     ///     Ok(ep) => ep,
     ///     Err(err) => panic!("Failed to connect socket: {}", err)
     /// };    
@@ -240,7 +240,7 @@ impl Socket {
     /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read.ipc").unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_doc.ipc").unwrap();
     /// let mut buffer = [0u8, ..1024];
     ///
     /// match socket.nb_read(&mut buffer) {
@@ -277,7 +277,7 @@ impl Socket {
     /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end.ipc").unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end_doc.ipc").unwrap();
     ///
     /// match socket.nb_read_to_end() {
     ///     Ok(msg) => { 
@@ -316,6 +316,23 @@ impl Socket {
     #[unstable]
     /// Non-blocking version of the `write` function.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if the message cannot be sent at the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_write_doc.ipc").unwrap();
+    ///
+    /// match socket.nb_write(b"foobar") {
+    ///     Ok(_) => { println!("Message sent !"); },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Receiver not ready, message can't be sent for the moment ...");
+    ///     },
+    ///     Err(err) => panic!("Problem while writing: {}", err)
+    /// };
+    /// ```        
     pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
         let len = buf.len();
         let ret = unsafe {
