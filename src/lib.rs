@@ -166,7 +166,7 @@ impl Socket {
     /// a new file descriptor behind the scene. The safe interface doesn't
     /// expose any of the underlying file descriptors and such.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -176,6 +176,13 @@ impl Socket {
     ///     Err(err) => panic!("{}", err)
     /// };
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `AddressFamilyNotSupported` : Specified address family is not supported.
+    /// - `InvalidArgument` : Unknown protocol.
+    /// - `TooManyOpenFiles` : The limit on the total number of open SP sockets or OS limit for file descriptors has been reached.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn new(protocol: Protocol) -> NanoResult<Socket> {
         Socket::create_socket(libnanomsg::AF_SP, protocol)
@@ -183,7 +190,7 @@ impl Socket {
 
     /// Allocate and initialize a new Nanomsg socket meant to be used in a device
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -219,7 +226,7 @@ impl Socket {
     /// Note: This does **not** block the current task. That job
     /// is up to the user of the library by entering a loop.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
@@ -235,6 +242,18 @@ impl Socket {
     ///     Err(err) => panic!("Failed to bind socket: {}", err)
     /// }
     /// ```
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `TooManyOpenFiles` : Maximum number of active endpoints was reached.
+    /// - `InvalidArgument` : The syntax of the supplied address is invalid.
+    /// - `NameTooLong` : The supplied address is too long.
+    /// - `ProtocolNotSupported` : The requested transport protocol is not supported.
+    /// - `AddressNotAvailable` : The requested endpoint is not local.
+    /// - `NoDevice` : Address specifies a nonexistent interface.
+    /// - `AddressInUse` : The requested local endpoint is already in use.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
@@ -261,6 +280,16 @@ impl Socket {
     ///     Err(err) => panic!("Failed to connect socket: {}", err)
     /// };    
     /// ```        
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `TooManyOpenFiles` : Maximum number of active endpoints was reached.
+    /// - `InvalidArgument` : The syntax of the supplied address is invalid.
+    /// - `NameTooLong` : The supplied address is too long.
+    /// - `ProtocolNotSupported` : The requested transport protocol is not supported.
+    /// - `NoDevice` : Address specifies a nonexistent interface.
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
         let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
@@ -688,6 +717,12 @@ impl Reader for Socket {
         }
     }
 
+    /// Reads at least `min` bytes and places them in `buf`.
+    /// Returns the number of bytes read.
+    ///
+    /// This will continue to call `read` until at least `min` bytes have been
+    ///
+    /// If an error occurs at any point, that error is returned, and no further bytes are read.
     fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
         if min > buf.len() {
             return Err(io::standard_error(io::InvalidInput));

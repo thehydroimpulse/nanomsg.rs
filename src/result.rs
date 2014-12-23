@@ -40,7 +40,10 @@ pub enum NanoErrorKind {
     ConnectionReset = libnanomsg::ECONNRESET as int,
     ProtocolNotAvailable = libnanomsg::ENOPROTOOPT as int,
     AlreadyConnected = libnanomsg::EISCONN as int,
-    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int
+    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int,
+    Terminating = libnanomsg::ETERM as int,
+    NameTooLong = libnanomsg::ENAMETOOLONG as int,
+    NoDevice = libnanomsg::ENODEV as int
 }
 
 #[deriving(PartialEq, Copy)]
