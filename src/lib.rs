@@ -229,9 +229,33 @@ impl Socket {
         Ok(Endpoint::new(ret, self.socket))
     }
 
-    #[unstable]
     /// Non-blocking version of the `read` function.
+    /// Returns the number of read bytes on success.
+    /// Any bytes exceeding the length of the specified buffer argument will be truncated.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
+    ///
+    /// match socket.nb_read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the message stored in `buffer`
+    ///     },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Nothing to be read for the moment ...");
+    ///         // here we can use the CPU for something else and try again later
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```        
+    #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
 
         let buf_len = buf.len() as size_t;
@@ -243,9 +267,31 @@ impl Socket {
         Ok(ret as uint)
     }
 
-    #[unstable]
     /// Non-blocking version of the `read_to_end` function.
+    /// Returns a message allocated by nanomsg on success.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    ///
+    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end.ipc").unwrap();
+    ///
+    /// match socket.nb_read_to_end() {
+    ///     Ok(msg) => { 
+    ///         println!("Read message {} !", msg.as_slice()); 
+    ///         // here we can process the message stored in `msg`
+    ///     },
+    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///         println!("Nothing to be read for the moment ...");
+    ///         // here we can use the CPU for something else and try again later
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```        
+    #[unstable]
     pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
