@@ -193,7 +193,7 @@ impl Socket {
     /// let ep1 = s1.bind("ipc:///tmp/new_for_device1.ipc").unwrap();
     /// let ep2 = s2.bind("ipc:///tmp/new_for_device2.ipc").unwrap();
     /// 
-    /// //let ret = Socket::device(&s1, &s2);
+    /// // And now `Socket::device(&s1, &s2)` can be called to create the device.
     /// ```
     #[unstable]
     pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket> {
@@ -596,12 +596,24 @@ impl Reader for Socket {
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
     ///
-    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut ep = socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
     /// let mut buffer = [0u8, ..1024];
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
     ///
-    /// match socket.nb_read(&mut buffer) {
+    /// match pull_socket.read(&mut buffer) {
     ///     Ok(count) => { 
     ///         println!("Read {} bytes !", count); 
     ///         // here we can process the `count` bytes of the message stored in `buffer`
@@ -629,11 +641,23 @@ impl Reader for Socket {
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::io::timer::sleep;
     ///
-    /// let mut socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut ep = socket.connect("ipc:///tmp/read_to_end.ipc").unwrap();
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
     ///
-    /// match socket.read_to_end() {
+    /// match pull_socket.read_to_end() {
     ///     Ok(msg) => { 
     ///         println!("Read {} bytes !", msg.as_slice().len()); 
     ///         // here we can process the the message stored in `msg`
@@ -686,27 +710,38 @@ impl Reader for Socket {
 }
 
 impl Writer for Socket {
-    /// The function will send a message containing the data from buffer pointed to by buf parameter to the socket. 
+    /// The function will send a message containing the data from the buf parameter to the socket. 
     /// Which of the peers the message will be sent to is determined by the particular socket type.
+    ///
     ///
     /// # Example:
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
     /// use std::io::timer::sleep;
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
-    /// let mut push_ep = socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
     /// 
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut pull_ep = socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
+    /// let mut buffer = [0u8, ..1024];
     /// 
     /// sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
-    ///     Ok(..) => println("Message sent !"),
+    ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
     /// }
+    ///
+    /// match pull_socket.read(&mut buffer) {
+    ///     Ok(count) => { 
+    ///         println!("Read {} bytes !", count); 
+    ///         // here we can process the `count` bytes of the message stored in `buffer`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
     /// ```
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
