@@ -906,6 +906,10 @@ impl Writer for Socket {
 }
 
 impl Drop for Socket {
+    /// Closes the socket. 
+    /// Any buffered inbound messages that were not yet received by the application will be discarded.
+    /// The library will try to deliver any outstanding outbound messages for the time specified by `set_linger`. 
+    /// The call will block in the meantime.
     fn drop(&mut self) {
         unsafe { libnanomsg::nn_close(self.socket); }
     }
