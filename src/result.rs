@@ -86,17 +86,18 @@ impl NanoError {
             NanoErrorKind::FileStateMismatch => io::standard_error(IoErrorKind::ResourceUnavailable),
             NanoErrorKind::Terminating => io::standard_error(IoErrorKind::IoUnavailable),
             NanoErrorKind::Interrupted => io::standard_error(IoErrorKind::BrokenPipe),
-            _ => io::standard_error(io::OtherIoError)
+            //_ => io::standard_error(io::OtherIoError)
+            _ => {
+                IoError {
+                    kind: IoErrorKind::OtherIoError,
+                    desc: self.description,
+                    detail: None
+                }
+            }
         }
     }
 }
-/*
-impl FromError<io::IoError> for NanoError {
-    fn from_error(_: io::IoError) -> NanoError {
-        NanoError::new("", TryAgain)
-    }
-}
-*/
+
 impl fmt::Show for NanoError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
