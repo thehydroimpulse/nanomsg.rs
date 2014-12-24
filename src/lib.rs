@@ -743,7 +743,7 @@ impl Reader for Socket {
         let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, 0 as c_int) };
 
         if ret == -1 {
-            return Err(io::standard_error(io::OtherIoError));
+            return Err(last_nano_error().to_ioerror());
         }
 
         Ok(ret as uint)
@@ -782,12 +782,12 @@ impl Reader for Socket {
     ///
     /// # Error
     ///
-    /// - `BadFileDescriptor` : The socket is invalid.
-    /// - `OperationNotSupported` : The operation is not supported by this socket type.
-    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `Terminating` : The library is terminating.
+    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
+    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
     fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
         let mut mem : *mut u8 = ptr::null_mut();
 
@@ -800,7 +800,7 @@ impl Reader for Socket {
         };
 
         if ret == -1 {
-            return Err(io::standard_error(io::OtherIoError));
+            return Err(last_nano_error().to_ioerror());
         }
 
         let len = ret as uint;
@@ -820,12 +820,12 @@ impl Reader for Socket {
     ///
     /// # Error
     ///
-    /// - `BadFileDescriptor` : The socket is invalid.
-    /// - `OperationNotSupported` : The operation is not supported by this socket type.
-    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `Terminating` : The library is terminating.
+    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
+    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
     fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
         if min > buf.len() {
             return Err(io::standard_error(io::InvalidInput));
@@ -884,12 +884,12 @@ impl Writer for Socket {
     ///
     /// # Error
     ///
-    /// - `BadFileDescriptor` : The socket is invalid.
-    /// - `OperationNotSupported` : The operation is not supported by this socket type.
-    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `Terminating` : The library is terminating.
+    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
+    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -898,7 +898,7 @@ impl Writer for Socket {
         };
 
         if ret as uint != len {
-            return Err(io::standard_error(io::OtherIoError));
+            return Err(last_nano_error().to_ioerror());
         }
 
         Ok(())
