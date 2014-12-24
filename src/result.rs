@@ -86,7 +86,6 @@ impl NanoError {
             NanoErrorKind::FileStateMismatch => io::standard_error(IoErrorKind::ResourceUnavailable),
             NanoErrorKind::Terminating => io::standard_error(IoErrorKind::IoUnavailable),
             NanoErrorKind::Interrupted => io::standard_error(IoErrorKind::BrokenPipe),
-            //_ => io::standard_error(io::OtherIoError)
             _ => {
                 IoError {
                     kind: IoErrorKind::OtherIoError,
