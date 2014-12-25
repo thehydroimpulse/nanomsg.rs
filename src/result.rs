@@ -5,6 +5,7 @@ use std::str;
 use std::fmt;
 use std::io;
 use std::io::{IoError, IoErrorKind};
+use std::error::FromError;
 
 pub use self::NanoErrorKind::*;
 
@@ -97,6 +98,12 @@ impl NanoError {
     }
 }
 
+impl FromError<io::IoError> for NanoError {
+    fn from_error(_: io::IoError) -> NanoError {
+        NanoError::new("", TryAgain)
+    }
+}
+
 impl fmt::Show for NanoError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
@@ -117,7 +124,9 @@ mod tests {
     use super::NanoErrorKind::*;
     use super::NanoErrorKind;
     use super::NanoError;
+    use std::io;
     use std::io::{IoErrorKind};
+    use std::error::FromError;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
         let i64_error_code = error_code as i64;
@@ -153,5 +162,13 @@ mod tests {
         check_error_kind_match(NanoErrorKind::FileStateMismatch, IoErrorKind::ResourceUnavailable);
         check_error_kind_match(NanoErrorKind::Terminating, IoErrorKind::IoUnavailable);
         check_error_kind_match(NanoErrorKind::Interrupted, IoErrorKind::BrokenPipe);
+    }
+
+    #[test]
+    fn nano_err_can_be_converted_from_io_err() {
+        let io_err = io::standard_error(IoErrorKind::TimedOut);
+        let nano_err: NanoError = FromError::from_error(io_err);
+
+        assert_eq!(NanoErrorKind::TryAgain, nano_err.kind)
     }
 }
