@@ -3,8 +3,9 @@ use libnanomsg;
 
 use std::str;
 use std::fmt;
-use std::error::FromError;
 use std::io;
+use std::io::{IoError, IoErrorKind};
+use std::error::FromError;
 
 pub use self::NanoErrorKind::*;
 
@@ -43,7 +44,9 @@ pub enum NanoErrorKind {
     SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int,
     Terminating = libnanomsg::ETERM as int,
     NameTooLong = libnanomsg::ENAMETOOLONG as int,
-    NoDevice = libnanomsg::ENODEV as int
+    NoDevice = libnanomsg::ENODEV as int,
+    FileStateMismatch = libnanomsg::EFSM as int,
+    Interrupted = libnanomsg::EINTR as int
 }
 
 #[deriving(PartialEq, Copy)]
@@ -73,11 +76,40 @@ impl NanoError {
             NanoError::new(desc, error_kind)
         }
     }
+
+    #[unstable]
+    pub fn to_ioerror(&self) -> IoError {
+        match self.kind {
+            NanoErrorKind::Timeout => io::standard_error(IoErrorKind::TimedOut),
+            NanoErrorKind::InvalidArgument => io::standard_error(IoErrorKind::InvalidInput),
+            NanoErrorKind::BadFileDescriptor => io::standard_error(IoErrorKind::FileNotFound),
+            NanoErrorKind::OperationNotSupported => io::standard_error(IoErrorKind::MismatchedFileTypeForOperation),
+            NanoErrorKind::FileStateMismatch => io::standard_error(IoErrorKind::ResourceUnavailable),
+            NanoErrorKind::Terminating => io::standard_error(IoErrorKind::IoUnavailable),
+            NanoErrorKind::Interrupted => io::standard_error(IoErrorKind::BrokenPipe),
+            _ => {
+                IoError {
+                    kind: IoErrorKind::OtherIoError,
+                    desc: self.description,
+                    detail: None
+                }
+            }
+        }
+    }
 }
 
 impl FromError<io::IoError> for NanoError {
-    fn from_error(_: io::IoError) -> NanoError {
-        NanoError::new("", TryAgain)
+    fn from_error(io_err: io::IoError) -> NanoError {
+        match io_err.kind {
+            IoErrorKind::TimedOut => NanoError::new(io_err.desc, NanoErrorKind::Timeout),
+            IoErrorKind::InvalidInput => NanoError::new(io_err.desc, NanoErrorKind::InvalidArgument),
+            IoErrorKind::FileNotFound => NanoError::new(io_err.desc, NanoErrorKind::BadFileDescriptor),
+            IoErrorKind::MismatchedFileTypeForOperation => NanoError::new(io_err.desc, NanoErrorKind::OperationNotSupported),
+            IoErrorKind::ResourceUnavailable => NanoError::new(io_err.desc, NanoErrorKind::FileStateMismatch),
+            IoErrorKind::IoUnavailable => NanoError::new(io_err.desc, NanoErrorKind::Terminating),
+            IoErrorKind::BrokenPipe => NanoError::new(io_err.desc, NanoErrorKind::Interrupted),
+            _ => NanoError::new(io_err.desc, Unknown)
+        }
     }
 }
 
@@ -100,6 +132,10 @@ mod tests {
     use libc;
     use super::NanoErrorKind::*;
     use super::NanoErrorKind;
+    use super::NanoError;
+    use std::io;
+    use std::io::{IoErrorKind};
+    use std::error::FromError;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
         let i64_error_code = error_code as i64;
@@ -117,5 +153,31 @@ mod tests {
         assert_convert_error_code_to_error_kind(libnanomsg::EPROTONOSUPPORT, ProtocolNotSupported);
         assert_convert_error_code_to_error_kind(libnanomsg::EADDRINUSE, AddressInUse);
         assert_convert_error_code_to_error_kind(libnanomsg::EHOSTUNREACH, HostUnreachable);
+    }
+
+    fn check_error_kind_match(nano_err_kind: NanoErrorKind, io_err_kind: IoErrorKind) {
+        let nano_err = NanoError::from_nn_errno(nano_err_kind as libc::c_int);
+        let io_err = nano_err.to_ioerror();
+
+        assert_eq!(io_err_kind, io_err.kind)
+    }
+
+    #[test]
+    fn check_to_ioerror() {
+        check_error_kind_match(NanoErrorKind::Timeout, IoErrorKind::TimedOut);
+        check_error_kind_match(NanoErrorKind::InvalidArgument, IoErrorKind::InvalidInput);
+        check_error_kind_match(NanoErrorKind::BadFileDescriptor, IoErrorKind::FileNotFound);
+        check_error_kind_match(NanoErrorKind::OperationNotSupported, IoErrorKind::MismatchedFileTypeForOperation);
+        check_error_kind_match(NanoErrorKind::FileStateMismatch, IoErrorKind::ResourceUnavailable);
+        check_error_kind_match(NanoErrorKind::Terminating, IoErrorKind::IoUnavailable);
+        check_error_kind_match(NanoErrorKind::Interrupted, IoErrorKind::BrokenPipe);
+    }
+
+    #[test]
+    fn nano_err_can_be_converted_from_io_err() {
+        let io_err = io::standard_error(IoErrorKind::TimedOut);
+        let nano_err: NanoError = FromError::from_error(io_err);
+
+        assert_eq!(NanoErrorKind::Timeout, nano_err.kind)
     }
 }
