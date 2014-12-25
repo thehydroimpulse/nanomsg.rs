@@ -99,8 +99,17 @@ impl NanoError {
 }
 
 impl FromError<io::IoError> for NanoError {
-    fn from_error(_: io::IoError) -> NanoError {
-        NanoError::new("", TryAgain)
+    fn from_error(io_err: io::IoError) -> NanoError {
+        match io_err.kind {
+            IoErrorKind::TimedOut => NanoError::new(io_err.desc, NanoErrorKind::Timeout),
+            IoErrorKind::InvalidInput => NanoError::new(io_err.desc, NanoErrorKind::InvalidArgument),
+            IoErrorKind::FileNotFound => NanoError::new(io_err.desc, NanoErrorKind::BadFileDescriptor),
+            IoErrorKind::MismatchedFileTypeForOperation => NanoError::new(io_err.desc, NanoErrorKind::OperationNotSupported),
+            IoErrorKind::ResourceUnavailable => NanoError::new(io_err.desc, NanoErrorKind::FileStateMismatch),
+            IoErrorKind::IoUnavailable => NanoError::new(io_err.desc, NanoErrorKind::Terminating),
+            IoErrorKind::BrokenPipe => NanoError::new(io_err.desc, NanoErrorKind::Interrupted),
+            _ => NanoError::new(io_err.desc, Unknown)
+        }
     }
 }
 
@@ -169,6 +178,6 @@ mod tests {
         let io_err = io::standard_error(IoErrorKind::TimedOut);
         let nano_err: NanoError = FromError::from_error(io_err);
 
-        assert_eq!(NanoErrorKind::TryAgain, nano_err.kind)
+        assert_eq!(NanoErrorKind::Timeout, nano_err.kind)
     }
 }
