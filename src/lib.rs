@@ -95,6 +95,9 @@ pub struct Socket {
 }
 
 #[deriving(Copy)]
+/// A request for polling a socket and the poll result.
+/// To create the request, see `Socket::new_pollfd`.
+/// To get the result, see `PollFd::can_read` and `PollFd::can_write`.
 pub struct PollFd {
     socket: c_int,
     check_pollin: bool,
@@ -109,22 +112,30 @@ impl PollFd {
         nn_pollfd::new(self.socket, self.check_pollin, self.check_pollout)
     }
 
+    /// Checks whether at least one message can be received from the socket without blocking.
+    #[unstable]
     pub fn can_read(&self) -> bool {
         self.check_pollin_result
     }
 
+    /// Checks whether at least one message can be sent to the fd socket without blocking.
+    #[unstable]
     pub fn can_write(&self) -> bool {
         self.check_pollout_result
     }
 
 }
 
+/// A request for polling a set of sockets and the poll results.
+/// To create the request, see `PollRequest::new`.
 pub struct PollRequest<'a> {
     fds: &'a mut [PollFd],
     nn_fds: Vec<nn_pollfd>
 }
 
 impl<'a> PollRequest<'a> {
+    /// Creates a request from the specified individualsocket requests.
+    #[unstable]
     pub fn new(fds: &'a mut [PollFd]) -> PollRequest<'a> {
         let nn_fds = fds.iter().map(|fd| fd.convert()).collect();
 
@@ -135,6 +146,8 @@ impl<'a> PollRequest<'a> {
         self.fds.len()
     }
 
+    /// Returs a reference to the socket requests, so they can be checked.
+    #[unstable]
     pub fn get_fds(&'a self) -> &'a [PollFd] {
         self.fds
     }
@@ -143,9 +156,9 @@ impl<'a> PollRequest<'a> {
         self.nn_fds.as_mut_ptr()
     }
 
-    fn copy_poll_result(&mut self, count: uint) {
+    fn copy_poll_result(&mut self) {
 
-        for x in range(0, count) {
+        for x in range(0, self.fds.len()) {
             self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
             self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
         }
@@ -400,7 +413,6 @@ impl Socket {
         }
     }
 
-    #[unstable]
     /// Non-blocking version of the `write` function.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if the message cannot be sent at the moment.
     ///
@@ -429,6 +441,7 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
+    #[unstable]
     pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
         let len = buf.len();
         let ret = unsafe {
@@ -443,6 +456,9 @@ impl Socket {
         Ok(())
     }
 
+    /// Creates a poll request for the socket with the specified check criteria.
+    /// - **pollin:** Check whether at least one message can be received from the socket without blocking.
+    /// - **pollout:** Check whether at least one message can be sent to the fd socket without blocking.
     #[unstable]
     pub fn new_pollfd(&self, pollin: bool , pollout: bool) -> PollFd {
         PollFd {
@@ -507,11 +523,25 @@ impl Socket {
             return Err(NanoError::new("Timeout", NanoErrorKind::Timeout));
         }
 
-        request.copy_poll_result(ret as uint);
+        request.copy_poll_result();
 
         Ok(ret)
     }
 
+    /// Starts a device to forward messages between two sockets.
+    /// If both sockets are valid, `device` function loops
+    /// and sends and messages received from s1 to s2 and vice versa.
+    /// If only one socket is valid and the other is negative,
+    /// `device` works in a "loopback" mode — 
+    /// it loops and sends any messages received from the socket back to itself.
+    /// To break the loop and make `device` function exit use `terminate` function.
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : Some of the provided sockets are invalid.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `InvalidArgument` : Either one of the socket is not an AF_SP_RAW socket; or the two sockets don’t belong to the same protocol; or the directionality of the sockets doesn’t fit (e.g. attempt to join two SINK sockets to form a device).
+    /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
         let ret = unsafe { libnanomsg::nn_device(socket1.socket, socket2.socket) };
@@ -563,6 +593,8 @@ impl Socket {
         Ok(())
     }
 
+    /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
+    /// Negative value means infinite linger. Default value is 1 second.
     #[unstable]
     pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -570,6 +602,9 @@ impl Socket {
                                       linger.num_milliseconds() as c_int)
     }
 
+    /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer, 
+    /// exactly one message may be buffered in addition to the data in the send buffer.
+    /// Default value is 128kB.
     #[unstable]
     pub fn set_send_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -577,6 +612,9 @@ impl Socket {
                                       size_in_bytes as c_int)
     }
 
+    /// Size of the receive buffer, in bytes. To prevent blocking for messages larger than the buffer,
+    /// exactly one message may be buffered in addition to the data in the receive buffer.
+    /// Default value is 128kB.
     #[unstable]
     pub fn set_receive_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -584,6 +622,9 @@ impl Socket {
                                       size_in_bytes as c_int)
     }
 
+    /// The timeout for send operation on the socket.
+    /// If message cannot be sent within the specified timeout, TryAgain error is returned.
+    /// Negative value means infinite timeout. Default value is infinite timeout.
     #[unstable]
     pub fn set_send_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -591,6 +632,9 @@ impl Socket {
                                       timeout.num_milliseconds() as c_int)
     }
 
+    /// The timeout for recv operation on the socket.
+    /// If message cannot be received within the specified timeout, TryAgain error is returned.
+    /// Negative value means infinite timeout. Default value is infinite timeout.
     #[unstable]
     pub fn set_receive_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -598,6 +642,10 @@ impl Socket {
                                       timeout.num_milliseconds() as c_int)
     }
 
+    /// For connection-based transports such as TCP, this option specifies how long to wait,
+    /// when connection is broken before trying to re-establish it.
+    /// Note that actual reconnect interval may be randomised to some extent to prevent severe reconnection storms.
+    /// Default value is 100 milliseconds.
     #[unstable]
     pub fn set_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -605,6 +653,13 @@ impl Socket {
                                       interval.num_milliseconds() as c_int)
     }
 
+    /// This option is to be used only in addition to `set_reconnect_interval` option.
+    /// It specifies maximum reconnection interval. On each reconnect attempt,
+    /// the previous interval is doubled until `max_reconnect_interval` is reached.
+    /// Value of zero means that no exponential backoff is performed and
+    /// reconnect interval is based only on `reconnect_interval`.
+    /// If `max_reconnect_interval` is less than `reconnect_interval`, it is ignored.
+    /// Default value is 0.
     #[unstable]
     pub fn set_max_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -612,6 +667,11 @@ impl Socket {
                                       interval.num_milliseconds() as c_int)
     }
 
+    /// Sets outbound priority for endpoints subsequently added to the socket. 
+    /// This option has no effect on socket types that send messages to all the peers.
+    /// However, if the socket type sends each message to a single peer (or a limited set of peers),
+    /// peers with high priority take precedence over peers with low priority.
+    /// Highest priority is 1, lowest priority is 16. Default value is 8.
     #[unstable]
     pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -619,6 +679,11 @@ impl Socket {
                                       priority as c_int)
     }
 
+    /// Sets inbound priority for endpoints subsequently added to the socket.
+    /// This option has no effect on socket types that are not able to receive messages.
+    /// When receiving a message, messages from peer with higher priority are received before messages
+    /// from peer with lower priority. 
+    /// Highest priority is 1, lowest priority is 16. Default value is 8.
     #[unstable]
     pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -626,6 +691,9 @@ impl Socket {
                                       priority as c_int)
     }
 
+    /// If set to true, only IPv4 addresses are used.
+    /// If set to false, both IPv4 and IPv6 addresses are used.
+    /// Default value is true.
     #[unstable]
     pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
@@ -633,6 +701,9 @@ impl Socket {
                                       ipv4_only as c_int)
     }
 
+    /// Socket name for error reporting and statistics.
+    /// Default value is "socket.N" where N is socket integer.
+    /// **This option is experimental, see `Socket::env` for details**
     #[unstable]
     pub fn set_socket_name(&mut self, name: &str) -> NanoResult<()> {
         self.set_socket_options_str(libnanomsg::NN_SOL_SOCKET,
