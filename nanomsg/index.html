@@ -44,10 +44,16 @@
 <h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nanomsg</a><wbr></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-0' href='../src/nanomsg/lib.rs.html#1-1185'>[src]</a></span></h1>
+        </span><a id='src-0' href='../src/nanomsg/lib.rs.html#1-1657'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
-<table><tr><td><code>pub use result::{<a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>, <a class='struct' href='../nanomsg/result/struct.NanoError.html' title='nanomsg::result::NanoError'>NanoError</a>, <a class='enum' href='../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>};</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr><td><code>pub use result::{<a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>, <a class='struct' href='../nanomsg/result/struct.NanoError.html' title='nanomsg::result::NanoError'>NanoError</a>, <a class='enum' href='../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>};</code></td></tr><tr><td><code>pub use endpoint::<a class='struct' href='../nanomsg/endpoint/struct.Endpoint.html' title='nanomsg::endpoint::Endpoint'>Endpoint</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='mod' href='endpoint/index.html'
+                               title='nanomsg::endpoint'>endpoint</a></td>
+                        <td class='docblock short'></td>
+                    </tr>
+                
                     <tr>
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='mod' href='result/index.html'
                                title='nanomsg::result'>result</a></td>
@@ -56,26 +62,20 @@
                 </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.Endpoint.html'
-                               title='nanomsg::Endpoint'>Endpoint</a></td>
-                        <td class='docblock short'><p>An endpoint created for a specific socket. Each endpoint is identified
-by a unique return value that can be further passed to a shutdown
-function. The shutdown is done through the endpoint itself and not
-the Socket. However, the <code>Endpoint</code> doesn&#39;t live longer than the socket
-itself. This is done through phantom lifetimes.</p>
-</td>
-                    </tr>
-                
-                    <tr>
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.PollFd.html'
                                title='nanomsg::PollFd'>PollFd</a></td>
-                        <td class='docblock short'></td>
+                        <td class='docblock short'><p>A request for polling a socket and the poll result.
+To create the request, see <code>Socket::new_pollfd</code>.
+To get the result, see <code>PollFd::can_read</code> and <code>PollFd::can_write</code>.</p>
+</td>
                     </tr>
                 
                     <tr>
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.PollRequest.html'
                                title='nanomsg::PollRequest'>PollRequest</a></td>
-                        <td class='docblock short'></td>
+                        <td class='docblock short'><p>A request for polling a set of sockets and the poll results.
+To create the request, see <code>PollRequest::new</code>.</p>
+</td>
                     </tr>
                 
                     <tr>

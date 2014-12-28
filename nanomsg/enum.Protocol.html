@@ -26,7 +26,7 @@
 
     <section class="sidebar">
         
-        <p class='location'><a href='index.html'>nanomsg</a></p><div class='block mod'><h2>Modules</h2><a class='mod ' href='result/index.html'>result</a></div><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.Endpoint.html'>Endpoint</a><a class='struct ' href='struct.PollFd.html'>PollFd</a><a class='struct ' href='struct.PollRequest.html'>PollRequest</a><a class='struct ' href='struct.Socket.html'>Socket</a></div><div class='block enum'><h2>Enums</h2><a class='enum current' href='enum.Protocol.html'>Protocol</a></div>
+        <p class='location'><a href='index.html'>nanomsg</a></p><div class='block mod'><h2>Modules</h2><a class='mod ' href='endpoint/index.html'>endpoint</a><a class='mod ' href='result/index.html'>result</a></div><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.PollFd.html'>PollFd</a><a class='struct ' href='struct.PollRequest.html'>PollRequest</a><a class='struct ' href='struct.Socket.html'>Socket</a></div><div class='block enum'><h2>Enums</h2><a class='enum current' href='enum.Protocol.html'>Protocol</a></div>
     </section>
 
     <nav class="sub">
@@ -44,7 +44,7 @@
 <h1 class='fqn'><span class='in-band'>Enum <a href='index.html'>nanomsg</a>::<wbr><a class='enum' href=''>Protocol</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-2815' href='../src/nanomsg/lib.rs.html#30-41'>[src]</a></span></h1>
+        </span><a id='src-3290' href='../src/nanomsg/lib.rs.html#30-81'>[src]</a></span></h1>
 <pre class='rust enum'>pub enum Protocol {
     Req,
     Rep,
@@ -60,9 +60,40 @@
 is bound to a single protocol that has specific behaviour
 (such as only being able to receive messages and not send &#39;em).</p>
 </div><h2 class='variants'>Variants</h2>
-<table><tr><td id='variant.Req'><a class='stability Unmarked' title='No stability level'></a><code>Req</code></td><td></td></tr><tr><td id='variant.Rep'><a class='stability Unmarked' title='No stability level'></a><code>Rep</code></td><td></td></tr><tr><td id='variant.Push'><a class='stability Unmarked' title='No stability level'></a><code>Push</code></td><td></td></tr><tr><td id='variant.Pull'><a class='stability Unmarked' title='No stability level'></a><code>Pull</code></td><td></td></tr><tr><td id='variant.Pair'><a class='stability Unmarked' title='No stability level'></a><code>Pair</code></td><td></td></tr><tr><td id='variant.Bus'><a class='stability Unmarked' title='No stability level'></a><code>Bus</code></td><td></td></tr><tr><td id='variant.Pub'><a class='stability Unmarked' title='No stability level'></a><code>Pub</code></td><td></td></tr><tr><td id='variant.Sub'><a class='stability Unmarked' title='No stability level'></a><code>Sub</code></td><td></td></tr><tr><td id='variant.Surveyor'><a class='stability Unmarked' title='No stability level'></a><code>Surveyor</code></td><td></td></tr><tr><td id='variant.Respondent'><a class='stability Unmarked' title='No stability level'></a><code>Respondent</code></td><td></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/kinds/trait.Copy.html' title='core::kinds::Copy'>Copy</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'></div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>fn <a href='#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<table><tr><td id='variant.Req'><a class='stability Unmarked' title='No stability level'></a><code>Req</code></td><td><div class='docblock'><p>Used to implement the client application that sends requests and receives replies.</p>
+
+<p><strong>See also:</strong> <code>Socket::set_request_resend_interval</code></p>
+</div></td></tr><tr><td id='variant.Rep'><a class='stability Unmarked' title='No stability level'></a><code>Rep</code></td><td><div class='docblock'><p>Used to implement the stateless worker that receives requests and sends replies.</p>
+</div></td></tr><tr><td id='variant.Push'><a class='stability Unmarked' title='No stability level'></a><code>Push</code></td><td><div class='docblock'><p>This socket is used to send messages to a cluster of load-balanced nodes.
+Receive operation is not implemented on this socket type.</p>
+</div></td></tr><tr><td id='variant.Pull'><a class='stability Unmarked' title='No stability level'></a><code>Pull</code></td><td><div class='docblock'><p>This socket is used to receive a message from a cluster of nodes.
+Send operation is not implemented on this socket type.</p>
+</div></td></tr><tr><td id='variant.Pair'><a class='stability Unmarked' title='No stability level'></a><code>Pair</code></td><td><div class='docblock'><p>Socket for communication with exactly one peer.
+Each party can send messages at any time. 
+If the peer is not available or send buffer is full subsequent calls to <code>write</code>
+will block until it’s possible to send the message.</p>
+</div></td></tr><tr><td id='variant.Bus'><a class='stability Unmarked' title='No stability level'></a><code>Bus</code></td><td><div class='docblock'><p>Sent messages are distributed to all nodes in the topology.
+Incoming messages from all other nodes in the topology are fair-queued in the socket.</p>
+</div></td></tr><tr><td id='variant.Pub'><a class='stability Unmarked' title='No stability level'></a><code>Pub</code></td><td><div class='docblock'><p>This socket is used to distribute messages to multiple destinations.
+Receive operation is not defined.</p>
+</div></td></tr><tr><td id='variant.Sub'><a class='stability Unmarked' title='No stability level'></a><code>Sub</code></td><td><div class='docblock'><p>Receives messages from the publisher.
+Only messages that the socket is subscribed to are received.
+When the socket is created there are no subscriptions and thus no messages will be received.
+Send operation is not defined on this socket.</p>
+
+<p><strong>See also:</strong> <code>Socket::subscribe</code> and <code>Socket::unsubscribe</code>.</p>
+</div></td></tr><tr><td id='variant.Surveyor'><a class='stability Unmarked' title='No stability level'></a><code>Surveyor</code></td><td><div class='docblock'><p>Used to send the survey.
+The survey is delivered to all the connected respondents.
+Once the query is sent, the socket can be used to receive the responses.
+When the survey deadline expires, receive will return Timeout error.</p>
+
+<p><strong>See also:</strong> <code>Socket::set_survey_deadline</code></p>
+</div></td></tr><tr><td id='variant.Respondent'><a class='stability Unmarked' title='No stability level'></a><code>Respondent</code></td><td><div class='docblock'><p>Use to respond to the survey.
+Survey is received using receive function, response is sent using send function
+This socket can be connected to at most one peer.</p>
+</div></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Experimental' title='Experimental'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/kinds/trait.Copy.html' title='core::kinds::Copy'>Copy</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'></div><h3 class='impl'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>fn <a href='#method.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <h4 id='method.ne' class='method'><a class='stability Unstable' title='Unstable: Definition may change slightly after trait reform'></a><code>fn <a href='#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Show.html' title='core::fmt::Show'>Show</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div><h3 class='impl'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Show.html' title='core::fmt::Show'>Show</a> for <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 

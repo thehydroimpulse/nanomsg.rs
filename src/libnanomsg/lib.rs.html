@@ -647,11 +647,6 @@
 <span id='605'>605</span>
 <span id='606'>606</span>
 <span id='607'>607</span>
-<span id='608'>608</span>
-<span id='609'>609</span>
-<span id='610'>610</span>
-<span id='611'>611</span>
-<span id='612'>612</span>
 </pre><pre class='rust '>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>feature</span>(<span class='ident'>phase</span>, <span class='ident'>globs</span>, <span class='ident'>import_shadowing</span>)]</span>
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>allow</span>(<span class='ident'>non_camel_case_types</span>)]</span>
@@ -663,7 +658,7 @@
 <span class='kw'>use</span> <span class='ident'>libc</span>::{<span class='ident'>c_int</span>, <span class='ident'>c_void</span>, <span class='ident'>size_t</span>, <span class='ident'>c_char</span>, <span class='ident'>c_short</span>};
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>posix_consts</span>::<span class='op'>*</span>;
 
-<span class='macro'>link_config</span><span class='macro'>!</span>(<span class='string'>&quot;libnanomsg&quot;</span>, [<span class='string'>&quot;only_static&quot;</span>])
+<span class='macro'>link_config</span><span class='macro'>!</span>(<span class='string'>&quot;libnanomsg&quot;</span>, [<span class='string'>&quot;only_static&quot;</span>]);
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_SP</span>: <span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>1</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>AF_SP_RAW</span>: <span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>2</span>;
@@ -960,6 +955,7 @@
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>timer</span>::<span class='ident'>sleep</span>;
 
     <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::{<span class='ident'>Arc</span>, <span class='ident'>Barrier</span>};
+    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>thread</span>::<span class='ident'>Thread</span>;
 
     <span class='kw'>fn</span> <span class='ident'>test_create_socket</span>(<span class='ident'>domain</span>: <span class='ident'>c_int</span>, <span class='ident'>protocol</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span> {
         <span class='kw'>let</span> <span class='ident'>sock</span> <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>nn_socket</span>(<span class='ident'>domain</span>, <span class='ident'>protocol</span>) };
@@ -992,7 +988,7 @@
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buf</span>: <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>u8</span> <span class='op'>=</span> <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>();
         <span class='kw'>let</span> <span class='ident'>bytes</span> <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>nn_recv</span>(<span class='ident'>socket</span>, <span class='ident'>transmute</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buf</span>), <span class='ident'>NN_MSG</span>, <span class='number'>0</span> <span class='kw'>as</span> <span class='ident'>c_int</span>) };
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>bytes</span> <span class='op'>&gt;=</span> <span class='number'>0</span>);
-        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>buf</span>.<span class='ident'>is_not_null</span>())
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>buf</span>.<span class='ident'>is_not_null</span>());
         <span class='kw'>let</span> <span class='ident'>msg</span> <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>String</span>::<span class='ident'>from_raw_buf_len</span>(<span class='ident'>buf</span> <span class='kw'>as</span> <span class='op'>*</span><span class='kw'>const</span> <span class='ident'>u8</span>, <span class='ident'>bytes</span> <span class='kw'>as</span> <span class='ident'>uint</span>) };
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>msg</span>.<span class='ident'>as_slice</span>(), <span class='ident'>expected</span>);
         <span class='kw'>unsafe</span> { <span class='ident'>nn_freemsg</span>(<span class='ident'>buf</span> <span class='kw'>as</span> <span class='op'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>); }
@@ -1206,7 +1202,7 @@
         }
     }
 
-    <span class='kw'>fn</span> <span class='ident'>finish_child_task</span>(<span class='ident'>checkin</span>: <span class='ident'>Arc</span><span class='op'>&lt;</span><span class='ident'>Barrier</span><span class='op'>&gt;</span>, <span class='ident'>socket</span>: <span class='ident'>c_int</span>, <span class='ident'>endpoint</span>: <span class='ident'>c_int</span>, <span class='ident'>checkout</span>: <span class='ident'>Arc</span><span class='op'>&lt;</span><span class='ident'>Barrier</span><span class='op'>&gt;</span>) {
+    <span class='kw'>fn</span> <span class='ident'>finish_child_task</span>(<span class='ident'>checkin</span>: <span class='ident'>Arc</span><span class='op'>&lt;</span><span class='ident'>Barrier</span><span class='op'>&gt;</span>, <span class='ident'>socket</span>: <span class='ident'>c_int</span>, <span class='ident'>endpoint</span>: <span class='ident'>c_int</span>) {
 
         <span class='ident'>checkin</span>.<span class='ident'>wait</span>();
 
@@ -1214,23 +1210,16 @@
             <span class='ident'>nn_shutdown</span>(<span class='ident'>socket</span>, <span class='ident'>endpoint</span>);
             <span class='ident'>nn_close</span>(<span class='ident'>socket</span>);
         }
-
-        <span class='ident'>checkout</span>.<span class='ident'>wait</span>();
     }
 
     <span class='kw'>fn</span> <span class='ident'>test_multithread_pipeline</span>(<span class='ident'>name</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span>) {
-
-        <span class='comment'>// this is required to stop the test main task only when children tasks are done</span>
-        <span class='kw'>let</span> <span class='ident'>finish_line</span> <span class='op'>=</span> <span class='ident'>Arc</span>::<span class='ident'>new</span>(<span class='ident'>Barrier</span>::<span class='ident'>new</span>(<span class='number'>3</span>));
-        <span class='kw'>let</span> <span class='ident'>finish_line_pull</span> <span class='op'>=</span> <span class='ident'>finish_line</span>.<span class='ident'>clone</span>();
-        <span class='kw'>let</span> <span class='ident'>finish_line_push</span> <span class='op'>=</span> <span class='ident'>finish_line</span>.<span class='ident'>clone</span>();
 
         <span class='comment'>// this is required to prevent the sender from being closed before the receiver gets the message</span>
         <span class='kw'>let</span> <span class='ident'>drop_after_use</span> <span class='op'>=</span> <span class='ident'>Arc</span>::<span class='ident'>new</span>(<span class='ident'>Barrier</span>::<span class='ident'>new</span>(<span class='number'>2</span>));
         <span class='kw'>let</span> <span class='ident'>drop_after_use_pull</span> <span class='op'>=</span> <span class='ident'>drop_after_use</span>.<span class='ident'>clone</span>();
         <span class='kw'>let</span> <span class='ident'>drop_after_use_push</span> <span class='op'>=</span> <span class='ident'>drop_after_use</span>.<span class='ident'>clone</span>();
 
-        <span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
+        <span class='kw'>let</span> <span class='ident'>push_thread</span> <span class='op'>=</span> <span class='ident'>Thread</span>::<span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
             <span class='kw'>let</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>name</span>.<span class='ident'>to_c_str</span>();
             <span class='kw'>let</span> <span class='ident'>push_msg</span> <span class='op'>=</span> <span class='string'>&quot;foobar&quot;</span>;
             <span class='kw'>let</span> <span class='ident'>push_sock</span> <span class='op'>=</span> <span class='ident'>test_create_socket</span>(<span class='ident'>AF_SP</span>, <span class='ident'>NN_PUSH</span>);
@@ -1238,10 +1227,10 @@
 
             <span class='ident'>test_send</span>(<span class='ident'>push_sock</span>, <span class='ident'>push_msg</span>);
 
-            <span class='ident'>finish_child_task</span>(<span class='ident'>drop_after_use_push</span>, <span class='ident'>push_sock</span>, <span class='ident'>push_endpoint</span>, <span class='ident'>finish_line_push</span>);
+            <span class='ident'>finish_child_task</span>(<span class='ident'>drop_after_use_push</span>, <span class='ident'>push_sock</span>, <span class='ident'>push_endpoint</span>);
         });
 
-        <span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
+        <span class='kw'>let</span> <span class='ident'>pull_thread</span> <span class='op'>=</span> <span class='ident'>Thread</span>::<span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
             <span class='kw'>let</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>name</span>.<span class='ident'>to_c_str</span>();
             <span class='kw'>let</span> <span class='ident'>pull_msg</span> <span class='op'>=</span> <span class='string'>&quot;foobar&quot;</span>;
             <span class='kw'>let</span> <span class='ident'>pull_sock</span> <span class='op'>=</span> <span class='ident'>test_create_socket</span>(<span class='ident'>AF_SP</span>, <span class='ident'>NN_PULL</span>);
@@ -1249,10 +1238,11 @@
 
             <span class='ident'>test_receive</span>(<span class='ident'>pull_sock</span>, <span class='ident'>pull_msg</span>);
 
-            <span class='ident'>finish_child_task</span>(<span class='ident'>drop_after_use_pull</span>, <span class='ident'>pull_sock</span>, <span class='ident'>pull_endpoint</span>, <span class='ident'>finish_line_pull</span>);
+            <span class='ident'>finish_child_task</span>(<span class='ident'>drop_after_use_pull</span>, <span class='ident'>pull_sock</span>, <span class='ident'>pull_endpoint</span>);
         });
 
-        <span class='ident'>finish_line</span>.<span class='ident'>wait</span>();
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>push_thread</span>.<span class='ident'>join</span>().<span class='ident'>is_ok</span>());
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>pull_thread</span>.<span class='ident'>join</span>().<span class='ident'>is_ok</span>());
     }
 
     <span class='attribute'>#[<span class='ident'>test</span>]</span>

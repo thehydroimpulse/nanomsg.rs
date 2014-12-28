@@ -26,7 +26,7 @@
 
     <section class="sidebar">
         
-        <p class='location'><a href='index.html'>nanomsg</a></p><div class='block mod'><h2>Modules</h2><a class='mod ' href='result/index.html'>result</a></div><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.Endpoint.html'>Endpoint</a><a class='struct ' href='struct.PollFd.html'>PollFd</a><a class='struct ' href='struct.PollRequest.html'>PollRequest</a><a class='struct current' href='struct.Socket.html'>Socket</a></div><div class='block enum'><h2>Enums</h2><a class='enum ' href='enum.Protocol.html'>Protocol</a></div>
+        <p class='location'><a href='index.html'>nanomsg</a></p><div class='block mod'><h2>Modules</h2><a class='mod ' href='endpoint/index.html'>endpoint</a><a class='mod ' href='result/index.html'>result</a></div><div class='block struct'><h2>Structs</h2><a class='struct ' href='struct.PollFd.html'>PollFd</a><a class='struct ' href='struct.PollRequest.html'>PollRequest</a><a class='struct current' href='struct.Socket.html'>Socket</a></div><div class='block enum'><h2>Enums</h2><a class='enum ' href='enum.Protocol.html'>Protocol</a></div>
     </section>
 
     <nav class="sub">
@@ -44,19 +44,19 @@
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>nanomsg</a>::<wbr><a class='struct' href=''>Socket</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-3485' href='../src/nanomsg/lib.rs.html#52-55'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Socket&lt;'a&gt; {
+        </span><a id='src-3960' href='../src/nanomsg/lib.rs.html#92-95'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Socket {
     // some fields omitted
 }</pre><div class='docblock'><p>A type-safe socket wrapper around nanomsg&#39;s own socket implementation. This
 provides a safe interface for dealing with initializing the sockets, sending
 and receiving messages.</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new' class='fnname'>new</a>(protocol: <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;&gt;</code></h4>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new' class='fnname'>new</a>(protocol: <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&gt;</code></h4>
 <div class='docblock'><p>Allocate and initialize a new Nanomsg socket which returns
 a new file descriptor behind the scene. The safe interface doesn&#39;t
 expose any of the underlying file descriptors and such.</p>
 
-<p>Usage:</p>
-<pre class='rust '>
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
 
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>) {
@@ -64,8 +64,30 @@ expose any of the underlying file descriptors and such.</p>
     <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>err</span>)
 };
 </pre>
-</div><h4 id='method.new_for_device' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new_for_device' class='fnname'>new_for_device</a>(protocol: <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;&gt;</code></h4>
-<h4 id='method.bind' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.bind' class='fnname'>bind</a>&lt;'b, 'a&gt;(&amp;mut self, addr: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Endpoint.html' title='nanomsg::Endpoint'>Endpoint</a>&lt;'b&gt;&gt;</code></h4>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>AddressFamilyNotSupported</code> : Specified address family is not supported.</li>
+<li><code>InvalidArgument</code> : Unknown protocol.</li>
+<li><code>TooManyOpenFiles</code> : The limit on the total number of open SP sockets or OS limit for file descriptors has been reached.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.new_for_device' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new_for_device' class='fnname'>new_for_device</a>(protocol: <a class='enum' href='../nanomsg/enum.Protocol.html' title='nanomsg::Protocol'>Protocol</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&gt;</code></h4>
+<div class='docblock'><p>Allocate and initialize a new Nanomsg socket meant to be used in a device</p>
+
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>s1</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new_for_device</span>(<span class='ident'>Protocol</span>::<span class='ident'>Req</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>s2</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new_for_device</span>(<span class='ident'>Protocol</span>::<span class='ident'>Rep</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>ep1</span> <span class='op'>=</span> <span class='ident'>s1</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/new_for_device1.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>ep2</span> <span class='op'>=</span> <span class='ident'>s2</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/new_for_device2.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='comment'>// And now `Socket::device(&amp;s1, &amp;s2)` can be called to create the device.</span>
+</pre>
+</div><h4 id='method.bind' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.bind' class='fnname'>bind</a>(&amp;mut self, addr: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/endpoint/struct.Endpoint.html' title='nanomsg::endpoint::Endpoint'>Endpoint</a>&gt;</code></h4>
 <div class='docblock'><p>Creating a new socket through <code>Socket::new</code> does <strong>not</strong>
 bind that socket to a listening state. Instead, one has to be
 explicit in enabling the socket to listen onto a specific address.</p>
@@ -76,8 +98,41 @@ explicit in enabling the socket to listen onto a specific address.</p>
 <p>Note: This does <strong>not</strong> block the current task. That job
 is up to the user of the library by entering a loop.</p>
 
-<p>Usage:</p>
-<pre class='rust '>
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Push</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>socket</span>) <span class='op'>=&gt;</span> <span class='ident'>socket</span>,
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>err</span>)
+};
+
+<span class='comment'>// Bind the newly created socket to the following address:</span>
+<span class='kw'>match</span> <span class='ident'>socket</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/bind_doc.ipc&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> {},
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Failed to bind socket: {}&quot;</span>, <span class='ident'>err</span>)
+}
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>TooManyOpenFiles</code> : Maximum number of active endpoints was reached.</li>
+<li><code>InvalidArgument</code> : The syntax of the supplied address is invalid.</li>
+<li><code>NameTooLong</code> : The supplied address is too long.</li>
+<li><code>ProtocolNotSupported</code> : The requested transport protocol is not supported.</li>
+<li><code>AddressNotAvailable</code> : The requested endpoint is not local.</li>
+<li><code>NoDevice</code> : Address specifies a nonexistent interface.</li>
+<li><code>AddressInUse</code> : The requested local endpoint is already in use.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.connect' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.connect' class='fnname'>connect</a>(&amp;mut self, addr: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/endpoint/struct.Endpoint.html' title='nanomsg::endpoint::Endpoint'>Endpoint</a>&gt;</code></h4>
+<div class='docblock'><p>Connects the socket to a remote endpoint.
+Returns the endpoint on success.</p>
+
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
 
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>) {
@@ -85,40 +140,373 @@ is up to the user of the library by entering a loop.</p>
     <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>err</span>)
 };
 
-<span class='comment'>// Bind the newly created socket to the following address:</span>
-<span class='comment'>//match socket.bind(&quot;ipc:///tmp/pipeline.ipc&quot;) {</span>
-<span class='comment'>//    Ok(_) =&gt; {},</span>
-<span class='comment'>//   Err(err) =&gt; panic!(&quot;Failed to bind socket: {}&quot;, err)</span>
-<span class='comment'>//}</span>
+<span class='kw'>let</span> <span class='ident'>endpoint</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/connect_doc.ipc&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>ep</span>) <span class='op'>=&gt;</span> <span class='ident'>ep</span>,
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Failed to connect socket: {}&quot;</span>, <span class='ident'>err</span>)
+};    
 </pre>
-</div><h4 id='method.connect' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.connect' class='fnname'>connect</a>&lt;'b, 'a&gt;(&amp;mut self, addr: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='../nanomsg/struct.Endpoint.html' title='nanomsg::Endpoint'>Endpoint</a>&lt;'b&gt;&gt;</code></h4>
-<h4 id='method.nb_read' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_read' class='fnname'>nb_read</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
-<h4 id='method.nb_read_to_end' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_read_to_end' class='fnname'>nb_read_to_end</a>(&amp;mut self) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;</code></h4>
-<h4 id='method.nb_write' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_write' class='fnname'>nb_write</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.new_pollfd' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new_pollfd' class='fnname'>new_pollfd</a>(&amp;self, pollin: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, pollout: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../nanomsg/struct.PollFd.html' title='nanomsg::PollFd'>PollFd</a></code></h4>
-<h4 id='method.poll' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.poll' class='fnname'>poll</a>(request: &amp;mut <a class='struct' href='../nanomsg/struct.PollRequest.html' title='nanomsg::PollRequest'>PollRequest</a>, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>&gt;</code></h4>
-<h4 id='method.device' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.device' class='fnname'>device</a>(socket1: &amp;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>, socket2: &amp;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.terminate' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.terminate' class='fnname'>terminate</a>()</code></h4>
-<h4 id='method.set_linger' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_linger' class='fnname'>set_linger</a>(&amp;mut self, linger: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_send_buffer_size' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_buffer_size' class='fnname'>set_send_buffer_size</a>(&amp;mut self, size_in_bytes: <a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_receive_buffer_size' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_buffer_size' class='fnname'>set_receive_buffer_size</a>(&amp;mut self, size_in_bytes: <a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_send_timeout' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_timeout' class='fnname'>set_send_timeout</a>(&amp;mut self, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_receive_timeout' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_timeout' class='fnname'>set_receive_timeout</a>(&amp;mut self, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_reconnect_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_reconnect_interval' class='fnname'>set_reconnect_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_max_reconnect_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_max_reconnect_interval' class='fnname'>set_max_reconnect_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_send_priority' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_priority' class='fnname'>set_send_priority</a>(&amp;mut self, priority: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_receive_priority' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_priority' class='fnname'>set_receive_priority</a>(&amp;mut self, priority: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_ipv4_only' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_ipv4_only' class='fnname'>set_ipv4_only</a>(&amp;mut self, ipv4_only: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_socket_name' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_socket_name' class='fnname'>set_socket_name</a>(&amp;mut self, name: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_tcp_nodelay' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_tcp_nodelay' class='fnname'>set_tcp_nodelay</a>(&amp;mut self, tcp_nodelay: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.subscribe' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.subscribe' class='fnname'>subscribe</a>(&amp;mut self, topic: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.unsubscribe' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.unsubscribe' class='fnname'>unsubscribe</a>(&amp;mut self, topic: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_survey_deadline' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_survey_deadline' class='fnname'>set_survey_deadline</a>(&amp;mut self, deadline: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.set_request_resend_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_request_resend_interval' class='fnname'>set_request_resend_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Reader.html' title='std::io::Reader'>Reader</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.read' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read' class='fnname'>read</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
-<h4 id='method.read_to_end' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read_to_end' class='fnname'>read_to_end</a>(&amp;mut self) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;</code></h4>
-<h4 id='method.read_at_least' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read_at_least' class='fnname'>read_at_least</a>(&amp;mut self, min: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
-<h4 id='method.read_byte' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_byte' class='fnname'>read_byte</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>TooManyOpenFiles</code> : Maximum number of active endpoints was reached.</li>
+<li><code>InvalidArgument</code> : The syntax of the supplied address is invalid.</li>
+<li><code>NameTooLong</code> : The supplied address is too long.</li>
+<li><code>ProtocolNotSupported</code> : The requested transport protocol is not supported.</li>
+<li><code>NoDevice</code> : Address specifies a nonexistent interface.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.nb_read' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_read' class='fnname'>nb_read</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
+<div class='docblock'><p>Non-blocking version of the <code>read</code> function.
+Returns the number of read bytes on success.
+Any bytes exceeding the length specified by <code>buf.len()</code> will be truncated.
+An error with the <code>NanoErrorKind::TryAgain</code> kind is returned if there&#39;s no message to receive for the moment.</p>
+
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>, <span class='ident'>NanoError</span>, <span class='ident'>NanoErrorKind</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>endpoint</span> <span class='op'>=</span> <span class='ident'>socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/nb_read_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buffer</span> <span class='op'>=</span> [<span class='number'>0u8</span>, ..<span class='number'>1024</span>];
+
+<span class='kw'>match</span> <span class='ident'>socket</span>.<span class='ident'>nb_read</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buffer</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>count</span>) <span class='op'>=&gt;</span> { 
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Read {} bytes !&quot;</span>, <span class='ident'>count</span>); 
+        <span class='comment'>// here we can process the message stored in `buffer`</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>NanoError</span> {<span class='ident'>description</span>: _, <span class='ident'>kind</span>: <span class='ident'>NanoErrorKind</span>::<span class='ident'>TryAgain</span>}) <span class='op'>=&gt;</span> {
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Nothing to be read for the moment ...&quot;</span>);
+        <span class='comment'>// here we can use the CPU for something else and try again later</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while reading: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>OperationNotSupported</code> : The operation is not supported by this socket type.</li>
+<li><code>FileStateMismatch</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>TryAgain</code> : Non-blocking mode was requested and there’s no message to receive at the moment.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.nb_read_to_end' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_read_to_end' class='fnname'>nb_read_to_end</a>(&amp;mut self) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Non-blocking version of the <code>read_to_end</code> function.
+Returns a message allocated by nanomsg on success.
+An error with the <code>NanoErrorKind::TryAgain</code> kind is returned if there&#39;s no message to receive for the moment.</p>
+
+<h1 id="example:" class='section-header'><a
+                           href="#example:">Example:</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>, <span class='ident'>NanoError</span>, <span class='ident'>NanoErrorKind</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>endpoint</span> <span class='op'>=</span> <span class='ident'>socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/nb_read_to_end_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+
+<span class='kw'>match</span> <span class='ident'>socket</span>.<span class='ident'>nb_read_to_end</span>() {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>msg</span>) <span class='op'>=&gt;</span> { 
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Read message {} !&quot;</span>, <span class='ident'>msg</span>.<span class='ident'>as_slice</span>()); 
+        <span class='comment'>// here we can process the message stored in `msg`</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>NanoError</span> {<span class='ident'>description</span>: _, <span class='ident'>kind</span>: <span class='ident'>NanoErrorKind</span>::<span class='ident'>TryAgain</span>}) <span class='op'>=&gt;</span> {
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Nothing to be read for the moment ...&quot;</span>);
+        <span class='comment'>// here we can use the CPU for something else and try again later</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while reading: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>OperationNotSupported</code> : The operation is not supported by this socket type.</li>
+<li><code>FileStateMismatch</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>TryAgain</code> : Non-blocking mode was requested and there’s no message to receive at the moment.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.nb_write' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.nb_write' class='fnname'>nb_write</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Non-blocking version of the <code>write</code> function.
+An error with the <code>NanoErrorKind::TryAgain</code> kind is returned if the message cannot be sent at the moment.</p>
+
+<h1 id="example:" class='section-header'><a
+                           href="#example:">Example:</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>, <span class='ident'>NanoError</span>, <span class='ident'>NanoErrorKind</span>};
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Push</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>endpoint</span> <span class='op'>=</span> <span class='ident'>socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/nb_write_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+
+<span class='kw'>match</span> <span class='ident'>socket</span>.<span class='ident'>nb_write</span>(<span class='string'>b&quot;foobar&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Message sent !&quot;</span>); },
+    <span class='prelude-val'>Err</span>(<span class='ident'>NanoError</span> {<span class='ident'>description</span>: _, <span class='ident'>kind</span>: <span class='ident'>NanoErrorKind</span>::<span class='ident'>TryAgain</span>}) <span class='op'>=&gt;</span> {
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Receiver not ready, message can&#39;t be sent for the moment ...&quot;</span>);
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while writing: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>OperationNotSupported</code> : The operation is not supported by this socket type.</li>
+<li><code>FileStateMismatch</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>TryAgain</code> : Non-blocking mode was requested and there’s no message to receive at the moment.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.new_pollfd' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.new_pollfd' class='fnname'>new_pollfd</a>(&amp;self, pollin: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, pollout: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='struct' href='../nanomsg/struct.PollFd.html' title='nanomsg::PollFd'>PollFd</a></code></h4>
+<div class='docblock'><p>Creates a poll request for the socket with the specified check criteria.
+- <strong>pollin:</strong> Check whether at least one message can be received from the socket without blocking.
+- <strong>pollout:</strong> Check whether at least one message can be sent to the fd socket without blocking.</p>
+</div><h4 id='method.poll' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.poll' class='fnname'>poll</a>(request: &amp;mut <a class='struct' href='../nanomsg/struct.PollRequest.html' title='nanomsg::PollRequest'>PollRequest</a>, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>&gt;</code></h4>
+<div class='docblock'><p>Checks a set of sockets and reports whether it’s possible to send a message to the socket and/or receive a message from each socket.
+Upon successful completion, the number of <code>PollFd</code> structures with events signaled is returned. </p>
+
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>, <span class='ident'>PollFd</span>, <span class='ident'>PollRequest</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>duration</span>::<span class='ident'>Duration</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>timer</span>::<span class='ident'>sleep</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>left_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pair</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>left_ep</span> <span class='op'>=</span> <span class='ident'>left_socket</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/poll_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>right_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pair</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>right_ep</span> <span class='op'>=</span> <span class='ident'>right_socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/poll_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='ident'>sleep</span>(<span class='ident'>Duration</span>::<span class='ident'>milliseconds</span>(<span class='number'>10</span>));
+
+<span class='comment'>// Here some messages may have been sent ...</span>
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pollfd_vec</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>PollFd</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>left_socket</span>.<span class='ident'>new_pollfd</span>(<span class='boolval'>true</span>, <span class='boolval'>true</span>), <span class='ident'>right_socket</span>.<span class='ident'>new_pollfd</span>(<span class='boolval'>true</span>, <span class='boolval'>true</span>)];
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>poll_req</span> <span class='op'>=</span> <span class='ident'>PollRequest</span>::<span class='ident'>new</span>(<span class='ident'>pollfd_vec</span>.<span class='ident'>as_mut_slice</span>());
+<span class='kw'>let</span> <span class='ident'>timeout</span> <span class='op'>=</span> <span class='ident'>Duration</span>::<span class='ident'>milliseconds</span>(<span class='number'>10</span>);
+<span class='kw'>let</span> <span class='ident'>poll_result</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>poll</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>poll_req</span>, <span class='kw-2'>&amp;</span><span class='ident'>timeout</span>);
+
+<span class='kw'>if</span> <span class='ident'>poll_req</span>.<span class='ident'>get_fds</span>()[<span class='number'>0</span>].<span class='ident'>can_write</span>() {
+    <span class='comment'>// left_socket socket can send a message ...</span>
+}
+
+<span class='kw'>if</span> <span class='ident'>poll_req</span>.<span class='ident'>get_fds</span>()[<span class='number'>1</span>].<span class='ident'>can_read</span>() {
+    <span class='comment'>// right_socket socket is ready to receive a message ...</span>
+}
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : Some of the provided sockets are invalid.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>Timeout</code> : No event was signaled before the specified timeout.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.device' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.device' class='fnname'>device</a>(socket1: &amp;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>, socket2: &amp;<a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Starts a device to forward messages between two sockets.
+If both sockets are valid, <code>device</code> function loops
+and sends and messages received from s1 to s2 and vice versa.
+If only one socket is valid and the other is negative,
+<code>device</code> works in a &quot;loopback&quot; mode — 
+it loops and sends any messages received from the socket back to itself.
+To break the loop and make <code>device</code> function exit use <code>terminate</code> function.</p>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : Some of the provided sockets are invalid.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>InvalidArgument</code> : Either one of the socket is not an AF_SP_RAW socket; or the two sockets don’t belong to the same protocol; or the directionality of the sockets doesn’t fit (e.g. attempt to join two SINK sockets to form a device).</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.terminate' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.terminate' class='fnname'>terminate</a>()</code></h4>
+<div class='docblock'><p>Notify all sockets about process termination.
+To help with shutdown of multi-threaded programs nanomsg provides the <code>terminate</code> function 
+which informs all the open sockets that process termination is underway.
+If a socket is blocked inside a blocking function, such as <code>read</code>,
+it will be unblocked and <code>Terminating</code> error will be returned to the user. 
+Similarly, any subsequent attempt to invoke a socket function other than <code>drop</code> after <code>terminate</code> was called will result in <code>Terminating</code> error.
+If waiting inside a polling function, the call will unblock with both read and write signaled.
+The <code>terminate</code> function itself is non-blocking.</p>
+</div><h4 id='method.set_linger' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_linger' class='fnname'>set_linger</a>(&amp;mut self, linger: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Specifies how long the socket should try to send pending outbound messages after <code>drop</code> have been called.
+Negative value means infinite linger. Default value is 1 second.</p>
+</div><h4 id='method.set_send_buffer_size' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_buffer_size' class='fnname'>set_send_buffer_size</a>(&amp;mut self, size_in_bytes: <a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer,
+exactly one message may be buffered in addition to the data in the send buffer.
+Default value is 128kB.</p>
+</div><h4 id='method.set_receive_buffer_size' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_buffer_size' class='fnname'>set_receive_buffer_size</a>(&amp;mut self, size_in_bytes: <a href='http://doc.rust-lang.org/nightly/std/primitive.int.html'>int</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Size of the receive buffer, in bytes. To prevent blocking for messages larger than the buffer,
+exactly one message may be buffered in addition to the data in the receive buffer.
+Default value is 128kB.</p>
+</div><h4 id='method.set_send_timeout' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_timeout' class='fnname'>set_send_timeout</a>(&amp;mut self, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>The timeout for send operation on the socket.
+If message cannot be sent within the specified timeout, TryAgain error is returned.
+Negative value means infinite timeout. Default value is infinite timeout.</p>
+</div><h4 id='method.set_receive_timeout' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_timeout' class='fnname'>set_receive_timeout</a>(&amp;mut self, timeout: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>The timeout for recv operation on the socket.
+If message cannot be received within the specified timeout, TryAgain error is returned.
+Negative value means infinite timeout. Default value is infinite timeout.</p>
+</div><h4 id='method.set_reconnect_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_reconnect_interval' class='fnname'>set_reconnect_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>For connection-based transports such as TCP, this option specifies how long to wait,
+when connection is broken before trying to re-establish it.
+Note that actual reconnect interval may be randomised to some extent to prevent severe reconnection storms.
+Default value is 100 milliseconds.</p>
+</div><h4 id='method.set_max_reconnect_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_max_reconnect_interval' class='fnname'>set_max_reconnect_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>This option is to be used only in addition to <code>set_reconnect_interval</code> option.
+It specifies maximum reconnection interval. On each reconnect attempt,
+the previous interval is doubled until <code>max_reconnect_interval</code> is reached.
+Value of zero means that no exponential backoff is performed and
+reconnect interval is based only on <code>reconnect_interval</code>.
+If <code>max_reconnect_interval</code> is less than <code>reconnect_interval</code>, it is ignored.
+Default value is 0.</p>
+</div><h4 id='method.set_send_priority' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_send_priority' class='fnname'>set_send_priority</a>(&amp;mut self, priority: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Sets outbound priority for endpoints subsequently added to the socket.
+This option has no effect on socket types that send messages to all the peers.
+However, if the socket type sends each message to a single peer (or a limited set of peers),
+peers with high priority take precedence over peers with low priority.
+Highest priority is 1, lowest priority is 16. Default value is 8.</p>
+</div><h4 id='method.set_receive_priority' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_receive_priority' class='fnname'>set_receive_priority</a>(&amp;mut self, priority: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Sets inbound priority for endpoints subsequently added to the socket.
+This option has no effect on socket types that are not able to receive messages.
+When receiving a message, messages from peer with higher priority are received before messages
+from peer with lower priority. 
+Highest priority is 1, lowest priority is 16. Default value is 8.</p>
+</div><h4 id='method.set_ipv4_only' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_ipv4_only' class='fnname'>set_ipv4_only</a>(&amp;mut self, ipv4_only: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>If set to true, only IPv4 addresses are used.
+If set to false, both IPv4 and IPv6 addresses are used.
+Default value is true.</p>
+</div><h4 id='method.set_socket_name' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_socket_name' class='fnname'>set_socket_name</a>(&amp;mut self, name: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Socket name for error reporting and statistics.
+Default value is &quot;socket.N&quot; where N is socket integer.
+<strong>This option is experimental, see <code>Socket::env</code> for details</strong></p>
+</div><h4 id='method.set_tcp_nodelay' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_tcp_nodelay' class='fnname'>set_tcp_nodelay</a>(&amp;mut self, tcp_nodelay: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>This option, when set to <code>true</code>, disables Nagle’s algorithm.
+It also disables delaying of TCP acknowledgments.
+Using this option improves latency at the expense of throughput.</p>
+</div><h4 id='method.subscribe' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.subscribe' class='fnname'>subscribe</a>(&amp;mut self, topic: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Defined on full <code>Sub</code> socket.
+Subscribes for a particular topic.
+Type of the option is string.
+A single <code>Sub</code> socket can handle multiple subscriptions.</p>
+</div><h4 id='method.unsubscribe' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.unsubscribe' class='fnname'>unsubscribe</a>(&amp;mut self, topic: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Defined on full <code>Sub</code> socket. Unsubscribes from a particular topic.</p>
+</div><h4 id='method.set_survey_deadline' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_survey_deadline' class='fnname'>set_survey_deadline</a>(&amp;mut self, deadline: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>Specifies how long to wait for responses to the survey.
+Once the deadline expires, receive function will return <code>Timeout</code> error and all subsequent responses to the survey will be silently dropped.
+The deadline is measured in milliseconds. Default value is 1 second.</p>
+</div><h4 id='method.set_request_resend_interval' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.set_request_resend_interval' class='fnname'>set_request_resend_interval</a>(&amp;mut self, interval: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/std/time/duration/struct.Duration.html' title='std::time::duration::Duration'>Duration</a>) -&gt; <a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>This option is defined on the full <code>Req</code> socket.
+If reply is not received in specified amount of milliseconds, the request will be automatically resent.
+The type of this option is int. Default value is 1 minute.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><a class='stability Experimental' title='Experimental'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Reader.html' title='std::io::Reader'>Reader</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a></code></h3><div class='impl-items'><h4 id='method.read' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read' class='fnname'>read</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
+<div class='docblock'><p>Receive a message from the socket and store it in the buf argument.
+Any bytes exceeding the length specified by <code>buf.len()</code> will be truncated.
+Returns the number of bytes in the message on success.</p>
+
+<h1 id="example" class='section-header'><a
+                           href="#example">Example</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>duration</span>::<span class='ident'>Duration</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>timer</span>::<span class='ident'>sleep</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Push</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_ep</span> <span class='op'>=</span> <span class='ident'>push_socket</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/read_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_ep</span> <span class='op'>=</span> <span class='ident'>pull_socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/read_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buffer</span> <span class='op'>=</span> [<span class='number'>0u8</span>, ..<span class='number'>1024</span>];
+ 
+<span class='ident'>sleep</span>(<span class='ident'>Duration</span>::<span class='ident'>milliseconds</span>(<span class='number'>50</span>));
+ 
+<span class='kw'>match</span> <span class='ident'>push_socket</span>.<span class='ident'>write</span>(<span class='string'>b&quot;foobar&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(..) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Message sent !&quot;</span>),
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Failed to write to the socket: {}&quot;</span>, <span class='ident'>err</span>)
+}
+
+<span class='kw'>match</span> <span class='ident'>pull_socket</span>.<span class='ident'>read</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buffer</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>count</span>) <span class='op'>=&gt;</span> { 
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Read {} bytes !&quot;</span>, <span class='ident'>count</span>); 
+        <span class='comment'>// here we can process the `count` bytes of the message stored in `buffer`</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while reading: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>BadFileDescriptor</code> : The socket is invalid.</li>
+<li><code>OperationNotSupported</code> : The operation is not supported by this socket type.</li>
+<li><code>FileStateMismatch</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>TryAgain</code> : Non-blocking mode was requested and there’s no message to receive at the moment.</li>
+<li><code>Timeout</code> : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.</li>
+<li><code>Interrupted</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>Terminating</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.read_to_end' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read_to_end' class='fnname'>read_to_end</a>(&amp;mut self) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Receive a message from the socket. Returns a message allocated by nanomsg on success.</p>
+
+<h1 id="example:" class='section-header'><a
+                           href="#example:">Example:</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>duration</span>::<span class='ident'>Duration</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>timer</span>::<span class='ident'>sleep</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Push</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_ep</span> <span class='op'>=</span> <span class='ident'>push_socket</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/read_to_end_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_ep</span> <span class='op'>=</span> <span class='ident'>pull_socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/read_to_end_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='ident'>sleep</span>(<span class='ident'>Duration</span>::<span class='ident'>milliseconds</span>(<span class='number'>50</span>));
+ 
+<span class='kw'>match</span> <span class='ident'>push_socket</span>.<span class='ident'>write</span>(<span class='string'>b&quot;foobar&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(..) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Message sent !&quot;</span>),
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Failed to write to the socket: {}&quot;</span>, <span class='ident'>err</span>)
+}
+
+<span class='kw'>match</span> <span class='ident'>pull_socket</span>.<span class='ident'>read_to_end</span>() {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>msg</span>) <span class='op'>=&gt;</span> { 
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Read {} bytes !&quot;</span>, <span class='ident'>msg</span>.<span class='ident'>as_slice</span>().<span class='ident'>len</span>()); 
+        <span class='comment'>// here we can process the the message stored in `msg`</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while reading: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>IoErrorKind::FileNotFound</code> : The socket is invalid.</li>
+<li><code>IoErrorKind::MismatchedFileTypeForOperation</code> : The operation is not supported by this socket type.</li>
+<li><code>IoErrorKind::ResourceUnavailable</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>IoErrorKind::BrokenPipe</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>IoErrorKind::TimedOut</code> : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.</li>
+<li><code>IoErrorKind::IoUnavailable</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.read_at_least' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.read_at_least' class='fnname'>read_at_least</a>(&amp;mut self, min: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>&gt;</code></h4>
+<div class='docblock'><p>Reads at least <code>min</code> bytes and places them in <code>buf</code>.
+Returns the number of bytes read.</p>
+
+<p>This will continue to call <code>read</code> until at least <code>min</code> bytes have been</p>
+
+<p>If an error occurs at any point, that error is returned, and no further bytes are read.</p>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>IoErrorKind::FileNotFound</code> : The socket is invalid.</li>
+<li><code>IoErrorKind::MismatchedFileTypeForOperation</code> : The operation is not supported by this socket type.</li>
+<li><code>IoErrorKind::ResourceUnavailable</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>IoErrorKind::BrokenPipe</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>IoErrorKind::TimedOut</code> : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.</li>
+<li><code>IoErrorKind::IoUnavailable</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.read_byte' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_byte' class='fnname'>read_byte</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.push' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.push' class='fnname'>push</a>(&amp;mut self, len: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, buf: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.push_at_least' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.push_at_least' class='fnname'>push_at_least</a>(&amp;mut self, min: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, len: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, buf: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.read_exact' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_exact' class='fnname'>read_exact</a>(&amp;mut self, len: <a href='http://doc.rust-lang.org/nightly/std/primitive.uint.html'>uint</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
@@ -149,8 +537,50 @@ is up to the user of the library by entering a loop.</p>
 <h4 id='method.read_le_f32' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_le_f32' class='fnname'>read_le_f32</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.read_u8' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_u8' class='fnname'>read_u8</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.read_i8' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.read_i8' class='fnname'>read_i8</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.i8.html'>i8</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
-</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Writer.html' title='std::io::Writer'>Writer</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.write' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.write' class='fnname'>write</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
-<h4 id='method.flush' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.flush' class='fnname'>flush</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
+</div><h3 class='impl'><a class='stability Experimental' title='Experimental'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/std/io/trait.Writer.html' title='std::io::Writer'>Writer</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a></code></h3><div class='impl-items'><h4 id='method.write' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.write' class='fnname'>write</a>(&amp;mut self, buf: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/type.IoResult.html' title='std::io::IoResult'>IoResult</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<div class='docblock'><p>The function will send a message containing the data from the buf parameter to the socket.
+Which of the peers the message will be sent to is determined by the particular socket type.</p>
+
+<h1 id="example:" class='section-header'><a
+                           href="#example:">Example:</a></h1><pre class='rust '>
+<span class='kw'>use</span> <span class='ident'>nanomsg</span>::{<span class='ident'>Socket</span>, <span class='ident'>Protocol</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>time</span>::<span class='ident'>duration</span>::<span class='ident'>Duration</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>timer</span>::<span class='ident'>sleep</span>;
+
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Push</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>push_ep</span> <span class='op'>=</span> <span class='ident'>push_socket</span>.<span class='ident'>bind</span>(<span class='string'>&quot;ipc:///tmp/write_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+ 
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_socket</span> <span class='op'>=</span> <span class='ident'>Socket</span>::<span class='ident'>new</span>(<span class='ident'>Protocol</span>::<span class='ident'>Pull</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pull_ep</span> <span class='op'>=</span> <span class='ident'>pull_socket</span>.<span class='ident'>connect</span>(<span class='string'>&quot;ipc:///tmp/write_doc.ipc&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buffer</span> <span class='op'>=</span> [<span class='number'>0u8</span>, ..<span class='number'>1024</span>];
+ 
+<span class='ident'>sleep</span>(<span class='ident'>Duration</span>::<span class='ident'>milliseconds</span>(<span class='number'>50</span>));
+ 
+<span class='kw'>match</span> <span class='ident'>push_socket</span>.<span class='ident'>write</span>(<span class='string'>b&quot;foobar&quot;</span>) {
+    <span class='prelude-val'>Ok</span>(..) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Message sent !&quot;</span>),
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Failed to write to the socket: {}&quot;</span>, <span class='ident'>err</span>)
+}
+
+<span class='kw'>match</span> <span class='ident'>pull_socket</span>.<span class='ident'>read</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buffer</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>count</span>) <span class='op'>=&gt;</span> { 
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Read {} bytes !&quot;</span>, <span class='ident'>count</span>); 
+        <span class='comment'>// here we can process the `count` bytes of the message stored in `buffer`</span>
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Problem while reading: {}&quot;</span>, <span class='ident'>err</span>)
+};
+</pre>
+
+<h1 id="error" class='section-header'><a
+                           href="#error">Error</a></h1>
+<ul>
+<li><code>IoErrorKind::FileNotFound</code> : The socket is invalid.</li>
+<li><code>IoErrorKind::MismatchedFileTypeForOperation</code> : The operation is not supported by this socket type.</li>
+<li><code>IoErrorKind::ResourceUnavailable</code> : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.</li>
+<li><code>IoErrorKind::BrokenPipe</code> : The operation was interrupted by delivery of a signal before the message was received.</li>
+<li><code>IoErrorKind::TimedOut</code> : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.</li>
+<li><code>IoErrorKind::IoUnavailable</code> : The library is terminating.</li>
+</ul>
+</div><h4 id='method.flush' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.flush' class='fnname'>flush</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.write_fmt' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_fmt' class='fnname'>write_fmt</a>(&amp;mut self, fmt: &amp;<a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Arguments.html' title='core::fmt::Arguments'>Arguments</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.write_str' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_str' class='fnname'>write_str</a>(&amp;mut self, s: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.write_line' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_line' class='fnname'>write_line</a>(&amp;mut self, s: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
@@ -179,8 +609,12 @@ is up to the user of the library by entering a loop.</p>
 <h4 id='method.write_le_f32' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_le_f32' class='fnname'>write_le_f32</a>(&amp;mut self, f: <a href='http://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.write_u8' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_u8' class='fnname'>write_u8</a>(&amp;mut self, n: <a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
 <h4 id='method.write_i8' class='tymethod'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#tymethod.write_i8' class='fnname'>write_i8</a>(&amp;mut self, n: <a href='http://doc.rust-lang.org/nightly/std/primitive.i8.html'>i8</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='struct' href='http://doc.rust-lang.org/nightly/std/io/struct.IoError.html' title='std::io::IoError'>IoError</a>&gt;</code></h4>
-</div><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.drop' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
-</div></section>
+</div><h3 class='impl'><a class='stability Experimental' title='Experimental'></a><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../nanomsg/struct.Socket.html' title='nanomsg::Socket'>Socket</a></code></h3><div class='impl-items'><h4 id='method.drop' class='method'><a class='stability Experimental' title='Experimental'></a><code>fn <a href='#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Closes the socket.
+Any buffered inbound messages that were not yet received by the application will be discarded.
+The library will try to deliver any outstanding outbound messages for the time specified by <code>set_linger</code>. 
+The call will block in the meantime.</p>
+</div></div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
