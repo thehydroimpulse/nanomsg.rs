@@ -1,7 +1,7 @@
-#![feature(phase, globs, import_shadowing)]
+#![feature(phase, plugin, import_shadowing, link_args)]
 #![allow(non_camel_case_types)]
 
-#[phase(plugin)]
+#[plugin]
 extern crate "link-config" as link_config;
 extern crate libc;
 
@@ -66,8 +66,8 @@ pub const NN_POLLOUT: c_short = 2;
 pub const NN_POLL_IN_AND_OUT: c_short = NN_POLLIN + NN_POLLOUT;
 
 // error codes
-pub const ETERM: c_int = NN_HAUSNUMERO + 53;
-pub const EFSM: c_int = NN_HAUSNUMERO + 54;
+pub const ETERM: c_int = posix_consts::NN_HAUSNUMERO + 53;
+pub const EFSM: c_int = posix_consts::NN_HAUSNUMERO + 54;
 
 #[cfg(not(windows))]
 mod posix_consts {
@@ -88,8 +88,8 @@ mod posix_consts {
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
 
-    #[cfg(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "macos", target_os = "ios")))]
-    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
+    //#[cfg(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "macos", target_os = "ios")))]
+    //pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
 
     // nanomsg uses EACCESS as an alias for EACCES
     pub const EACCESS: c_int = ::libc::consts::os::posix88::EACCES;
@@ -111,7 +111,7 @@ mod posix_consts {
     pub const EINPROGRESS: c_int = NN_HAUSNUMERO + 8;
     pub const ENOTSOCK: c_int = NN_HAUSNUMERO + 9;
     pub const EAFNOSUPPORT: c_int = NN_HAUSNUMERO + 10;
-    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
+    //pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
     pub const EAGAIN: c_int = NN_HAUSNUMERO + 12;
     pub const EBADF: c_int = NN_HAUSNUMERO + 13;
     pub const EINVAL: c_int = NN_HAUSNUMERO + 14;
@@ -132,7 +132,7 @@ mod posix_consts {
 }
 
 #[repr(C)]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct nn_pollfd  {
     fd: c_int,
     events: c_short,

@@ -1,6 +1,6 @@
-#![feature(globs, phase, slicing_syntax, macro_rules)]
+#![feature(phase, slicing_syntax, plugin)]
 
-#[phase(plugin, link)] extern crate log;
+#[plugin] extern crate log;
 
 extern crate libc;
 extern crate libnanomsg;
@@ -26,7 +26,7 @@ pub mod endpoint;
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
-#[deriving(Show, PartialEq, Copy)]
+#[derive(Show, PartialEq, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
     ///
@@ -94,7 +94,7 @@ pub struct Socket {
     no_copy_marker: NoCopy
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 /// A request for polling a socket and the poll result.
 /// To create the request, see `Socket::new_pollfd`.
 /// To get the result, see `PollFd::can_read` and `PollFd::can_write`.
@@ -269,7 +269,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.to_c_str().as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.as_ptr() as *const i8) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -305,7 +305,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.to_c_str().as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.as_ptr() as *const i8) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -323,7 +323,7 @@ impl Socket {
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_doc.ipc").unwrap();
-    /// let mut buffer = [0u8, ..1024];
+    /// let mut buffer = [0u8; 1024];
     ///
     /// match socket.nb_read(&mut buffer) {
     ///     Ok(count) => { 
@@ -579,8 +579,7 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
-        let c_str = val.to_c_str();
-        let ptr = c_str.as_ptr() as *const c_void;
+        let ptr = val.as_ptr() as *const c_void;
         let ret = unsafe {
             libnanomsg::nn_setsockopt(self.socket,
                                       level,
@@ -779,7 +778,7 @@ impl Reader for Socket {
     /// 
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
-    /// let mut buffer = [0u8, ..1024];
+    /// let mut buffer = [0u8; 1024];
     /// 
     /// sleep(Duration::milliseconds(50));
     /// 
@@ -904,7 +903,7 @@ impl Reader for Socket {
         let mut read = 0;
         while read < min {
             loop {
-                let write_buf = buf[mut read..];
+                let write_buf = buf.slice_from_mut(read);
                 match self.read(write_buf) {
                     Ok(n) => {
                         read += std::cmp::min(n, write_buf.len());
@@ -935,7 +934,7 @@ impl Writer for Socket {
     /// 
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
-    /// let mut buffer = [0u8, ..1024];
+    /// let mut buffer = [0u8; 1024];
     /// 
     /// sleep(Duration::milliseconds(50));
     /// 
@@ -1097,7 +1096,7 @@ mod tests {
     }
 
     fn test_read(socket: &mut Socket, expected: &[u8]) {
-        let mut buf = [0u8, ..6];
+        let mut buf = [0u8; 6];
         match socket.read(&mut buf) {
             Ok(len) => {
                 assert_eq!(len, 6);
@@ -1531,7 +1530,7 @@ mod tests {
         test_connect(&mut pull_socket, url);
         sleep(Duration::milliseconds(10));
 
-        let mut buf = [0u8, ..6];
+        let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
             Ok(_) => panic!("Nothing should have been received !"),
             Err(err) => assert_eq!(err.kind, TryAgain)
@@ -1540,7 +1539,7 @@ mod tests {
         test_write(&mut push_socket, b"foobar");
         sleep(Duration::milliseconds(10));
 
-        let mut buf = [0u8, ..6];
+        let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
             Ok(len) => {
                 assert_eq!(len, 6);

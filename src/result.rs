@@ -6,12 +6,13 @@ use std::fmt;
 use std::io;
 use std::io::{IoError, IoErrorKind};
 use std::error::FromError;
+use std::num::FromPrimitive;
 
 pub use self::NanoErrorKind::*;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[deriving(Show, Clone, PartialEq, FromPrimitive, Copy)]
+#[derive(Show, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
     Unknown = 0i,
     OperationNotSupported = libnanomsg::ENOTSUP as int,
@@ -49,7 +50,7 @@ pub enum NanoErrorKind {
     Interrupted = libnanomsg::EINTR as int
 }
 
-#[deriving(PartialEq, Copy)]
+#[derive(PartialEq, Copy)]
 pub struct NanoError {
     pub description: &'static str,
     pub kind: NanoErrorKind
@@ -136,6 +137,7 @@ mod tests {
     use std::io;
     use std::io::{IoErrorKind};
     use std::error::FromError;
+    use std::num::FromPrimitive;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
         let i64_error_code = error_code as i64;
