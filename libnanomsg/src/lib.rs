@@ -1,5 +1,5 @@
 #![feature(plugin, import_shadowing, link_args)]
-#![allow(non_camel_case_types)]
+#![allow(non_camel_case_types, unstable)]
 
 #[plugin]
 extern crate "link-config" as link_config;

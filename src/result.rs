@@ -120,6 +120,11 @@ impl fmt::Show for NanoError {
     }
 }
 
+impl fmt::String for NanoError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "An error has ocurred: {}", self.description)
+    }
+}
 pub fn last_nano_error() -> NanoError {
     let nn_errno = unsafe { libnanomsg::nn_errno() };
 

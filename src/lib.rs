@@ -1,4 +1,5 @@
 #![feature(slicing_syntax, plugin)]
+#![allow(unstable)]
 
 #[plugin] extern crate log;
 
@@ -365,6 +366,7 @@ impl Socket {
     /// # Example:
     ///
     /// ```rust
+    /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
@@ -372,7 +374,7 @@ impl Socket {
     ///
     /// match socket.nb_read_to_end() {
     ///     Ok(msg) => { 
-    ///         println!("Read message {} !", msg.as_slice()); 
+    ///         println!("Read message {} bytes !", msg.len()); 
     ///         // here we can process the message stored in `msg`
     ///     },
     ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
@@ -476,6 +478,7 @@ impl Socket {
     /// # Example
     ///
     /// ```rust
+    /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol, PollFd, PollRequest};
     /// use std::time::duration::Duration;
     /// use std::io::timer::sleep;
@@ -769,6 +772,7 @@ impl Reader for Socket {
     /// # Example
     ///
     /// ```rust
+    /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
     /// use std::io::timer::sleep;
@@ -824,6 +828,7 @@ impl Reader for Socket {
     /// # Example:
     ///
     /// ```rust
+    /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
     /// use std::io::timer::sleep;
@@ -925,6 +930,7 @@ impl Writer for Socket {
     /// # Example:
     ///
     /// ```rust
+    /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
     /// use std::io::timer::sleep;
@@ -987,7 +993,7 @@ impl Drop for Socket {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused_must_use)]
+    #![allow(unused_must_use, unstable)]
     use {Socket, Protocol, PollRequest, PollFd, Endpoint};
     use libc::c_int;
     use libnanomsg;
@@ -1149,7 +1155,7 @@ mod tests {
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        let push_thread = Thread::spawn(move || {
+        let push_thread = Thread::scoped(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -1158,7 +1164,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        let pull_thread = Thread::spawn(move|| {
+        let pull_thread = Thread::scoped(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
