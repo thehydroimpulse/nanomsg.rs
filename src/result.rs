@@ -116,7 +116,7 @@ impl FromError<io::IoError> for NanoError {
 
 impl fmt::Show for NanoError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
+        write!(formatter, "An error has ocurred: {}", self.description)
     }
 }
 

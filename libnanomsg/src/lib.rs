@@ -1,4 +1,4 @@
-#![feature(phase, plugin, import_shadowing, link_args)]
+#![feature(plugin, import_shadowing, link_args)]
 #![allow(non_camel_case_types)]
 
 #[plugin]

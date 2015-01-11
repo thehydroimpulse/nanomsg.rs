@@ -1,4 +1,4 @@
-#![feature(phase, slicing_syntax, plugin)]
+#![feature(slicing_syntax, plugin)]
 
 #[plugin] extern crate log;
 
@@ -18,7 +18,7 @@ use std::io::{Writer, Reader, IoResult};
 use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
-use std::kinds::marker::NoCopy;
+use std::marker::NoCopy;
 
 pub mod result;
 pub mod endpoint;
