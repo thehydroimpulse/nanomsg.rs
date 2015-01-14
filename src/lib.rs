@@ -1326,7 +1326,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let size: int = 64 * 1024;
+        let size = 64 * 1024;
         match socket.set_send_buffer_size(size) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change send buffer size on the socket: {}", err)
@@ -1340,7 +1340,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let size: int = 64 * 1024;
+        let size = 64 * 1024;
         match socket.set_receive_buffer_size(size) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change receive buffer size on the socket: {}", err)
