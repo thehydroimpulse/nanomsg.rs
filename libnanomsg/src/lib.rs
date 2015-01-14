@@ -338,7 +338,7 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        let msg = unsafe { Vec::from_raw_buf(buf, bytes as uint) };
+        let msg = unsafe { Vec::from_raw_buf(buf, bytes as usize) };
         assert_eq!(msg, expected.as_bytes());
         unsafe { nn_freemsg(buf as *mut c_void); }
     }
@@ -520,7 +520,7 @@ mod tests {
         let mut fd_vector: Vec<nn_pollfd> = vec![pollfd1, pollfd2];
         let fd_ptr = fd_vector.as_mut_ptr();
 
-        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as int };
+        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as usize };
         let fd_slice = fd_vector.as_mut_slice();
         assert_eq!(0, poll_result);
         assert_eq!(0, fd_slice[0].revents);
@@ -530,7 +530,7 @@ mod tests {
         test_connect(s2, url.as_ptr() as *const i8);
         sleep(Duration::milliseconds(10));
 
-        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result2);
         assert_eq!(NN_POLLOUT, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);
@@ -539,7 +539,7 @@ mod tests {
         test_send(s2, msg);
         sleep(Duration::milliseconds(10));
 
-        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result3);
         assert_eq!(NN_POLLOUT + NN_POLLIN, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);

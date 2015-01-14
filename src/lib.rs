@@ -32,32 +32,32 @@ pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
     ///
     /// **See also:** `Socket::set_request_resend_interval`
-    Req = (libnanomsg::NN_REQ) as int,
+    Req = (libnanomsg::NN_REQ) as isize,
 
     /// Used to implement the stateless worker that receives requests and sends replies.
-    Rep = (libnanomsg::NN_REP) as int,
+    Rep = (libnanomsg::NN_REP) as isize,
 
     /// This socket is used to send messages to a cluster of load-balanced nodes. 
     /// Receive operation is not implemented on this socket type.
-    Push = (libnanomsg::NN_PUSH) as int,
+    Push = (libnanomsg::NN_PUSH) as isize,
 
     /// This socket is used to receive a message from a cluster of nodes.
     /// Send operation is not implemented on this socket type.
-    Pull = (libnanomsg::NN_PULL) as int,
+    Pull = (libnanomsg::NN_PULL) as isize,
 
     /// Socket for communication with exactly one peer.
     /// Each party can send messages at any time. 
     /// If the peer is not available or send buffer is full subsequent calls to `write`
     /// will block until it’s possible to send the message.
-    Pair = (libnanomsg::NN_PAIR) as int,
+    Pair = (libnanomsg::NN_PAIR) as isize,
 
     /// Sent messages are distributed to all nodes in the topology.
     /// Incoming messages from all other nodes in the topology are fair-queued in the socket.
-    Bus = (libnanomsg::NN_BUS) as int,
+    Bus = (libnanomsg::NN_BUS) as isize,
 
     /// This socket is used to distribute messages to multiple destinations.
     /// Receive operation is not defined.
-    Pub = (libnanomsg::NN_PUB) as int,
+    Pub = (libnanomsg::NN_PUB) as isize,
 
     /// Receives messages from the publisher.
     /// Only messages that the socket is subscribed to are received.
@@ -65,7 +65,7 @@ pub enum Protocol {
     /// Send operation is not defined on this socket.
     ///
     /// **See also:** `Socket::subscribe` and `Socket::unsubscribe`.
-    Sub = (libnanomsg::NN_SUB) as int,
+    Sub = (libnanomsg::NN_SUB) as isize,
 
     /// Used to send the survey.
     /// The survey is delivered to all the connected respondents.
@@ -73,12 +73,12 @@ pub enum Protocol {
     /// When the survey deadline expires, receive will return Timeout error.
     /// 
     /// **See also:** `Socket::set_survey_deadline`
-    Surveyor = (libnanomsg::NN_SURVEYOR) as int,
+    Surveyor = (libnanomsg::NN_SURVEYOR) as isize,
 
     /// Use to respond to the survey. 
     /// Survey is received using receive function, response is sent using send function
     /// This socket can be connected to at most one peer.
-    Respondent = (libnanomsg::NN_RESPONDENT) as int
+    Respondent = (libnanomsg::NN_RESPONDENT) as isize
 }
 
 impl Protocol {
@@ -143,7 +143,7 @@ impl<'a> PollRequest<'a> {
         PollRequest { fds: fds, nn_fds: nn_fds }
     }
 
-    fn len(&self) -> uint {
+    fn len(&self) -> usize {
         self.fds.len()
     }
 
@@ -348,7 +348,7 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<uint> {
+    pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<usize> {
 
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
@@ -356,7 +356,7 @@ impl Socket {
         let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
 
         error_guard!(ret);
-        Ok(ret as uint)
+        Ok(ret as usize)
     }
 
     /// Non-blocking version of the `read_to_end` function.
@@ -407,7 +407,7 @@ impl Socket {
 
         error_guard!(ret);
 
-        let len = ret as uint;
+        let len = ret as usize;
         unsafe {
             let bytes = Vec::from_raw_buf(mem as *const _, len);
             libnanomsg::nn_freemsg(mem as *mut c_void);
@@ -514,11 +514,11 @@ impl Socket {
     /// - `Timeout` : No event was signaled before the specified timeout.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn poll(request: &mut PollRequest, timeout: &Duration) -> NanoResult<int> {
+    pub fn poll(request: &mut PollRequest, timeout: &Duration) -> NanoResult<usize> {
         let nn_fds = request.get_nn_fds();
         let len = request.len() as c_int;
         let millis = timeout.num_milliseconds() as c_int;
-        let ret = unsafe { libnanomsg::nn_poll(nn_fds, len, millis) } as int;
+        let ret = unsafe { libnanomsg::nn_poll(nn_fds, len, millis) } as usize;
 
         error_guard!(ret);
 
@@ -608,7 +608,7 @@ impl Socket {
     /// exactly one message may be buffered in addition to the data in the send buffer.
     /// Default value is 128kB.
     #[unstable]
-    pub fn set_send_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
+    pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
                                       libnanomsg::NN_SNDBUF,
                                       size_in_bytes as c_int)
@@ -618,7 +618,7 @@ impl Socket {
     /// exactly one message may be buffered in addition to the data in the receive buffer.
     /// Default value is 128kB.
     #[unstable]
-    pub fn set_receive_buffer_size(&mut self, size_in_bytes: int) -> NanoResult<()> {
+    pub fn set_receive_buffer_size(&mut self, size_in_bytes: usize) -> NanoResult<()> {
         self.set_socket_options_c_int(libnanomsg::NN_SOL_SOCKET,
                                       libnanomsg::NN_RCVBUF,
                                       size_in_bytes as c_int)
@@ -809,7 +809,7 @@ impl Reader for Socket {
     /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
 
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
@@ -820,7 +820,7 @@ impl Reader for Socket {
             return Err(last_nano_error().to_ioerror());
         }
 
-        Ok(ret as uint)
+        Ok(ret as usize)
     }
 
     /// Receive a message from the socket. Returns a message allocated by nanomsg on success.
@@ -878,7 +878,7 @@ impl Reader for Socket {
             return Err(last_nano_error().to_ioerror());
         }
 
-        let len = ret as uint;
+        let len = ret as usize;
         unsafe {
             let bytes = Vec::from_raw_buf(mem as *const _, len);
             libnanomsg::nn_freemsg(mem as *mut c_void);
@@ -901,7 +901,7 @@ impl Reader for Socket {
     /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `IoErrorKind::IoUnavailable` : The library is terminating.
-    fn read_at_least(&mut self, min: uint, buf: &mut [u8]) -> IoResult<uint> {
+    fn read_at_least(&mut self, min: usize, buf: &mut [u8]) -> IoResult<usize> {
         if min > buf.len() {
             return Err(io::standard_error(io::InvalidInput));
         }
@@ -973,7 +973,7 @@ impl Writer for Socket {
                                 len as size_t, 0)
         };
 
-        if ret as uint != len {
+        if ret as usize != len {
             return Err(last_nano_error().to_ioerror());
         }
 
