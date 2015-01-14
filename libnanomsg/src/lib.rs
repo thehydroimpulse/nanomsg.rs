@@ -88,9 +88,6 @@ mod posix_consts {
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
 
-    //#[cfg(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "macos", target_os = "ios")))]
-    //pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
-
     // nanomsg uses EACCESS as an alias for EACCES
     pub const EACCESS: c_int = ::libc::consts::os::posix88::EACCES;
 }
