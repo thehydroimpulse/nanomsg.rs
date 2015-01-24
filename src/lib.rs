@@ -4,7 +4,7 @@
 #[plugin] extern crate log;
 
 extern crate libc;
-extern crate libnanomsg;
+extern crate "nanomsg-sys" as libnanomsg;
 
 pub use result::{NanoResult, NanoError, NanoErrorKind};
 pub use endpoint::Endpoint;
