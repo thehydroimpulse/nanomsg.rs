@@ -908,7 +908,7 @@ impl Reader for Socket {
         let mut read = 0;
         while read < min {
             loop {
-                let write_buf = buf.slice_from_mut(read);
+                let write_buf = &mut buf[read..];
                 match self.read(write_buf) {
                     Ok(n) => {
                         read += std::cmp::min(n, write_buf.len());
