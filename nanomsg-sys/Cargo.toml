@@ -1,6 +1,6 @@
 [package]
 
-name = "libnanomsg"
+name = "nanomsg-sys"
 version = "0.1.0"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",

@@ -1,7 +1,7 @@
 use libc::c_int;
 use libnanomsg;
 use result::{NanoResult,last_nano_error};
-use std::kinds::marker::NoCopy;
+use std::marker::NoCopy;
 
 /// An endpoint created for a specific socket. Each endpoint is identified
 /// by a unique return value that can be further passed to a shutdown

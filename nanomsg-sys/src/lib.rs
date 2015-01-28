@@ -1,7 +1,7 @@
-#![feature(phase, globs, import_shadowing)]
-#![allow(non_camel_case_types)]
+#![feature(plugin, link_args)]
+#![allow(non_camel_case_types, unstable)]
 
-#[phase(plugin)]
+#[plugin]
 extern crate "link-config" as link_config;
 extern crate libc;
 
@@ -66,8 +66,8 @@ pub const NN_POLLOUT: c_short = 2;
 pub const NN_POLL_IN_AND_OUT: c_short = NN_POLLIN + NN_POLLOUT;
 
 // error codes
-pub const ETERM: c_int = NN_HAUSNUMERO + 53;
-pub const EFSM: c_int = NN_HAUSNUMERO + 54;
+pub const ETERM: c_int = posix_consts::NN_HAUSNUMERO + 53;
+pub const EFSM: c_int = posix_consts::NN_HAUSNUMERO + 54;
 
 #[cfg(not(windows))]
 mod posix_consts {
@@ -87,9 +87,6 @@ mod posix_consts {
 
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
-
-    #[cfg(not(any(target_os = "freebsd", target_os = "dragonfly", target_os = "macos", target_os = "ios")))]
-    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
 
     // nanomsg uses EACCESS as an alias for EACCES
     pub const EACCESS: c_int = ::libc::consts::os::posix88::EACCES;
@@ -132,7 +129,7 @@ mod posix_consts {
 }
 
 #[repr(C)]
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct nn_pollfd  {
     fd: c_int,
     events: c_short,
@@ -306,6 +303,7 @@ mod tests {
 
     use std::sync::{Arc, Barrier};
     use std::thread::Thread;
+    use std::slice::from_raw_buf;
 
     fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
         let sock = unsafe { nn_socket(domain, protocol) };
@@ -326,9 +324,8 @@ mod tests {
     }
 
     fn test_send(socket: c_int, msg: &str) {
-        let c_msg = msg.to_c_str();
         let bytes = unsafe {
-            nn_send(socket, c_msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
+            nn_send(socket, msg.as_ptr() as *const c_void, msg.len() as size_t, 0)
         };
         let expected = msg.len() as i32;
         assert!(bytes == expected);
@@ -338,16 +335,14 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        assert!(buf.is_not_null());
-        let msg = unsafe { String::from_raw_buf_len(buf as *const u8, bytes as uint) };
-        assert_eq!(msg.as_slice(), expected);
+        let msg = unsafe { Vec::from_raw_buf(buf, bytes as usize) };
+        assert_eq!(msg, expected.as_bytes());
         unsafe { nn_freemsg(buf as *mut c_void); }
     }
 
     fn test_subscribe(socket: c_int, topic: &str) {
         let topic_len = topic.len() as size_t;
-        let topic_c_str = topic.to_c_str();
-        let topic_ptr = topic_c_str.as_ptr();
+        let topic_ptr = topic.as_ptr();
         let topic_raw_ptr = topic_ptr as *const c_void;
         assert!(unsafe { nn_setsockopt (socket, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
     }
@@ -359,13 +354,13 @@ mod tests {
     #[test]
     fn should_create_a_pipeline() {
 
-        let url = "ipc:///tmp/should_create_a_pipeline.ipc".to_c_str();
+        let url = "ipc:///tmp/should_create_a_pipeline.ipc";
 
         let push_sock = test_create_socket(AF_SP, NN_PUSH);
-        let push_endpoint = test_bind(push_sock, url.as_ptr());
+        let push_endpoint = test_bind(push_sock, url.as_ptr() as *const i8);
 
         let pull_sock = test_create_socket(AF_SP, NN_PULL);
-        let pull_endpoint = test_connect(pull_sock, url.as_ptr());
+        let pull_endpoint = test_connect(pull_sock, url.as_ptr() as *const i8);
 
         let push_msg = "foobar";
         test_send(push_sock, push_msg);
@@ -382,12 +377,12 @@ mod tests {
     #[test]
     fn should_create_a_pair() {
 
-        let url = "ipc:///tmp/should_create_a_pair.ipc".to_c_str();
+        let url = "ipc:///tmp/should_create_a_pair.ipc";
         let left_sock = test_create_socket(AF_SP, NN_PAIR);
-        let left_endpoint = test_bind(left_sock, url.as_ptr());
+        let left_endpoint = test_bind(left_sock, url.as_ptr() as *const i8);
 
         let right_sock = test_create_socket(AF_SP, NN_PAIR);
-        let right_endpoint = test_connect(right_sock, url.as_ptr());
+        let right_endpoint = test_connect(right_sock, url.as_ptr() as *const i8);
 
         let right_to_left_msg = "foobar";
         test_send(right_sock, right_to_left_msg);
@@ -408,16 +403,16 @@ mod tests {
     #[test]
     fn should_create_a_bus() {
 
-        let url = "ipc:///tmp/should_create_a_bus.ipc".to_c_str();
+        let url = "ipc:///tmp/should_create_a_bus.ipc";
 
         let sock1 = test_create_socket(AF_SP, NN_BUS);
-        let sock1_write_endpoint = test_bind(sock1, url.as_ptr());
+        let sock1_write_endpoint = test_bind(sock1, url.as_ptr() as *const i8);
 
         let sock2 = test_create_socket(AF_SP, NN_BUS);
-        let sock2_read_endpoint = test_connect(sock2, url.as_ptr());
+        let sock2_read_endpoint = test_connect(sock2, url.as_ptr() as *const i8);
 
         let sock3 = test_create_socket(AF_SP, NN_BUS);
-        let sock3_read_endpoint = test_connect(sock3, url.as_ptr());
+        let sock3_read_endpoint = test_connect(sock3, url.as_ptr() as *const i8);
 
         sleep(Duration::milliseconds(10));
 
@@ -440,17 +435,17 @@ mod tests {
     #[test]
     fn should_create_a_pubsub() {
 
-        let url = "ipc:///tmp/should_create_a_pubsub.ipc".to_c_str();
+        let url = "ipc:///tmp/should_create_a_pubsub.ipc";
         let pub_sock = test_create_socket(AF_SP, NN_PUB);
-        let pub_endpoint = test_bind(pub_sock, url.as_ptr());
+        let pub_endpoint = test_bind(pub_sock, url.as_ptr() as *const i8);
 
         let sub_sock1 = test_create_socket(AF_SP, NN_SUB);
-        let sub_endpoint1 = test_connect(sub_sock1, url.as_ptr());
+        let sub_endpoint1 = test_connect(sub_sock1, url.as_ptr() as *const i8);
         let topic1 = "foo";
         test_subscribe(sub_sock1, topic1);
 
         let sub_sock2 = test_create_socket(AF_SP, NN_SUB);
-        let sub_endpoint2 = test_connect(sub_sock2, url.as_ptr());
+        let sub_endpoint2 = test_connect(sub_sock2, url.as_ptr() as *const i8);
         let topic2 = "bar";
         test_subscribe(sub_sock2, topic2);
 
@@ -478,15 +473,15 @@ mod tests {
     #[test]
     fn should_create_a_survey() {
 
-        let url = "ipc:///tmp/should_create_a_survey.ipc".to_c_str();
+        let url = "ipc:///tmp/should_create_a_survey.ipc";
         let surv_sock = test_create_socket(AF_SP, NN_SURVEYOR);
-        let surv_endpoint = test_bind(surv_sock, url.as_ptr());
+        let surv_endpoint = test_bind(surv_sock, url.as_ptr() as *const i8);
 
         let resp_sock1 = test_create_socket(AF_SP, NN_RESPONDENT);
-        let resp_endpoint1 = test_connect(resp_sock1, url.as_ptr());
+        let resp_endpoint1 = test_connect(resp_sock1, url.as_ptr() as *const i8);
 
         let resp_sock2 = test_create_socket(AF_SP, NN_RESPONDENT);
-        let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr());
+        let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr() as *const i8);
 
         sleep(Duration::milliseconds(10));
 
@@ -514,7 +509,7 @@ mod tests {
 
     #[test]
     fn poll_should_work() {
-        let url = "ipc:///tmp/poll_should_work.ipc".to_c_str();
+        let url = "ipc:///tmp/poll_should_work.ipc";
         let s1 = test_create_socket(AF_SP, NN_PAIR);
         let s2 = test_create_socket(AF_SP, NN_PAIR);
         let pollfd1 = nn_pollfd { fd: s1, events: 3i16 as c_short, revents: 0i16 as c_short };
@@ -522,17 +517,17 @@ mod tests {
         let mut fd_vector: Vec<nn_pollfd> = vec![pollfd1, pollfd2];
         let fd_ptr = fd_vector.as_mut_ptr();
 
-        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as int };
+        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as usize };
         let fd_slice = fd_vector.as_mut_slice();
         assert_eq!(0, poll_result);
         assert_eq!(0, fd_slice[0].revents);
         assert_eq!(0, fd_slice[1].revents);
 
-        test_bind(s1, url.as_ptr());
-        test_connect(s2, url.as_ptr());
+        test_bind(s1, url.as_ptr() as *const i8);
+        test_connect(s2, url.as_ptr() as *const i8);
         sleep(Duration::milliseconds(10));
 
-        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result2);
         assert_eq!(NN_POLLOUT, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);
@@ -541,7 +536,7 @@ mod tests {
         test_send(s2, msg);
         sleep(Duration::milliseconds(10));
 
-        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as int };
+        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result3);
         assert_eq!(NN_POLLOUT + NN_POLLIN, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);
@@ -562,29 +557,27 @@ mod tests {
         }
     }
 
-    fn test_multithread_pipeline(name: &'static str) {
+    fn test_multithread_pipeline(url: &'static str) {
 
         // this is required to prevent the sender from being closed before the receiver gets the message
         let drop_after_use = Arc::new(Barrier::new(2));
         let drop_after_use_pull = drop_after_use.clone();
         let drop_after_use_push = drop_after_use.clone();
 
-        let push_thread = Thread::spawn(move || {
-            let url = name.to_c_str();
+        let push_thread = Thread::scoped(move || {
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
-            let push_endpoint = test_bind(push_sock, url.as_ptr());
+            let push_endpoint = test_bind(push_sock, url.as_ptr() as *const i8);
 
             test_send(push_sock, push_msg);
 
             finish_child_task(drop_after_use_push, push_sock, push_endpoint);
         });
 
-        let pull_thread = Thread::spawn(move || {
-            let url = name.to_c_str();
+        let pull_thread = Thread::scoped(move || {
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);
-            let pull_endpoint = test_connect(pull_sock, url.as_ptr());
+            let pull_endpoint = test_connect(pull_sock, url.as_ptr() as *const i8);
 
             test_receive(pull_sock, pull_msg);
 

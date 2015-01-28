@@ -6,50 +6,51 @@ use std::fmt;
 use std::io;
 use std::io::{IoError, IoErrorKind};
 use std::error::FromError;
+use std::num::FromPrimitive;
 
 pub use self::NanoErrorKind::*;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[deriving(Show, Clone, PartialEq, FromPrimitive, Copy)]
+#[derive(Show, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
-    Unknown = 0i,
-    OperationNotSupported = libnanomsg::ENOTSUP as int,
-    ProtocolNotSupported = libnanomsg::EPROTONOSUPPORT as int,
-    NoBufferSpace = libnanomsg::ENOBUFS as int,
-    NetworkDown = libnanomsg::ENETDOWN as int,
-    AddressInUse = libnanomsg::EADDRINUSE as int,
-    AddressNotAvailable = libnanomsg::EADDRNOTAVAIL as int,
-    ConnectionRefused = libnanomsg::ECONNREFUSED as int,
-    OperationNowInProgress = libnanomsg::EINPROGRESS as int,
-    NotSocket = libnanomsg::ENOTSOCK as int,
-    AddressFamilyNotSupported = libnanomsg::EAFNOSUPPORT as int,
-    WrongProtocol = libnanomsg::EPROTO as int,
-    TryAgain = libnanomsg::EAGAIN as int,
-    BadFileDescriptor = libnanomsg::EBADF as int,
-    InvalidArgument = libnanomsg::EINVAL as int,
-    TooManyOpenFiles = libnanomsg::EMFILE as int,
-    BadAddress = libnanomsg::EFAULT as int,
-    PermisionDenied = libnanomsg::EACCESS as int,
-    NetworkReset = libnanomsg::ENETRESET as int,
-    NetworkUnreachable = libnanomsg::ENETUNREACH as int,
-    HostUnreachable = libnanomsg::EHOSTUNREACH as int,
-    NotConnected = libnanomsg::ENOTCONN as int,
-    MessageTooLong = libnanomsg::EMSGSIZE as int,
-    Timeout = libnanomsg::ETIMEDOUT as int,
-    ConnectionAbort = libnanomsg::ECONNABORTED as int,
-    ConnectionReset = libnanomsg::ECONNRESET as int,
-    ProtocolNotAvailable = libnanomsg::ENOPROTOOPT as int,
-    AlreadyConnected = libnanomsg::EISCONN as int,
-    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as int,
-    Terminating = libnanomsg::ETERM as int,
-    NameTooLong = libnanomsg::ENAMETOOLONG as int,
-    NoDevice = libnanomsg::ENODEV as int,
-    FileStateMismatch = libnanomsg::EFSM as int,
-    Interrupted = libnanomsg::EINTR as int
+    Unknown = 0is,
+    OperationNotSupported = libnanomsg::ENOTSUP as isize,
+    ProtocolNotSupported = libnanomsg::EPROTONOSUPPORT as isize,
+    NoBufferSpace = libnanomsg::ENOBUFS as isize,
+    NetworkDown = libnanomsg::ENETDOWN as isize,
+    AddressInUse = libnanomsg::EADDRINUSE as isize,
+    AddressNotAvailable = libnanomsg::EADDRNOTAVAIL as isize,
+    ConnectionRefused = libnanomsg::ECONNREFUSED as isize,
+    OperationNowInProgress = libnanomsg::EINPROGRESS as isize,
+    NotSocket = libnanomsg::ENOTSOCK as isize,
+    AddressFamilyNotSupported = libnanomsg::EAFNOSUPPORT as isize,
+    WrongProtocol = libnanomsg::EPROTO as isize,
+    TryAgain = libnanomsg::EAGAIN as isize,
+    BadFileDescriptor = libnanomsg::EBADF as isize,
+    InvalidArgument = libnanomsg::EINVAL as isize,
+    TooManyOpenFiles = libnanomsg::EMFILE as isize,
+    BadAddress = libnanomsg::EFAULT as isize,
+    PermisionDenied = libnanomsg::EACCESS as isize,
+    NetworkReset = libnanomsg::ENETRESET as isize,
+    NetworkUnreachable = libnanomsg::ENETUNREACH as isize,
+    HostUnreachable = libnanomsg::EHOSTUNREACH as isize,
+    NotConnected = libnanomsg::ENOTCONN as isize,
+    MessageTooLong = libnanomsg::EMSGSIZE as isize,
+    Timeout = libnanomsg::ETIMEDOUT as isize,
+    ConnectionAbort = libnanomsg::ECONNABORTED as isize,
+    ConnectionReset = libnanomsg::ECONNRESET as isize,
+    ProtocolNotAvailable = libnanomsg::ENOPROTOOPT as isize,
+    AlreadyConnected = libnanomsg::EISCONN as isize,
+    SocketTypeNotSupported = libnanomsg::ESOCKTNOSUPPORT as isize,
+    Terminating = libnanomsg::ETERM as isize,
+    NameTooLong = libnanomsg::ENAMETOOLONG as isize,
+    NoDevice = libnanomsg::ENODEV as isize,
+    FileStateMismatch = libnanomsg::EFSM as isize,
+    Interrupted = libnanomsg::EINTR as isize
 }
 
-#[deriving(PartialEq, Copy)]
+#[derive(PartialEq, Copy)]
 pub struct NanoError {
     pub description: &'static str,
     pub kind: NanoErrorKind
@@ -113,12 +114,17 @@ impl FromError<io::IoError> for NanoError {
     }
 }
 
-impl fmt::Show for NanoError {
+impl fmt::Debug for NanoError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "An error has ocurred: Kind: {} Description: {}", self.kind, self.description)
+        write!(formatter, "An error has ocurred: {}", self.description)
     }
 }
 
+impl fmt::Display for NanoError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "An error has ocurred: {}", self.description)
+    }
+}
 pub fn last_nano_error() -> NanoError {
     let nn_errno = unsafe { libnanomsg::nn_errno() };
 
@@ -136,6 +142,7 @@ mod tests {
     use std::io;
     use std::io::{IoErrorKind};
     use std::error::FromError;
+    use std::num::FromPrimitive;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
         let i64_error_code = error_code as i64;
