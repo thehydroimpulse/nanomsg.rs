@@ -1,5 +1,4 @@
 #![feature(slicing_syntax, plugin)]
-#![allow(unstable)]
 
 #[plugin] extern crate log;
 

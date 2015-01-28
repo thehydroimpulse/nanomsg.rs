@@ -1,14 +1,13 @@
 #![feature(plugin, link_args)]
-#![allow(non_camel_case_types, unstable)]
+#![allow(non_camel_case_types)]
+#[link(name = "nanomsg", kind = "static")]
 
-#[plugin]
-extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char, c_short};
 pub use posix_consts::*;
 
-link_config!("libnanomsg", ["only_static"]);
+
 
 pub const AF_SP: c_int = 1;
 pub const AF_SP_RAW: c_int = 2;
