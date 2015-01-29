@@ -1,4 +1,4 @@
-#![feature(plugin, link_args)]
+#![feature(plugin, link_args, libc)]
 #![allow(non_camel_case_types)]
 #[link(name = "nanomsg", kind = "static")]
 
@@ -298,7 +298,7 @@ mod tests {
     use std::mem::transmute;
 
     use std::time::duration::Duration;
-    use std::io::timer::sleep;
+    use std::old_io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
     use std::thread::Thread;
