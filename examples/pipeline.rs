@@ -5,7 +5,7 @@ extern crate nanomsg;
 use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
-use std::old_io::timer::sleep;
+use std::io::timer::sleep;
 
 fn collector() {
     let mut socket = Socket::new(Protocol::Pull).unwrap();

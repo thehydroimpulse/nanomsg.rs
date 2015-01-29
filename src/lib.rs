@@ -1,4 +1,7 @@
-#![feature(slicing_syntax, plugin, libc, core)]
+#![feature(slicing_syntax, plugin)]
+#![allow(unstable)]
+
+#[plugin] extern crate log;
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
@@ -12,8 +15,8 @@ use libc::{c_int, c_void, size_t};
 use std::mem::transmute;
 use std::ptr;
 use result::last_nano_error;
-use std::old_io::{Writer, Reader, IoResult};
-use std::old_io;
+use std::io::{Writer, Reader, IoResult};
+use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use std::marker::NoCopy;
@@ -478,7 +481,7 @@ impl Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol, PollFd, PollRequest};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::io::timer::sleep;
     ///
     /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut left_ep = left_socket.bind("ipc:///tmp/poll_doc.ipc").unwrap();
@@ -772,7 +775,7 @@ impl Reader for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::io::timer::sleep;
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_doc.ipc").unwrap();
@@ -828,7 +831,7 @@ impl Reader for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::io::timer::sleep;
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
@@ -900,7 +903,7 @@ impl Reader for Socket {
     /// - `IoErrorKind::IoUnavailable` : The library is terminating.
     fn read_at_least(&mut self, min: usize, buf: &mut [u8]) -> IoResult<usize> {
         if min > buf.len() {
-            return Err(old_io::standard_error(old_io::InvalidInput));
+            return Err(io::standard_error(io::InvalidInput));
         }
         let mut read = 0;
         while read < min {
@@ -930,7 +933,7 @@ impl Writer for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::io::timer::sleep;
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
@@ -941,7 +944,7 @@ impl Writer for Socket {
     /// 
     /// sleep(Duration::milliseconds(50));
     /// 
-    /// match push_socket.write_all(b"foobar") {
+    /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
     /// }
@@ -963,7 +966,7 @@ impl Writer for Socket {
     /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `IoErrorKind::IoUnavailable` : The library is terminating.
-    fn write_all(&mut self, buf: &[u8]) -> IoResult<()> {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         let len = buf.len();
         let ret = unsafe {
             libnanomsg::nn_send(self.socket, buf.as_ptr() as *const c_void,
@@ -998,7 +1001,7 @@ mod tests {
     use super::result::NanoErrorKind::*;
 
     use std::time::duration::Duration;
-    use std::old_io::timer::sleep;
+    use std::io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
     use std::thread::Thread;

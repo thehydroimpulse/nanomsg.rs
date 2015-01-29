@@ -3,8 +3,8 @@ use libnanomsg;
 
 use std::str;
 use std::fmt;
-use std::old_io;
-use std::old_io::{IoError, IoErrorKind};
+use std::io;
+use std::io::{IoError, IoErrorKind};
 use std::error::FromError;
 use std::num::FromPrimitive;
 
@@ -81,13 +81,13 @@ impl NanoError {
     #[unstable]
     pub fn to_ioerror(&self) -> IoError {
         match self.kind {
-            NanoErrorKind::Timeout => old_io::standard_error(IoErrorKind::TimedOut),
-            NanoErrorKind::InvalidArgument => old_io::standard_error(IoErrorKind::InvalidInput),
-            NanoErrorKind::BadFileDescriptor => old_io::standard_error(IoErrorKind::FileNotFound),
-            NanoErrorKind::OperationNotSupported => old_io::standard_error(IoErrorKind::MismatchedFileTypeForOperation),
-            NanoErrorKind::FileStateMismatch => old_io::standard_error(IoErrorKind::ResourceUnavailable),
-            NanoErrorKind::Terminating => old_io::standard_error(IoErrorKind::IoUnavailable),
-            NanoErrorKind::Interrupted => old_io::standard_error(IoErrorKind::BrokenPipe),
+            NanoErrorKind::Timeout => io::standard_error(IoErrorKind::TimedOut),
+            NanoErrorKind::InvalidArgument => io::standard_error(IoErrorKind::InvalidInput),
+            NanoErrorKind::BadFileDescriptor => io::standard_error(IoErrorKind::FileNotFound),
+            NanoErrorKind::OperationNotSupported => io::standard_error(IoErrorKind::MismatchedFileTypeForOperation),
+            NanoErrorKind::FileStateMismatch => io::standard_error(IoErrorKind::ResourceUnavailable),
+            NanoErrorKind::Terminating => io::standard_error(IoErrorKind::IoUnavailable),
+            NanoErrorKind::Interrupted => io::standard_error(IoErrorKind::BrokenPipe),
             _ => {
                 IoError {
                     kind: IoErrorKind::OtherIoError,
@@ -99,8 +99,8 @@ impl NanoError {
     }
 }
 
-impl FromError<old_io::IoError> for NanoError {
-    fn from_error(io_err: old_io::IoError) -> NanoError {
+impl FromError<io::IoError> for NanoError {
+    fn from_error(io_err: io::IoError) -> NanoError {
         match io_err.kind {
             IoErrorKind::TimedOut => NanoError::new(io_err.desc, NanoErrorKind::Timeout),
             IoErrorKind::InvalidInput => NanoError::new(io_err.desc, NanoErrorKind::InvalidArgument),
@@ -139,8 +139,8 @@ mod tests {
     use super::NanoErrorKind::*;
     use super::NanoErrorKind;
     use super::NanoError;
-    use std::old_io;
-    use std::old_io::{IoErrorKind};
+    use std::io;
+    use std::io::{IoErrorKind};
     use std::error::FromError;
     use std::num::FromPrimitive;
 
@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn nano_err_can_be_converted_from_io_err() {
-        let io_err = old_io::standard_error(IoErrorKind::TimedOut);
+        let io_err = io::standard_error(IoErrorKind::TimedOut);
         let nano_err: NanoError = FromError::from_error(io_err);
 
         assert_eq!(NanoErrorKind::Timeout, nano_err.kind)
