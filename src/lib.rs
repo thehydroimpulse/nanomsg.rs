@@ -1,6 +1,4 @@
-#![feature(slicing_syntax, plugin)]
-
-#[plugin] extern crate log;
+#![feature(slicing_syntax, plugin, libc, core)]
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
