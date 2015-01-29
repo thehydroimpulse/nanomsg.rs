@@ -5,7 +5,7 @@ extern crate nanomsg;
 use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
-use std::io::timer::sleep;
+use std::old_io::timer::sleep;
 
 const CLIENT_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_front.ipc";
 const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_back.ipc";
@@ -20,7 +20,7 @@ fn client() {
     loop {
         let request = format!("Request #{}", count);
 
-        match socket.write(request.as_bytes()) {
+        match socket.write_all(request.as_bytes()) {
             Ok(..) => println!("Send '{}'.", request.as_slice()),
             Err(err) => {
                 println!("Client failed to send request '{}'.", err);
@@ -59,7 +59,7 @@ fn server() {
                 println!("Recv '{}'.", request.as_slice());
 
                 let reply = format!("{} -> Reply #{}", request.as_slice(), count);
-                match socket.write(reply.as_bytes()) {
+                match socket.write_all(reply.as_bytes()) {
                     Ok(..) => println!("Sent '{}'.", reply.as_slice()),
                     Err(err) => {
                         println!("Server failed to send reply '{}'.", err);
