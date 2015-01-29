@@ -1,13 +1,14 @@
-#![feature(plugin, link_args, libc)]
-#![allow(non_camel_case_types)]
-#[link(name = "nanomsg", kind = "static")]
+#![feature(plugin, link_args)]
+#![allow(non_camel_case_types, unstable)]
 
+#[plugin]
+extern crate "link-config" as link_config;
 extern crate libc;
 
 use libc::{c_int, c_void, size_t, c_char, c_short};
 pub use posix_consts::*;
 
-
+link_config!("libnanomsg", ["only_static"]);
 
 pub const AF_SP: c_int = 1;
 pub const AF_SP_RAW: c_int = 2;
@@ -298,7 +299,7 @@ mod tests {
     use std::mem::transmute;
 
     use std::time::duration::Duration;
-    use std::old_io::timer::sleep;
+    use std::io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
     use std::thread::Thread;
@@ -344,10 +345,6 @@ mod tests {
         let topic_ptr = topic.as_ptr();
         let topic_raw_ptr = topic_ptr as *const c_void;
         assert!(unsafe { nn_setsockopt (socket, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
-    }
-
-    fn sleep_some_millis(timeout: i64) {
-        sleep(Duration::milliseconds(timeout));
     }
 
     /// This ensures that the one-way pipe works correctly and also serves as an example
@@ -417,7 +414,7 @@ mod tests {
         let sock3 = test_create_socket(AF_SP, NN_BUS);
         let sock3_read_endpoint = test_connect(sock3, url.as_ptr() as *const i8);
 
-        sleep_some_millis(10);
+        sleep(Duration::milliseconds(10));
 
         let msg = "foobar";
         test_send(sock1, msg);
@@ -452,7 +449,7 @@ mod tests {
         let topic2 = "bar";
         test_subscribe(sub_sock2, topic2);
 
-        sleep_some_millis(10);
+        sleep(Duration::milliseconds(10));
 
         let msg1 = "foobar";
         test_send(pub_sock, msg1);
@@ -486,7 +483,7 @@ mod tests {
         let resp_sock2 = test_create_socket(AF_SP, NN_RESPONDENT);
         let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr() as *const i8);
 
-        sleep_some_millis(10);
+        sleep(Duration::milliseconds(10));
 
         let survey = "are_you_there";
         test_send(surv_sock, survey);
@@ -528,7 +525,7 @@ mod tests {
 
         test_bind(s1, url.as_ptr() as *const i8);
         test_connect(s2, url.as_ptr() as *const i8);
-        sleep_some_millis(10);
+        sleep(Duration::milliseconds(10));
 
         let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result2);
@@ -537,7 +534,7 @@ mod tests {
 
         let msg = "foobar";
         test_send(s2, msg);
-        sleep_some_millis(10);
+        sleep(Duration::milliseconds(10));
 
         let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
         assert_eq!(2, poll_result3);

@@ -10,5 +10,9 @@ authors = [
 license = "MIT"
 description = "The low-level bindings that is used by the nanomsg library."
 keywords = ["binding", "nanomsg"]
-links = "nanomsg"
-build = "build.rs"
+
+#[dependencies]
+#link-config = "^0.1.1"
+
+[dependencies.link-config]
+git = "https://github.com/alexcrichton/link-config.git"

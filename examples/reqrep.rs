@@ -5,7 +5,7 @@ extern crate nanomsg;
 use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
-use std::old_io::timer::sleep;
+use std::io::timer::sleep;
 
 const CLIENT_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_front.ipc";
 const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_back.ipc";
