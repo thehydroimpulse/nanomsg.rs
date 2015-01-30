@@ -1,5 +1,5 @@
-#![feature(plugin, link_args)]
-#![allow(non_camel_case_types, unstable)]
+#![feature(plugin, link_args, libc)]
+#![allow(non_camel_case_types)]
 
 #[plugin]
 extern crate "link-config" as link_config;
@@ -299,7 +299,7 @@ mod tests {
     use std::mem::transmute;
 
     use std::time::duration::Duration;
-    use std::io::timer::sleep;
+    use std::old_io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
     use std::thread::Thread;
