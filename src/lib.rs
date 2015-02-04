@@ -9,6 +9,7 @@ pub use endpoint::Endpoint;
 use libnanomsg::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
+use std::ffi::CString;
 use std::mem::transmute;
 use std::ptr;
 use result::last_nano_error;
@@ -267,7 +268,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -303,7 +304,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_connect(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
