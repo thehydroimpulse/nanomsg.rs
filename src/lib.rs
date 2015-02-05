@@ -25,7 +25,7 @@ pub mod endpoint;
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
-#[derive(Show, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
     ///
@@ -580,7 +580,8 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
-        let ptr = val.as_ptr() as *const c_void;
+        let c_val = CString::from_slice(val.as_bytes());
+        let ptr = c_val.as_ptr() as *const c_void;
         let ret = unsafe {
             libnanomsg::nn_setsockopt(self.socket,
                                       level,
