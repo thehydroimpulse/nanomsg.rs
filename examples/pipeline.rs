@@ -6,6 +6,8 @@ use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
 use std::old_io::timer::sleep;
+use std::env;
+use std::ffi;
 
 fn collector() {
     let mut socket = Socket::new(Protocol::Pull).unwrap();
@@ -34,7 +36,7 @@ fn worker() {
             Ok(msg) => {
                 println!("Worker received '{}'.", msg.as_slice());
                 sleep(Duration::milliseconds(300)); // fake some work ...
-                output.write(msg.as_bytes());
+                output.write_all(msg.as_bytes());
             },
             Err(err) => {
                 println!("Worker failed '{}'.", err);
@@ -53,7 +55,7 @@ fn feeder() {
     loop {
         let msg = format!("Message #{}", count);
         let msg_bytes = msg.as_bytes();
-        match socket.write(msg_bytes) {
+        match socket.write_all(msg_bytes) {
             Ok(_) => {
                 sleep(sleep_duration);
                 count += 1;
@@ -76,11 +78,15 @@ fn usage() {
 
 fn main() {
     let args = std::os::args();
+    //let os_arg_itr = std::env::args();
+    //let string_arg_itr = os_arg_itr.map(|os_arg| os_arg.into_string().unwrap());
+    //let args = string_arg_itr.collect::<Vec<String>>();
 
     if args.len() < 2 {
         return usage()
     }
 
+    
     match args[1].as_slice() {
         "worker" => worker(),
         "feeder" => feeder(),

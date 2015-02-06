@@ -1,4 +1,4 @@
-#![feature(slicing_syntax, plugin, libc, core)]
+#![feature(slicing_syntax, plugin, libc, core, std_misc, collections, io)]
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
@@ -992,7 +992,7 @@ impl Drop for Socket {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused_must_use, unstable)]
+    #![allow(unused_must_use)]
     use {Socket, Protocol, PollRequest, PollFd, Endpoint};
     use libc::c_int;
     use libnanomsg;
@@ -1094,7 +1094,7 @@ mod tests {
     }
 
     fn test_write(socket: &mut Socket, buf: &[u8]) {
-        match socket.write(buf) {
+        match socket.write_all(buf) {
             Ok(..) => {},
             Err(err) => panic!("Failed to write to the socket: {}", err)
         }
