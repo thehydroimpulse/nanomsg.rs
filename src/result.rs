@@ -12,7 +12,7 @@ pub use self::NanoErrorKind::*;
 
 pub type NanoResult<T> = Result<T, NanoError>;
 
-#[derive(Show, Clone, PartialEq, FromPrimitive, Copy)]
+#[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
     Unknown = 0is,
     OperationNotSupported = libnanomsg::ENOTSUP as isize,

@@ -9,6 +9,7 @@ pub use endpoint::Endpoint;
 use libnanomsg::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
+use std::ffi::CString;
 use std::mem::transmute;
 use std::ptr;
 use result::last_nano_error;
@@ -24,7 +25,7 @@ pub mod endpoint;
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
-#[derive(Show, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
     ///
@@ -267,7 +268,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_bind(self.socket, addr.as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -303,7 +304,7 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_connect(self.socket, addr.as_ptr() as *const i8) };
+        let ret = unsafe { libnanomsg::nn_connect(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -579,7 +580,8 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
-        let ptr = val.as_ptr() as *const c_void;
+        let c_val = CString::from_slice(val.as_bytes());
+        let ptr = c_val.as_ptr() as *const c_void;
         let ret = unsafe {
             libnanomsg::nn_setsockopt(self.socket,
                                       level,
