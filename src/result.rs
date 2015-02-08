@@ -7,6 +7,8 @@ use std::old_io;
 use std::old_io::{IoError, IoErrorKind};
 use std::error::FromError;
 use std::num::FromPrimitive;
+use std::ffi::c_str_to_bytes;
+use std::mem::transmute;
 
 pub use self::NanoErrorKind::*;
 
@@ -71,8 +73,10 @@ impl NanoError {
         let error_kind = maybe_error_kind.unwrap_or(Unknown);
 
         unsafe {
-            let c_desc = libnanomsg::nn_strerror(nn_errno);
-            let desc = str::from_c_str(c_desc);
+            let c_desc: *const libc::c_char = libnanomsg::nn_strerror(nn_errno);
+            let c_desc_ref: &'static *const libc::c_char = transmute(&c_desc);
+            let desc_bytes = c_str_to_bytes(c_desc_ref);
+            let desc = str::from_utf8(desc_bytes).unwrap_or("Error");
 
             NanoError::new(desc, error_kind)
         }
