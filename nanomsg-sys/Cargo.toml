@@ -1,7 +1,7 @@
 [package]
 
 name = "nanomsg-sys"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Benoît Labaere"
@@ -9,6 +9,9 @@ authors = [
 
 license = "MIT"
 description = "The low-level bindings that is used by the nanomsg library."
+homepage = "https://github.com/thehydroimpulse/nanomsg.rs"
+documentation = "https://github.com/thehydroimpulse/nanomsg.rs"
+repository = "https://github.com/thehydroimpulse/nanomsg.rs"
 keywords = ["binding", "nanomsg"]
 
 #[dependencies]
