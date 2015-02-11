@@ -34,7 +34,7 @@ fn worker() {
             Ok(msg) => {
                 println!("Worker received '{}'.", msg.as_slice());
                 sleep(Duration::milliseconds(300)); // fake some work ...
-                output.write(msg.as_bytes());
+                output.write_all(msg.as_bytes());
             },
             Err(err) => {
                 println!("Worker failed '{}'.", err);
