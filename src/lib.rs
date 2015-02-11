@@ -1,7 +1,4 @@
-#![feature(slicing_syntax, plugin)]
-#![allow(unstable)]
-
-#[plugin] extern crate log;
+#![feature(slicing_syntax, plugin, libc, core, std_misc, collections, io)]
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
