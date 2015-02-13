@@ -18,6 +18,7 @@ use std::old_io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use std::marker::NoCopy;
+use std::slice;
 
 pub mod result;
 pub mod endpoint;
@@ -456,6 +457,23 @@ impl Socket {
         Ok(())
     }
 
+    #[unstable]
+    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+        let ptr = buf.as_ptr() as *const c_void;
+        let len = libnanomsg::NN_MSG;
+        let ptr_addr: *const c_void = unsafe { transmute(&ptr) };
+        let ret = unsafe {
+            libnanomsg::nn_send(
+                self.socket,
+                ptr_addr as *const c_void,
+                len as size_t,
+                0)
+        };
+
+        error_guard!(ret);
+        Ok(())
+    }
+
     /// Creates a poll request for the socket with the specified check criteria.
     /// - **pollin:** Check whether at least one message can be received from the socket without blocking.
     /// - **pollout:** Check whether at least one message can be sent to the fd socket without blocking.
@@ -761,6 +779,19 @@ impl Socket {
                                       interval.num_milliseconds() as c_int)
     }
 
+    pub fn allocate_msg<'a>(len: usize) -> NanoResult<&'a mut [u8]> {
+        unsafe { 
+            let ptr = libnanomsg::nn_allocmsg(len as size_t, 0) as *mut u8;
+            let ptr_value = ptr as isize;
+
+            if ptr_value == 0 {
+                return Err(last_nano_error());
+            }
+
+            Ok(slice::from_raw_parts_mut(ptr, len))
+        }
+    }
+
 }
 
 impl Reader for Socket {
@@ -1006,6 +1037,13 @@ mod tests {
     use std::thread::Thread;
 
     #[test]
+    fn check_allocate() {
+        let msg = Socket::allocate_msg(10).unwrap();
+
+        assert_eq!(10, msg.len())
+    }
+
+    #[test]
     fn bool_to_c_int_sanity() {
         assert_eq!(false as c_int, 0 as c_int);
         assert_eq!(true as c_int, 1 as c_int);
@@ -1100,6 +1138,17 @@ mod tests {
         }
     }
 
+    fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
+        let mut msg = Socket::allocate_msg(buf.len()).unwrap();
+        for i in range(0us, buf.len()) {
+           msg[i] = buf[i]; 
+        }
+        match socket.zc_write(msg) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to write to the socket: {}", err)
+        }
+    }
+
     fn test_read(socket: &mut Socket, expected: &[u8]) {
         let mut buf = [0u8; 6];
         match socket.read(&mut buf) {
@@ -1139,6 +1188,28 @@ mod tests {
         sleep(Duration::milliseconds(10));
 
         test_write(&mut push_socket, b"foobar");
+        test_read(&mut pull_socket, b"foobar");
+
+        push_endpoint.shutdown();
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn zero_copy_works() {
+
+        let url = "ipc:///tmp/zero_copy_works.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        let mut push_endpoint = test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+
+        sleep(Duration::milliseconds(10));
+
+        test_zc_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
 
         push_endpoint.shutdown();
