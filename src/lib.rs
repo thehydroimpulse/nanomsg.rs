@@ -18,6 +18,7 @@ use std::old_io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use std::marker::NoCopy;
+use std::slice;
 
 pub mod result;
 pub mod endpoint;
@@ -80,7 +81,23 @@ pub enum Protocol {
 }
 
 impl Protocol {
-    fn to_raw(&self) -> c_int{
+    fn to_raw(&self) -> c_int {
+        *self as c_int
+    }
+}
+
+#[derive(Debug, PartialEq, Copy)]
+pub enum Transport {
+    /// In-process transport
+    Inproc = (libnanomsg::NN_INPROC) as isize,
+    /// Inter-process transport
+    Ipc = (libnanomsg::NN_IPC) as isize,
+    /// TCP transport
+    Tcp = (libnanomsg::NN_TCP) as isize
+}
+
+impl Transport {
+    pub fn to_raw(&self) -> c_int {
         *self as c_int
     }
 }
@@ -454,6 +471,99 @@ impl Socket {
 
         error_guard!(ret);
         Ok(())
+    }
+
+    /// Zero-copy version of the `write` function.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use nanomsg::{Socket, Protocol};
+    ///
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_endpoint = push_socket.bind("ipc:///tmp/zc_write_doc.ipc").unwrap();
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_endpoint = pull_socket.connect("ipc:///tmp/zc_write_doc.ipc").unwrap();
+    /// let mut msg = Socket::allocate_msg(6).unwrap();
+    /// msg[0] = 102u8;
+    /// msg[1] = 111u8;
+    /// msg[2] = 111u8;
+    /// msg[3] = 98u8;
+    /// msg[4] = 97u8;
+    /// msg[5] = 114u8;
+    ///
+    /// match push_socket.zc_write(msg) {
+    ///     Ok(_) => { println!("Message sent, do not try to reuse it !"); },
+    ///     Err(err) => panic!("Problem while writing: {}, msg still available", err)
+    /// };
+    /// match pull_socket.read_to_string() {
+    ///     Ok(_) => { println!("Message received."); },
+    ///     Err(err) => panic!("{}", err)
+    /// }
+    /// ```        
+    ///
+    /// # Error
+    ///
+    /// - `BadFileDescriptor` : The socket is invalid.
+    /// - `OperationNotSupported` : The operation is not supported by this socket type.
+    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `Terminating` : The library is terminating.
+    #[unstable]
+    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+        let ptr = buf.as_ptr() as *const c_void;
+        let len = libnanomsg::NN_MSG;
+        let ptr_addr = &ptr as *const _ as *const c_void;
+        let ret = unsafe {
+            libnanomsg::nn_send(
+                self.socket,
+                ptr_addr as *const c_void,
+                len as size_t,
+                0)
+        };
+
+        error_guard!(ret);
+        Ok(())
+    }
+
+    /// Allocate a message of the specified size to be sent in zero-copy fashion.
+    /// The content of the message is undefined after allocation and it should be filled in by the user.
+    /// While `write` functions allow to send arbitrary buffers, 
+    /// buffers allocated using `allocate_msg` can be more efficient for large messages 
+    /// as they allow for using zero-copy techniques.
+    ///
+    /// # Error
+    ///
+    /// - `InvalidArgument` : Supplied allocation type is invalid.
+    /// - `Unknown` : Out of memory.
+    #[unstable]
+    pub fn allocate_msg<'a>(len: usize) -> NanoResult<&'a mut [u8]> {
+        unsafe { 
+            let ptr = libnanomsg::nn_allocmsg(len as size_t, 0 as c_int) as *mut u8;
+            let ptr_value = ptr as isize;
+
+            if ptr_value == 0 {
+                return Err(last_nano_error());
+            }
+
+            Ok(slice::from_raw_parts_mut(ptr, len))
+        }
+    }
+
+    /// Deallocates a message allocated using `allocate_msg` function
+    ///
+    /// # Error
+    ///
+    /// - `BadAddress` : The message pointer is invalid.
+    #[unstable]
+    pub fn free_msg<'a>(msg: &'a mut [u8]) -> NanoResult<()> {
+        unsafe { 
+            let ptr = msg.as_mut_ptr() as *mut c_void;
+            let ret = libnanomsg::nn_freemsg(ptr);
+
+            error_guard!(ret);
+            Ok(())
+        }
     }
 
     /// Creates a poll request for the socket with the specified check criteria.
@@ -1006,6 +1116,16 @@ mod tests {
     use std::thread::Thread;
 
     #[test]
+    fn check_allocate() {
+        let msg = Socket::allocate_msg(10).unwrap();
+        let allocated_len = msg.len();
+
+        Socket::free_msg(msg).unwrap();
+
+        assert_eq!(10, allocated_len)
+    }
+
+    #[test]
     fn bool_to_c_int_sanity() {
         assert_eq!(false as c_int, 0 as c_int);
         assert_eq!(true as c_int, 1 as c_int);
@@ -1100,6 +1220,17 @@ mod tests {
         }
     }
 
+    fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
+        let mut msg = Socket::allocate_msg(buf.len()).unwrap();
+        for i in range(0us, buf.len()) {
+           msg[i] = buf[i]; 
+        }
+        match socket.zc_write(msg) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to write to the socket: {}", err)
+        }
+    }
+
     fn test_read(socket: &mut Socket, expected: &[u8]) {
         let mut buf = [0u8; 6];
         match socket.read(&mut buf) {
@@ -1139,6 +1270,28 @@ mod tests {
         sleep(Duration::milliseconds(10));
 
         test_write(&mut push_socket, b"foobar");
+        test_read(&mut pull_socket, b"foobar");
+
+        push_endpoint.shutdown();
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn zero_copy_works() {
+
+        let url = "ipc:///tmp/zero_copy_works.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        let mut push_endpoint = test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+
+        sleep(Duration::milliseconds(10));
+
+        test_zc_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
 
         push_endpoint.shutdown();
