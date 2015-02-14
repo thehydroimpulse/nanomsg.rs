@@ -54,6 +54,8 @@ pub const NN_SOCKET_NAME: c_int = 15;
 
 pub const NN_DONTWAIT: c_int = 1;
 
+pub const NN_INPROC: c_int = -1;
+pub const NN_IPC: c_int = -2;
 pub const NN_TCP: c_int = -3;
 
 pub const NN_TCP_NODELAY: c_int = 1;
