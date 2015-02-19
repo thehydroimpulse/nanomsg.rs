@@ -1327,8 +1327,8 @@ mod tests {
 
         finish_line.wait();
 
-        assert!(push_thread.join().is_ok());
-        assert!(pull_thread.join().is_ok());
+        push_thread.join();
+        pull_thread.join();
     }
 
     #[test]

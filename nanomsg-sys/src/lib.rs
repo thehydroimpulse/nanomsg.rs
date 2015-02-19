@@ -301,8 +301,7 @@ mod tests {
     use std::old_io::timer::sleep;
 
     use std::sync::{Arc, Barrier};
-    use std::thread::Thread;
-    use std::slice::from_raw_buf;
+    use std::thread;
 
     fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
         let sock = unsafe { nn_socket(domain, protocol) };
@@ -567,7 +566,7 @@ mod tests {
         let drop_after_use_pull = drop_after_use.clone();
         let drop_after_use_push = drop_after_use.clone();
 
-        let push_thread = Thread::scoped(move || {
+        let push_thread = thread::scoped(move || {
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
             let push_endpoint = test_bind(push_sock, url.as_ptr() as *const i8);
@@ -577,7 +576,7 @@ mod tests {
             finish_child_task(drop_after_use_push, push_sock, push_endpoint);
         });
 
-        let pull_thread = Thread::scoped(move || {
+        let pull_thread = thread::scoped(move || {
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);
             let pull_endpoint = test_connect(pull_sock, url.as_ptr() as *const i8);
@@ -587,8 +586,8 @@ mod tests {
             finish_child_task(drop_after_use_pull, pull_sock, pull_endpoint);
         });
 
-        assert!(push_thread.join().is_ok());
-        assert!(pull_thread.join().is_ok());
+        push_thread.join();
+        pull_thread.join();
     }
 
     #[test]
