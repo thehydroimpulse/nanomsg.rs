@@ -294,6 +294,7 @@ extern {
 mod tests {
     use super::*;
     use libc::{c_int, c_void, size_t, c_char, c_short};
+    use std::slice;
     use std::ptr;
     use std::mem::transmute;
 
@@ -333,7 +334,7 @@ mod tests {
         let mut buf: *mut u8 = ptr::null_mut();
         let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
         assert!(bytes >= 0);
-        let msg = unsafe { Vec::from_raw_buf(buf, bytes as usize) };
+        let msg = unsafe { slice::from_raw_parts_mut(buf, bytes as usize) };
         assert_eq!(msg, expected.as_bytes());
         unsafe { nn_freemsg(buf as *mut c_void); }
     }

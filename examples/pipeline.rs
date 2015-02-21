@@ -7,35 +7,42 @@ use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
 use std::old_io::timer::sleep;
+use std::string::String;
+
+use std::io::{Read, Write};
 
 fn collector() {
     let mut socket = Socket::new(Protocol::Pull).unwrap();
+    let mut text = String::new();
     socket.bind("ipc:///tmp/pipeline_collector.ipc");
 
     loop {
-        match socket.read_to_string() {
-            Ok(msg) => println!("Collected work result for '{}'.", msg.as_slice()),
+        match socket.read_to_string(&mut text) {
+            Ok(_) => println!("Collected work result for '{}'.", text.as_slice()),
             Err(err) => {
                 println!("Collector failed '{}'.", err);
                 break
             }
         }
+        text.clear();
     }
 }
 
 fn worker() {
     let mut input = Socket::new(Protocol::Pull).unwrap();
     let mut output = Socket::new(Protocol::Push).unwrap();
+    let mut msg = String::new();
 
     input.connect("ipc:///tmp/pipeline_worker.ipc");
     output.connect("ipc:///tmp/pipeline_collector.ipc");
 
     loop {
-        match input.read_to_string() {
-            Ok(msg) => {
+        match input.read_to_string(&mut msg) {
+            Ok(_) => {
                 println!("Worker received '{}'.", msg.as_slice());
                 sleep(Duration::milliseconds(300)); // fake some work ...
                 output.write_all(msg.as_bytes());
+                msg.clear();
             },
             Err(err) => {
                 println!("Worker failed '{}'.", err);
