@@ -1,4 +1,4 @@
-#![feature(plugin, link_args, libc)]
+#![feature(libc)]
 #![allow(non_camel_case_types)]
 #[link(name = "nanomsg", kind = "static")]
 

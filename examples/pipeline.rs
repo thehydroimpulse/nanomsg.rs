@@ -1,4 +1,4 @@
-#![feature(core, std_misc, io, os)]
+#![feature(core, std_misc, io, old_io, os)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
