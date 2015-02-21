@@ -10,7 +10,7 @@ use libnanomsg::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
 use std::ffi::CString;
-use std::mem::transmute;
+use std::mem;
 use std::str;
 use std::ptr;
 use result::last_nano_error;
@@ -383,7 +383,6 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<usize> {
-
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
@@ -429,23 +428,18 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read_to_end(&mut self, buffer: &mut Vec<u8>) -> NanoResult<()> {
-        let mut mem : *mut u8 = ptr::null_mut();
-
+    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> NanoResult<()> {
+        let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            libnanomsg::nn_recv(
-                self.socket,
-                transmute(&mut mem),
-                libnanomsg::NN_MSG,
-                libnanomsg::NN_DONTWAIT)
+            libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, libnanomsg::NN_DONTWAIT)
         };
 
         error_guard!(ret);
 
         unsafe {
-            let bytes = slice::from_raw_parts(mem as *const _, ret as usize);
-            buffer.push_all(bytes);
-            libnanomsg::nn_freemsg(mem as *mut c_void);
+            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
+            buf.push_all(bytes);
+            libnanomsg::nn_freemsg(msg as *mut c_void);
             Ok(())
         }
     }
@@ -479,18 +473,13 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
-        let len = buf.len();
-        let ret = unsafe {
-            libnanomsg::nn_send(
-                self.socket,
-                buf.as_ptr() as *const c_void,
-                len as size_t,
-                libnanomsg::NN_DONTWAIT)
-        };
+    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
+        let buf_ptr = buf.as_ptr() as *const c_void;
+        let buf_len = buf.len() as size_t;
+        let ret = unsafe { libnanomsg::nn_send(self.socket, buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
 
         error_guard!(ret);
-        Ok(())
+        Ok(buf_len as usize)
     }
 
     /// Zero-copy version of the `write` function.
@@ -532,20 +521,14 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
         let ptr = buf.as_ptr() as *const c_void;
-        let len = libnanomsg::NN_MSG;
         let ptr_addr = &ptr as *const _ as *const c_void;
-        let ret = unsafe {
-            libnanomsg::nn_send(
-                self.socket,
-                ptr_addr as *const c_void,
-                len as size_t,
-                0)
-        };
+        let len = buf.len();
+        let ret = unsafe { libnanomsg::nn_send(self.socket, ptr_addr, libnanomsg::NN_MSG as size_t, 0) };
 
         error_guard!(ret);
-        Ok(())
+        Ok(len)
     }
 
     /// Allocate a message of the specified size to be sent in zero-copy fashion.
@@ -943,10 +926,9 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
-    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-
-        let buf_len = buffer.len() as size_t;
-        let buf_ptr = buffer.as_mut_ptr();
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
         let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, 0 as c_int) };
 
@@ -996,25 +978,16 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
-    fn read_to_end(&mut self, buffer: &mut Vec<u8>) -> io::Result<()> {
-        let mut mem : *mut u8 = ptr::null_mut();
-
-        let ret = unsafe {
-            libnanomsg::nn_recv(
-                self.socket,
-                transmute(&mut mem),
-                libnanomsg::NN_MSG,
-                0 as c_int)
-        };
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
+        let mut msg : *mut u8 = ptr::null_mut();
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
         io_error_guard!(ret);
 
-        unsafe {
-            let bytes = slice::from_raw_parts(mem as *const _, ret as usize);
-            buffer.push_all(bytes);
-            libnanomsg::nn_freemsg(mem as *mut c_void);
-            Ok(())
-        }
+        let bytes = unsafe { slice::from_raw_parts(msg as *const _, ret as usize) };
+        buf.push_all(bytes);
+        unsafe { libnanomsg::nn_freemsg(msg as *mut c_void) };
+        Ok(())
     }
 
     /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
@@ -1061,28 +1034,21 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<()> {
-        let mut mem : *mut u8 = ptr::null_mut();
-
-        let ret = unsafe {
-            libnanomsg::nn_recv(
-                self.socket,
-                transmute(&mut mem),
-                libnanomsg::NN_MSG,
-                0 as c_int)
-        };
+        let mut msg : *mut u8 = ptr::null_mut();
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
         io_error_guard!(ret);
 
         unsafe {
-            let bytes = slice::from_raw_parts(mem as *const _, ret as usize);
+            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
             match str::from_utf8(bytes) {
                 Ok(text) => {
                     buf.push_str(text);
-                    libnanomsg::nn_freemsg(mem as *mut c_void);
+                    libnanomsg::nn_freemsg(msg as *mut c_void);
                     Ok(())
                 },
                 Err(_) => {
-                    libnanomsg::nn_freemsg(mem as *mut c_void);
+                    libnanomsg::nn_freemsg(msg as *mut c_void);
                     Err(io::Error::new(io::ErrorKind::Other, "UTF8 conversion failed !", None))
                 },
             }
@@ -1137,13 +1103,12 @@ impl io::Write for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Other` : The library is terminating.
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let len = buf.len();
-        let ret = unsafe {
-            libnanomsg::nn_send(self.socket, buf.as_ptr() as *const c_void, len as size_t, 0)
-        };
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_ptr() as *const c_void;
+        let ret = unsafe { libnanomsg::nn_send(self.socket, buf_ptr, buf_len , 0) };
 
         io_error_guard!(ret);
-        Ok(len)
+        Ok(buf_len as usize)
     }
 
     fn flush(&mut self) -> io::Result<()> {
