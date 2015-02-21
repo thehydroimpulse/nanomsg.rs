@@ -1,4 +1,4 @@
-#![feature(core, std_misc, io, old_io, os)]
+#![feature(core, std_misc, io, old_io, env)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -34,8 +34,8 @@ fn client() {
 
         match socket.read_to_string(&mut reply) {
             Ok(_) => {
-                reply.clear();
-                println!("Recv '{}'.", reply.as_slice())
+                println!("Recv '{}'.", reply.as_slice());
+                reply.clear()
             },
             Err(err) => {
                 println!("Client failed to receive reply '{}'.", err);
@@ -109,7 +109,7 @@ fn usage() {
 }
 
 fn main() {
-    let args = std::os::args();
+    let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 2 {
         return usage()

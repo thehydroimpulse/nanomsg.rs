@@ -1,4 +1,4 @@
-#![feature(core, std_misc, io, old_io, os)]
+#![feature(core, std_misc, io, old_io, env)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -83,7 +83,7 @@ fn usage() {
 }
 
 fn main() {
-    let args = std::os::args();
+    let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 2 {
         return usage()
