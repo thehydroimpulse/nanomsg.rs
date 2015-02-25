@@ -112,13 +112,22 @@ pub struct Socket {
 }
 
 #[derive(Copy)]
+pub enum PollInOut {
+    /// Check whether at least one message can be received from the socket without blocking.
+    In,
+    /// Check whether at least one message can be sent to the fd socket without blocking.
+    Out,
+    /// Check whether at least one message can be sent to or received from the fd socket without blocking.
+    InOut,
+}
+
+#[derive(Copy)]
 /// A request for polling a socket and the poll result.
 /// To create the request, see `Socket::new_pollfd`.
 /// To get the result, see `PollFd::can_read` and `PollFd::can_write`.
 pub struct PollFd {
     socket: c_int,
-    check_pollin: bool,
-    check_pollout: bool,
+    check_pollinout: PollInOut,
     check_pollin_result: bool,
     check_pollout_result: bool
 }
@@ -126,7 +135,18 @@ pub struct PollFd {
 impl PollFd {
 
     fn convert(&self) -> nn_pollfd {
-        nn_pollfd::new(self.socket, self.check_pollin, self.check_pollout)
+        let (pollin, pollout) = match self.check_pollinout {
+            PollInOut::In => {
+                (true, false)
+            },
+            PollInOut::Out => {
+                (false, true)
+            },
+            PollInOut::InOut => {
+                (true, true)
+            },
+        };
+        nn_pollfd::new(self.socket, pollin, pollout)
     }
 
     /// Checks whether at least one message can be received from the socket without blocking.
@@ -572,14 +592,12 @@ impl Socket {
     }
 
     /// Creates a poll request for the socket with the specified check criteria.
-    /// - **pollin:** Check whether at least one message can be received from the socket without blocking.
-    /// - **pollout:** Check whether at least one message can be sent to the fd socket without blocking.
+    /// - **pollinout:** See `PollInOut` for options
     #[unstable]
-    pub fn new_pollfd(&self, pollin: bool , pollout: bool) -> PollFd {
+    pub fn new_pollfd(&self, pollinout: PollInOut) -> PollFd {
         PollFd {
             socket: self.socket,
-            check_pollin: pollin,
-            check_pollout: pollout,
+            check_pollinout: pollinout,
             check_pollin_result: false,
             check_pollout_result: false
         }
@@ -592,7 +610,7 @@ impl Socket {
     ///
     /// ```rust
     /// #![allow(unstable)]
-    /// use nanomsg::{Socket, Protocol, PollFd, PollRequest};
+    /// use nanomsg::{Socket, Protocol, PollFd, PollRequest, PollInOut};
     /// use std::time::duration::Duration;
     /// use std::old_io::timer;
     ///
@@ -606,7 +624,7 @@ impl Socket {
     ///
     /// // Here some messages may have been sent ...
     ///
-    /// let mut pollfd_vec: Vec<PollFd> = vec![left_socket.new_pollfd(true, true), right_socket.new_pollfd(true, true)];
+    /// let mut pollfd_vec: Vec<PollFd> = vec![left_socket.new_pollfd(PollInOut::InOut), right_socket.new_pollfd(PollInOut::InOut)];
     /// let mut poll_req = PollRequest::new(pollfd_vec.as_mut_slice());
     /// let timeout = Duration::milliseconds(10);
     /// let poll_result = Socket::poll(&mut poll_req, &timeout);
@@ -1129,7 +1147,7 @@ impl Drop for Socket {
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
-    use {Socket, Protocol, PollRequest, PollFd, Endpoint};
+    use {Socket, Protocol, PollRequest, PollFd, Endpoint, PollInOut};
     use libc::c_int;
     use libnanomsg;
     use super::Protocol::*;
@@ -1802,8 +1820,8 @@ mod tests {
 
         sleep_some_millis(10);
 
-        let pollfd1 = left_socket.new_pollfd(true, true);
-        let pollfd2 = right_socket.new_pollfd(true, true);
+        let pollfd1 = left_socket.new_pollfd(PollInOut::InOut);
+        let pollfd2 = right_socket.new_pollfd(PollInOut::InOut);
 
         // TODO : find some simpler/shorter/better way to intialize a poll request
         let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
