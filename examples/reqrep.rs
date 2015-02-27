@@ -1,4 +1,4 @@
-#![feature(core, std_misc, io, os)]
+#![feature(core, std_misc, io, old_io, env)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -7,6 +7,8 @@ use nanomsg::{Socket, Protocol};
 
 use std::time::duration::Duration;
 use std::old_io::timer::sleep;
+
+use std::io::{Read, Write};
 
 const CLIENT_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_front.ipc";
 const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/reqrep_example_back.ipc";
@@ -17,6 +19,7 @@ fn client() {
     let mut count = 1u32;
 
     let sleep_duration = Duration::milliseconds(100);
+    let mut reply = String::new();
 
     loop {
         let request = format!("Request #{}", count);
@@ -29,14 +32,16 @@ fn client() {
             }
         }
 
-        match socket.read_to_string() {
-            Ok(reply) => println!("Recv '{}'.", reply.as_slice()),
+        match socket.read_to_string(&mut reply) {
+            Ok(_) => {
+                println!("Recv '{}'.", reply.as_slice());
+                reply.clear()
+            },
             Err(err) => {
                 println!("Client failed to receive reply '{}'.", err);
                 break
             }
         }
-
         sleep(sleep_duration);
         count += 1;
     }
@@ -50,13 +55,14 @@ fn server() {
     let mut count = 1u32;
 
     let sleep_duration = Duration::milliseconds(400);
+    let mut request = String::new();
 
     println!("Server is ready.");
 
     loop {
 
-        match socket.read_to_string() {
-            Ok(request) => {
+        match socket.read_to_string(&mut request) {
+            Ok(_) => {
                 println!("Recv '{}'.", request.as_slice());
 
                 let reply = format!("{} -> Reply #{}", request.as_slice(), count);
@@ -67,7 +73,7 @@ fn server() {
                         break
                     }
                 }
-
+                request.clear();
                 sleep(sleep_duration);
                 count += 1;
             },
@@ -103,7 +109,7 @@ fn usage() {
 }
 
 fn main() {
-    let args = std::os::args();
+    let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 2 {
         return usage()

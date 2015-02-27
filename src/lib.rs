@@ -1,4 +1,4 @@
-#![feature(slicing_syntax, plugin, libc, core, std_misc, collections, io)]
+#![feature(libc, core, std_misc, collections, io)]
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
@@ -10,15 +10,16 @@ use libnanomsg::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
 use std::ffi::CString;
-use std::mem::transmute;
+use std::mem;
+use std::str;
 use std::ptr;
 use result::last_nano_error;
-use std::old_io::{Writer, Reader, IoResult};
-use std::old_io;
+use std::io;
 use std::mem::size_of;
 use std::time::duration::Duration;
 use std::marker::NoCopy;
 use std::slice;
+use std::error::FromError;
 
 pub mod result;
 pub mod endpoint;
@@ -189,6 +190,16 @@ macro_rules! error_guard(
     )
 );
 
+macro_rules! io_error_guard(
+    ($ret:ident) => (
+        if $ret == -1 {
+            let nano_err = last_nano_error();
+            let io_err = FromError::from_error(nano_err);
+            return Err(io_err);
+        }
+    )
+);
+
 impl Socket {
 
     /// Allocate and initialize a new Nanomsg socket which returns
@@ -285,7 +296,11 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_bind(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
+        let c_addr = CString::new(addr.as_bytes());
+        if c_addr.is_err() {
+            return Err(NanoError::from_nn_errno(libnanomsg::EINVAL));
+        }
+        let ret = unsafe { libnanomsg::nn_bind(self.socket, c_addr.unwrap().as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -321,7 +336,11 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
-        let ret = unsafe { libnanomsg::nn_connect(self.socket, CString::from_slice(addr.as_bytes()).as_ptr()) };
+        let c_addr = CString::new(addr.as_bytes());
+        if c_addr.is_err() {
+            return Err(NanoError::from_nn_errno(libnanomsg::EINVAL));
+        }
+        let ret = unsafe { libnanomsg::nn_connect(self.socket, c_addr.unwrap().as_ptr()) };
 
         error_guard!(ret);
         Ok(Endpoint::new(ret, self.socket))
@@ -364,7 +383,6 @@ impl Socket {
     /// - `Terminating` : The library is terminating.
     #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<usize> {
-
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
@@ -375,7 +393,7 @@ impl Socket {
     }
 
     /// Non-blocking version of the `read_to_end` function.
-    /// Returns a message allocated by nanomsg on success.
+    /// Copy the message allocated by nanomsg into the buffer on success.
     /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
     /// # Example:
@@ -387,10 +405,11 @@ impl Socket {
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end_doc.ipc").unwrap();
     ///
-    /// match socket.nb_read_to_end() {
-    ///     Ok(msg) => { 
-    ///         println!("Read message {} bytes !", msg.len()); 
-    ///         // here we can process the message stored in `msg`
+    /// let mut buffer = Vec::new();
+    /// match socket.nb_read_to_end(&mut buffer) {
+    ///     Ok(_) => { 
+    ///         println!("Read message {} bytes !", buffer.len()); 
+    ///         // here we can process the message stored in `buffer`
     ///     },
     ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
     ///         println!("Nothing to be read for the moment ...");
@@ -409,24 +428,19 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read_to_end(&mut self) -> NanoResult<Vec<u8>> {
-        let mut mem : *mut u8 = ptr::null_mut();
-
+    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> NanoResult<()> {
+        let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            libnanomsg::nn_recv(
-                self.socket,
-                transmute(&mut mem),
-                libnanomsg::NN_MSG,
-                libnanomsg::NN_DONTWAIT)
+            libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, libnanomsg::NN_DONTWAIT)
         };
 
         error_guard!(ret);
 
-        let len = ret as usize;
         unsafe {
-            let bytes = Vec::from_raw_buf(mem as *const _, len);
-            libnanomsg::nn_freemsg(mem as *mut c_void);
-            Ok(bytes)
+            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
+            buf.push_all(bytes);
+            libnanomsg::nn_freemsg(msg as *mut c_void);
+            Ok(())
         }
     }
 
@@ -459,18 +473,13 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<()> {
-        let len = buf.len();
-        let ret = unsafe {
-            libnanomsg::nn_send(
-                self.socket,
-                buf.as_ptr() as *const c_void,
-                len as size_t,
-                libnanomsg::NN_DONTWAIT)
-        };
+    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
+        let buf_ptr = buf.as_ptr() as *const c_void;
+        let buf_len = buf.len() as size_t;
+        let ret = unsafe { libnanomsg::nn_send(self.socket, buf_ptr, buf_len, libnanomsg::NN_DONTWAIT) };
 
         error_guard!(ret);
-        Ok(())
+        Ok(buf_len as usize)
     }
 
     /// Zero-copy version of the `write` function.
@@ -479,6 +488,7 @@ impl Socket {
     ///
     /// ```rust
     /// use nanomsg::{Socket, Protocol};
+    /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_endpoint = push_socket.bind("ipc:///tmp/zc_write_doc.ipc").unwrap();
@@ -496,7 +506,8 @@ impl Socket {
     ///     Ok(_) => { println!("Message sent, do not try to reuse it !"); },
     ///     Err(err) => panic!("Problem while writing: {}, msg still available", err)
     /// };
-    /// match pull_socket.read_to_string() {
+    /// let mut text = String::new();
+    /// match pull_socket.read_to_string(&mut text) {
     ///     Ok(_) => { println!("Message received."); },
     ///     Err(err) => panic!("{}", err)
     /// }
@@ -510,20 +521,14 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<()> {
+    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
         let ptr = buf.as_ptr() as *const c_void;
-        let len = libnanomsg::NN_MSG;
         let ptr_addr = &ptr as *const _ as *const c_void;
-        let ret = unsafe {
-            libnanomsg::nn_send(
-                self.socket,
-                ptr_addr as *const c_void,
-                len as size_t,
-                0)
-        };
+        let len = buf.len();
+        let ret = unsafe { libnanomsg::nn_send(self.socket, ptr_addr, libnanomsg::NN_MSG as size_t, 0) };
 
         error_guard!(ret);
-        Ok(())
+        Ok(len)
     }
 
     /// Allocate a message of the specified size to be sent in zero-copy fashion.
@@ -589,7 +594,7 @@ impl Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol, PollFd, PollRequest};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::old_io::timer;
     ///
     /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut left_ep = left_socket.bind("ipc:///tmp/poll_doc.ipc").unwrap();
@@ -597,7 +602,7 @@ impl Socket {
     /// let mut right_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut right_ep = right_socket.connect("ipc:///tmp/poll_doc.ipc").unwrap();
     /// 
-    /// sleep(Duration::milliseconds(10));
+    /// timer::sleep(Duration::milliseconds(10));
     ///
     /// // Here some messages may have been sent ...
     ///
@@ -690,8 +695,11 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
-        let c_val = CString::from_slice(val.as_bytes());
-        let ptr = c_val.as_ptr() as *const c_void;
+        let c_val = CString::new(val.as_bytes());
+        if c_val.is_err() {
+            return Err(NanoError::from_nn_errno(libnanomsg::EINVAL));
+        }
+        let ptr = c_val.unwrap().as_ptr() as *const c_void;
         let ret = unsafe {
             libnanomsg::nn_setsockopt(self.socket,
                                       level,
@@ -873,9 +881,9 @@ impl Socket {
 
 }
 
-impl Reader for Socket {
-    /// Receive a message from the socket and store it in the buf argument.
-    /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
+impl io::Read for Socket {
+    /// Receive a message from the socket and store it in the buffer argument.
+    /// Any bytes exceeding the length specified by `buffer.len()` will be truncated.
     /// Returns the number of bytes in the message on success.
     ///
     /// # Example
@@ -884,7 +892,8 @@ impl Reader for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::old_io::timer;
+    /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_doc.ipc").unwrap();
@@ -893,7 +902,7 @@ impl Reader for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// sleep(Duration::milliseconds(50));
+    /// timer::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -911,28 +920,23 @@ impl Reader for Socket {
     ///
     /// # Error
     ///
-    /// - `BadFileDescriptor` : The socket is invalid.
-    /// - `OperationNotSupported` : The operation is not supported by this socket type.
-    /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
-    /// - `Timeout` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `Terminating` : The library is terminating.
-    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
-
+    /// - `io::ErrorKind::FileNotFound` : The socket is invalid.
+    /// - `io::ErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `io::ErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `io::ErrorKind::Other` : The library is terminating.
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
         let ret = unsafe { libnanomsg::nn_recv(self.socket, c_buf_ptr, buf_len, 0 as c_int) };
 
-        if ret == -1 {
-            return Err(last_nano_error().to_ioerror());
-        }
-
+        io_error_guard!(ret);
         Ok(ret as usize)
     }
 
-    /// Receive a message from the socket. Returns a message allocated by nanomsg on success.
+    /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
     ///
     /// # Example:
     ///
@@ -940,7 +944,8 @@ impl Reader for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::old_io::timer;
+    /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
@@ -948,15 +953,16 @@ impl Reader for Socket {
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
     /// 
-    /// sleep(Duration::milliseconds(50));
+    /// timer::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
     /// }
     ///
-    /// match pull_socket.read_to_end() {
-    ///     Ok(msg) => { 
+    /// let mut msg = Vec::new();
+    /// match pull_socket.read_to_end(&mut msg) {
+    ///     Ok(_) => { 
     ///         println!("Read {} bytes !", msg.as_slice().len()); 
     ///         // here we can process the the message stored in `msg`
     ///     },
@@ -966,72 +972,92 @@ impl Reader for Socket {
     ///
     /// # Error
     ///
-    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
-    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
-    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
-    fn read_to_end(&mut self) -> IoResult<Vec<u8>> {
-        let mut mem : *mut u8 = ptr::null_mut();
+    /// - `io::ErrorKind::FileNotFound` : The socket is invalid.
+    /// - `io::ErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `io::ErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `io::ErrorKind::Other` : The library is terminating.
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
+        let mut msg : *mut u8 = ptr::null_mut();
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
-        let ret = unsafe {
-            libnanomsg::nn_recv(
-                self.socket,
-                transmute(&mut mem),
-                libnanomsg::NN_MSG,
-                0 as c_int)
-        };
+        io_error_guard!(ret);
 
-        if ret == -1 {
-            return Err(last_nano_error().to_ioerror());
-        }
-
-        let len = ret as usize;
-        unsafe {
-            let bytes = Vec::from_raw_buf(mem as *const _, len);
-            libnanomsg::nn_freemsg(mem as *mut c_void);
-            Ok(bytes)
-        }
+        let bytes = unsafe { slice::from_raw_parts(msg as *const _, ret as usize) };
+        buf.push_all(bytes);
+        unsafe { libnanomsg::nn_freemsg(msg as *mut c_void) };
+        Ok(())
     }
 
-    /// Reads at least `min` bytes and places them in `buf`.
-    /// Returns the number of bytes read.
+    /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
+    /// If the data in the message is not valid UTF-8 then an error is returned and buffer is unchanged.
     ///
-    /// This will continue to call `read` until at least `min` bytes have been
+    /// # Example:
     ///
-    /// If an error occurs at any point, that error is returned, and no further bytes are read.
+    /// ```rust
+    /// #![allow(unstable)]
+    /// use nanomsg::{Socket, Protocol};
+    /// use std::time::duration::Duration;
+    /// use std::old_io::timer;
+    /// use std::io::{Read, Write};
     ///
-    /// # Error
+    /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
+    /// 
+    /// timer::sleep(Duration::milliseconds(50));
+    /// 
+    /// match push_socket.write(b"foobar") {
+    ///     Ok(..) => println!("Message sent !"),
+    ///     Err(err) => panic!("Failed to write to the socket: {}", err)
+    /// }
     ///
-    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
-    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
-    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
-    fn read_at_least(&mut self, min: usize, buf: &mut [u8]) -> IoResult<usize> {
-        if min > buf.len() {
-            return Err(old_io::standard_error(old_io::InvalidInput));
-        }
-        let mut read = 0;
-        while read < min {
-            loop {
-                let write_buf = &mut buf[read..];
-                match self.read(write_buf) {
-                    Ok(n) => {
-                        read += std::cmp::min(n, write_buf.len());
-                        break;
-                    }
-                    err@Err(_) => return err
-                }
+    /// let mut msg = String::new();
+    /// match pull_socket.read_to_string(&mut msg) {
+    ///     Ok(_) => { 
+    ///         println!("Read {} bytes !", msg.as_slice().len()); 
+    ///         // here we can process the the message stored in `msg`
+    ///     },
+    ///     Err(err) => panic!("Problem while reading: {}", err)
+    /// };
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - `io::ErrorKind::FileNotFound` : The socket is invalid.
+    /// - `io::ErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `io::ErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
+    fn read_to_string(&mut self, buf: &mut String) -> io::Result<()> {
+        let mut msg : *mut u8 = ptr::null_mut();
+        let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
+
+        io_error_guard!(ret);
+
+        unsafe {
+            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
+            match str::from_utf8(bytes) {
+                Ok(text) => {
+                    buf.push_str(text);
+                    libnanomsg::nn_freemsg(msg as *mut c_void);
+                    Ok(())
+                },
+                Err(_) => {
+                    libnanomsg::nn_freemsg(msg as *mut c_void);
+                    Err(io::Error::new(io::ErrorKind::Other, "UTF8 conversion failed !", None))
+                },
             }
         }
-        Ok(read)
     }
+
 }
 
-impl Writer for Socket {
+impl io::Write for Socket {
     /// The function will send a message containing the data from the buf parameter to the socket. 
     /// Which of the peers the message will be sent to is determined by the particular socket type.
     ///
@@ -1042,7 +1068,8 @@ impl Writer for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer::sleep;
+    /// use std::old_io::timer;
+    /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
@@ -1051,7 +1078,7 @@ impl Writer for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// sleep(Duration::milliseconds(50));
+    /// timer::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write_all(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1069,23 +1096,22 @@ impl Writer for Socket {
     ///
     /// # Error
     ///
-    /// - `IoErrorKind::FileNotFound` : The socket is invalid.
-    /// - `IoErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
-    /// - `IoErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
-    /// - `IoErrorKind::BrokenPipe` : The operation was interrupted by delivery of a signal before the message was received.
-    /// - `IoErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
-    /// - `IoErrorKind::IoUnavailable` : The library is terminating.
-    fn write_all(&mut self, buf: &[u8]) -> IoResult<()> {
-        let len = buf.len();
-        let ret = unsafe {
-            libnanomsg::nn_send(self.socket, buf.as_ptr() as *const c_void,
-                                len as size_t, 0)
-        };
+    /// - `io::ErrorKind::FileNotFound` : The socket is invalid.
+    /// - `io::ErrorKind::MismatchedFileTypeForOperation` : The operation is not supported by this socket type.
+    /// - `io::ErrorKind::ResourceUnavailable` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
+    /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
+    /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
+    /// - `io::ErrorKind::Other` : The library is terminating.
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let buf_len = buf.len() as size_t;
+        let buf_ptr = buf.as_ptr() as *const c_void;
+        let ret = unsafe { libnanomsg::nn_send(self.socket, buf_ptr, buf_len , 0) };
 
-        if ret as usize != len {
-            return Err(last_nano_error().to_ioerror());
-        }
+        io_error_guard!(ret);
+        Ok(buf_len as usize)
+    }
 
+    fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
 }
@@ -1110,10 +1136,11 @@ mod tests {
     use super::result::NanoErrorKind::*;
 
     use std::time::duration::Duration;
-    use std::old_io::timer::sleep;
+    use std::old_io::timer;
+    use std::io::{Read, Write};
 
     use std::sync::{Arc, Barrier};
-    use std::thread::Thread;
+    use std::thread;
 
     #[test]
     fn check_allocate() {
@@ -1222,7 +1249,7 @@ mod tests {
 
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
         let mut msg = Socket::allocate_msg(buf.len()).unwrap();
-        for i in range(0us, buf.len()) {
+        for i in range(0, buf.len()) {
            msg[i] = buf[i]; 
         }
         match socket.zc_write(msg) {
@@ -1243,8 +1270,9 @@ mod tests {
     }
 
     fn test_read_to_string(socket: &mut Socket, expected: &str) {
-        match socket.read_to_string() {
-            Ok(text) => assert_eq!(text.as_slice(), expected),
+        let mut text = String::new();
+        match socket.read_to_string(&mut text) {
+            Ok(_) => assert_eq!(text.as_slice(), expected),
             Err(err) => panic!("{}", err)
         }
     }
@@ -1254,6 +1282,10 @@ mod tests {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
         }
+    }
+
+    fn sleep_some_millis(millis: i64) {
+        timer::sleep(Duration::milliseconds(millis));
     }
 
     #[test]
@@ -1267,7 +1299,7 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         test_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
@@ -1289,7 +1321,7 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         test_zc_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
@@ -1307,7 +1339,7 @@ mod tests {
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        let push_thread = Thread::scoped(move || {
+        let push_thread = thread::scoped(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -1316,7 +1348,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        let pull_thread = Thread::scoped(move|| {
+        let pull_thread = thread::scoped(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
@@ -1327,8 +1359,8 @@ mod tests {
 
         finish_line.wait();
 
-        assert!(push_thread.join().is_ok());
-        assert!(pull_thread.join().is_ok());
+        push_thread.join();
+        pull_thread.join();
     }
 
     #[test]
@@ -1352,7 +1384,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         test_write(&mut right_socket, b"foobar");
         test_read(&mut left_socket, b"foobar");
@@ -1378,7 +1410,7 @@ mod tests {
         let mut sock3 = test_create_socket(Bus);
         test_connect(&mut sock3, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let msg = b"foobar";
         test_write(&mut sock1, msg);
@@ -1406,7 +1438,7 @@ mod tests {
         test_subscribe(&mut sock3, "bar");
         test_connect(&mut sock3, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let msg1 = b"foobar";
         test_write(&mut sock1, msg1);
@@ -1435,7 +1467,7 @@ mod tests {
         let mut sock3 = test_create_socket(Respondent);
         test_connect(&mut sock3, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let deadline = Duration::milliseconds(500);
         match sock1.set_survey_deadline(&deadline) {
@@ -1661,13 +1693,10 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         test_write(&mut right_socket, b"ok");
         test_read_to_string(&mut left_socket, "ok".as_slice());
-
-        test_write(&mut left_socket, b"");
-        test_read_to_string(&mut right_socket, "".as_slice());
 
         test_write(&mut left_socket, b"not ok");
         test_read_to_string(&mut right_socket, "not ok".as_slice());
@@ -1686,7 +1715,7 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1695,7 +1724,7 @@ mod tests {
         }
 
         test_write(&mut push_socket, b"foobar");
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1720,20 +1749,22 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
-        match pull_socket.nb_read_to_end() {
+        let mut buffer = Vec::new();
+        match pull_socket.nb_read_to_end(&mut buffer) {
             Ok(_) => panic!("Nothing should have been received !"),
             Err(err) => assert_eq!(err.kind, TryAgain)
         }
 
         test_write(&mut push_socket, b"foobar");
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
-        match pull_socket.nb_read_to_end() {
-            Ok(buf) => {
-                assert_eq!(buf.len(), 6);
-                assert_eq!(buf.as_slice(), b"foobar")
+        let mut buffer = Vec::new();
+        match pull_socket.nb_read_to_end(&mut buffer) {
+            Ok(_) => {
+                assert_eq!(buffer.len(), 6);
+                assert_eq!(buffer.as_slice(), b"foobar")
             },
             Err(err) => panic!("{}", err)
         }
@@ -1749,7 +1780,7 @@ mod tests {
 
         let mut push_socket = test_create_socket(Push);
         test_bind(&mut push_socket, url);
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         match push_socket.nb_write(b"barfoo") {
             Ok(_) => panic!("Nothing should have been sent !"),
@@ -1769,7 +1800,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
 
         let pollfd1 = left_socket.new_pollfd(true, true);
         let pollfd2 = right_socket.new_pollfd(true, true);
@@ -1795,7 +1826,7 @@ mod tests {
         }
 
         test_write(&mut right_socket, b"foobar");
-        sleep(Duration::milliseconds(10));
+        sleep_some_millis(10);
         {
             let poll_result = Socket::poll(&mut request, &timeout);
 
