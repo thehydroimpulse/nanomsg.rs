@@ -67,7 +67,7 @@ impl NanoError {
 
     #[unstable]
     pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
-        let maybe_error_kind = FromPrimitive::from_int(nn_errno as isize);
+        let maybe_error_kind = FromPrimitive::from_isize(nn_errno as isize);
         let error_kind = maybe_error_kind.unwrap_or(Unknown);
 
         unsafe {

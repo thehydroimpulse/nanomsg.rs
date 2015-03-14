@@ -1,4 +1,4 @@
-#![feature(libc, core, std_misc, collections, io)]
+#![feature(libc, core, std_misc, collections, io, old_io)]
 
 extern crate libc;
 extern crate "nanomsg-sys" as libnanomsg;
@@ -996,7 +996,7 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
@@ -1005,7 +1005,7 @@ impl io::Read for Socket {
         let bytes = unsafe { slice::from_raw_parts(msg as *const _, ret as usize) };
         buf.push_all(bytes);
         unsafe { libnanomsg::nn_freemsg(msg as *mut c_void) };
-        Ok(())
+        Ok(ret as usize)
     }
 
     /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
@@ -1051,7 +1051,7 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
-    fn read_to_string(&mut self, buf: &mut String) -> io::Result<()> {
+    fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
@@ -1063,7 +1063,7 @@ impl io::Read for Socket {
                 Ok(text) => {
                     buf.push_str(text);
                     libnanomsg::nn_freemsg(msg as *mut c_void);
-                    Ok(())
+                    Ok(ret as usize)
                 },
                 Err(_) => {
                     libnanomsg::nn_freemsg(msg as *mut c_void);
