@@ -996,16 +996,17 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
-    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<()> {
+    fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
         io_error_guard!(ret);
 
-        let bytes = unsafe { slice::from_raw_parts(msg as *const _, ret as usize) };
+        let ret = ret as usize;
+        let bytes = unsafe { slice::from_raw_parts(msg as *const _, ret) };
         buf.push_all(bytes);
         unsafe { libnanomsg::nn_freemsg(msg as *mut c_void) };
-        Ok(())
+        Ok(ret)
     }
 
     /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
@@ -1051,19 +1052,20 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::TimedOut` : Individual socket types may define their own specific timeouts. If such timeout is hit this error will be returned.
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
-    fn read_to_string(&mut self, buf: &mut String) -> io::Result<()> {
+    fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe { libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, 0 as c_int) };
 
         io_error_guard!(ret);
 
         unsafe {
-            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
+            let ret = ret as usize;
+            let bytes = slice::from_raw_parts(msg as *const _, ret);
             match str::from_utf8(bytes) {
                 Ok(text) => {
                     buf.push_str(text);
                     libnanomsg::nn_freemsg(msg as *mut c_void);
-                    Ok(())
+                    Ok(ret)
                 },
                 Err(_) => {
                     libnanomsg::nn_freemsg(msg as *mut c_void);
