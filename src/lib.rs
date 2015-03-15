@@ -448,7 +448,7 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> NanoResult<()> {
+    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> NanoResult<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
             libnanomsg::nn_recv(self.socket, mem::transmute(&mut msg), libnanomsg::NN_MSG, libnanomsg::NN_DONTWAIT)
@@ -456,11 +456,12 @@ impl Socket {
 
         error_guard!(ret);
 
+        let ret = ret as usize;
         unsafe {
-            let bytes = slice::from_raw_parts(msg as *const _, ret as usize);
+            let bytes = slice::from_raw_parts(msg as *const _, ret);
             buf.push_all(bytes);
             libnanomsg::nn_freemsg(msg as *mut c_void);
-            Ok(())
+            Ok(ret)
         }
     }
 
