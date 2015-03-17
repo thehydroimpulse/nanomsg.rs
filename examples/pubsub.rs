@@ -15,16 +15,16 @@ const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/pubsub_example_back.ipc";
 
 fn client(topic: &str) {
     let mut socket = Socket::new(Protocol::Sub).unwrap();
+    let mut setopt = socket.subscribe(topic);
     let mut endpoint = socket.connect(CLIENT_DEVICE_URL).unwrap();
 
-    match socket.subscribe(topic) {
+    match setopt {
         Ok(_) => println!("Subscribed to '{}'.", topic.as_slice()),
         Err(err) => println!("Client failed to subscribe '{}'.", err)
     }
 
     let mut msg = String::new();
     loop {
-
         match socket.read_to_string(&mut msg) {
             Ok(_) => {
                 println!("Recv '{}'.", msg.as_slice());
@@ -66,13 +66,17 @@ fn server(topic: &str) {
     endpoint.shutdown();
 }
 
-fn device() {
+fn device(topic: &str) {
     let mut front_socket = Socket::new_for_device(Protocol::Pub).unwrap();
     let mut front_endpoint = front_socket.bind(CLIENT_DEVICE_URL).unwrap();
     let mut back_socket = Socket::new_for_device(Protocol::Sub).unwrap();
+    let mut setopt = back_socket.subscribe(topic);
     let mut back_endpoint = back_socket.bind(SERVER_DEVICE_URL).unwrap();
 
-    back_socket.subscribe("");
+    match setopt {
+        Ok(_) => println!("Subscribed to '{}'.", topic.as_slice()),
+        Err(err) => println!("Device failed to subscribe '{}'.", err)
+    }
 
     println!("Device is ready.");
     Socket::device(&front_socket, &back_socket);
@@ -83,7 +87,7 @@ fn device() {
 }
 
 fn usage() {
-    println!("Usage: pubsub [client topic|server topic|device]");
+    println!("Usage: pubsub [client|server|device] topic");
     println!("  Try running several clients and servers");
     println!("  And also try killing and restarting them");
     println!("  Don't forget to start the device !");
@@ -92,14 +96,14 @@ fn usage() {
 fn main() {
     let args: Vec<_> = std::env::args().collect();
 
-    if args.len() < 2 {
+    if args.len() < 3 {
         return usage()
     }
 
     match args[1].as_slice() {
         "client" => client(args[2].as_slice()),
         "server" => server(args[2].as_slice()),
-        "device" => device(),
+        "device" => device(args[2].as_slice()),
         _ => usage()
     }
 }
