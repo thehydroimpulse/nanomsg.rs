@@ -195,7 +195,7 @@ impl<'a> PollRequest<'a> {
 
     fn copy_poll_result(&mut self) {
 
-        for x in range(0, self.fds.len()) {
+        for x in (0..self.fds.len()) {
             self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
             self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
         }
@@ -1270,7 +1270,7 @@ mod tests {
 
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
         let mut msg = Socket::allocate_msg(buf.len()).unwrap();
-        for i in range(0, buf.len()) {
+        for i in (0..buf.len()) {
            msg[i] = buf[i]; 
         }
         match socket.zc_write(msg) {
