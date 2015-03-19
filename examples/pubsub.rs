@@ -15,7 +15,7 @@ const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/pubsub_example_back.ipc";
 
 fn client(topic: &str) {
     let mut socket = Socket::new(Protocol::Sub).unwrap();
-    let mut setopt = socket.subscribe(topic);
+    let setopt = socket.subscribe(topic);
     let mut endpoint = socket.connect(CLIENT_DEVICE_URL).unwrap();
 
     match setopt {
@@ -46,7 +46,6 @@ fn server(topic: &str) {
     let mut count = 1u32;
 
     let sleep_duration = Duration::milliseconds(400);
-    let mut request = String::new();
 
     println!("Server is ready.");
 
@@ -70,7 +69,7 @@ fn device(topic: &str) {
     let mut front_socket = Socket::new_for_device(Protocol::Pub).unwrap();
     let mut front_endpoint = front_socket.bind(CLIENT_DEVICE_URL).unwrap();
     let mut back_socket = Socket::new_for_device(Protocol::Sub).unwrap();
-    let mut setopt = back_socket.subscribe(topic);
+    let setopt = back_socket.subscribe(topic);
     let mut back_endpoint = back_socket.bind(SERVER_DEVICE_URL).unwrap();
 
     match setopt {
