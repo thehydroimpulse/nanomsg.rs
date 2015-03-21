@@ -655,7 +655,7 @@ impl Socket {
         error_guard!(ret);
 
         if ret == 0 {
-            return Err(NanoError::new("Timeout", NanoErrorKind::Timeout));
+            return Err(NanoError::new("TimedOut", NanoErrorKind::TimedOut));
         }
 
         request.copy_poll_result();
