@@ -31,13 +31,13 @@ pub enum NanoErrorKind {
     InvalidArgument            = libnanomsg::EINVAL           as isize,
     TooManyOpenFiles           = libnanomsg::EMFILE           as isize,
     BadAddress                 = libnanomsg::EFAULT           as isize,
-    PermisionDenied            = libnanomsg::EACCESS          as isize,
+    PermissionDenied           = libnanomsg::EACCESS          as isize,
     NetworkReset               = libnanomsg::ENETRESET        as isize,
     NetworkUnreachable         = libnanomsg::ENETUNREACH      as isize,
     HostUnreachable            = libnanomsg::EHOSTUNREACH     as isize,
     NotConnected               = libnanomsg::ENOTCONN         as isize,
     MessageTooLong             = libnanomsg::EMSGSIZE         as isize,
-    Timeout                    = libnanomsg::ETIMEDOUT        as isize,
+    TimedOut                   = libnanomsg::ETIMEDOUT        as isize,
     ConnectionAbort            = libnanomsg::ECONNABORTED     as isize,
     ConnectionReset            = libnanomsg::ECONNRESET       as isize,
     ProtocolNotAvailable       = libnanomsg::ENOPROTOOPT      as isize,
@@ -84,13 +84,19 @@ impl NanoError {
 impl FromError<io::Error> for NanoError {
     fn from_error(err: io::Error) -> NanoError {
         match err.kind() {
-            io::ErrorKind::TimedOut                       => NanoError::from_nn_errno(libnanomsg::ETIMEDOUT),
-            io::ErrorKind::InvalidInput                   => NanoError::from_nn_errno(libnanomsg::EINVAL),
-            io::ErrorKind::FileNotFound                   => NanoError::from_nn_errno(libnanomsg::EBADF),
-            io::ErrorKind::MismatchedFileTypeForOperation => NanoError::from_nn_errno(libnanomsg::ENOTSUP),
-            io::ErrorKind::ResourceUnavailable            => NanoError::from_nn_errno(libnanomsg::EFSM),
-            io::ErrorKind::Interrupted                    => NanoError::from_nn_errno(libnanomsg::EINTR),
-            _                                             => NanoError::new("Other", Unknown)
+            io::ErrorKind::PermissionDenied    => NanoError::from_nn_errno(libnanomsg::EACCESS),
+            io::ErrorKind::ConnectionRefused   => NanoError::from_nn_errno(libnanomsg::ECONNREFUSED),
+            io::ErrorKind::ConnectionReset     => NanoError::from_nn_errno(libnanomsg::ECONNRESET),
+            io::ErrorKind::ConnectionAborted   => NanoError::from_nn_errno(libnanomsg::ECONNABORTED),
+            io::ErrorKind::NotConnected        => NanoError::from_nn_errno(libnanomsg::ENOTCONN),
+            io::ErrorKind::AddrInUse           => NanoError::from_nn_errno(libnanomsg::EADDRINUSE),
+            io::ErrorKind::AddrNotAvailable    => NanoError::from_nn_errno(libnanomsg::EADDRNOTAVAIL),
+            io::ErrorKind::AlreadyExists       => NanoError::from_nn_errno(libnanomsg::EISCONN),
+            io::ErrorKind::WouldBlock          => NanoError::from_nn_errno(libnanomsg::EAGAIN),
+            io::ErrorKind::InvalidInput        => NanoError::from_nn_errno(libnanomsg::EINVAL),
+            io::ErrorKind::TimedOut            => NanoError::from_nn_errno(libnanomsg::ETIMEDOUT),
+            io::ErrorKind::Interrupted         => NanoError::from_nn_errno(libnanomsg::EINTR),
+            _                                  => NanoError::new("Other", Unknown)
         }
     }
 }
@@ -98,13 +104,19 @@ impl FromError<io::Error> for NanoError {
 impl FromError<NanoError> for io::Error {
     fn from_error(err: NanoError) -> io::Error {
         match err.kind {
-            NanoErrorKind::Timeout                => io::Error::new(io::ErrorKind::TimedOut,                       err.description, None ),
-            NanoErrorKind::InvalidArgument        => io::Error::new(io::ErrorKind::InvalidInput,                   err.description, None ),
-            NanoErrorKind::BadFileDescriptor      => io::Error::new(io::ErrorKind::FileNotFound,                   err.description, None ),
-            NanoErrorKind::OperationNotSupported  => io::Error::new(io::ErrorKind::MismatchedFileTypeForOperation, err.description, None ),
-            NanoErrorKind::FileStateMismatch      => io::Error::new(io::ErrorKind::ResourceUnavailable,            err.description, None ),
-            NanoErrorKind::Interrupted            => io::Error::new(io::ErrorKind::Interrupted,                    err.description, None ),
-            _                                     => io::Error::new(io::ErrorKind::Other,                          err.description, None )
+            NanoErrorKind::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  err.description, None ),
+            NanoErrorKind::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, err.description, None ),
+            NanoErrorKind::ConnectionReset       => io::Error::new(io::ErrorKind::ConnectionReset,   err.description, None ),
+            NanoErrorKind::ConnectionAbort       => io::Error::new(io::ErrorKind::ConnectionAborted, err.description, None ),
+            NanoErrorKind::NotConnected          => io::Error::new(io::ErrorKind::NotConnected,      err.description, None ),
+            NanoErrorKind::AddressInUse          => io::Error::new(io::ErrorKind::AddrInUse,         err.description, None ),
+            NanoErrorKind::AddressNotAvailable   => io::Error::new(io::ErrorKind::AddrNotAvailable,  err.description, None ),
+            NanoErrorKind::AlreadyConnected      => io::Error::new(io::ErrorKind::AlreadyExists,     err.description, None ),
+            NanoErrorKind::TryAgain              => io::Error::new(io::ErrorKind::WouldBlock,        err.description, None ),
+            NanoErrorKind::InvalidArgument       => io::Error::new(io::ErrorKind::InvalidInput,      err.description, None ),
+            NanoErrorKind::TimedOut              => io::Error::new(io::ErrorKind::TimedOut,          err.description, None ),
+            NanoErrorKind::Interrupted           => io::Error::new(io::ErrorKind::Interrupted,       err.description, None ),
+            _                                    => io::Error::new(io::ErrorKind::Other,             err.description, None )
         }
     }
 }
@@ -165,11 +177,11 @@ mod tests {
 
     #[test]
     fn check_to_ioerror() {
-        check_error_kind_match(NanoErrorKind::Timeout, io::ErrorKind::TimedOut);
-        check_error_kind_match(NanoErrorKind::InvalidArgument, io::ErrorKind::InvalidInput);
-        check_error_kind_match(NanoErrorKind::BadFileDescriptor, io::ErrorKind::FileNotFound);
-        check_error_kind_match(NanoErrorKind::OperationNotSupported, io::ErrorKind::MismatchedFileTypeForOperation);
-        check_error_kind_match(NanoErrorKind::FileStateMismatch, io::ErrorKind::ResourceUnavailable);
+        check_error_kind_match(NanoErrorKind::TimedOut, io::ErrorKind::TimedOut);
+        check_error_kind_match(NanoErrorKind::PermissionDenied, io::ErrorKind::PermissionDenied);
+        check_error_kind_match(NanoErrorKind::ConnectionRefused, io::ErrorKind::ConnectionRefused);
+        check_error_kind_match(NanoErrorKind::OperationNotSupported, io::ErrorKind::Other);
+        check_error_kind_match(NanoErrorKind::NotConnected, io::ErrorKind::NotConnected);
         check_error_kind_match(NanoErrorKind::Interrupted, io::ErrorKind::Interrupted);
     }
 
@@ -178,6 +190,6 @@ mod tests {
         let io_err = io::Error::new(io::ErrorKind::TimedOut, "Timed out", None);
         let nano_err: NanoError = FromError::from_error(io_err);
 
-        assert_eq!(NanoErrorKind::Timeout, nano_err.kind)
+        assert_eq!(NanoErrorKind::TimedOut, nano_err.kind)
     }
 }
