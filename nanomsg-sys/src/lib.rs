@@ -298,8 +298,7 @@ mod tests {
     use std::ptr;
     use std::mem::transmute;
 
-    use std::time::duration::Duration;
-    use std::old_io::timer::sleep;
+    use std::time::duration;
 
     use std::sync::{Arc, Barrier};
     use std::thread;
@@ -347,7 +346,7 @@ mod tests {
     }
 
     fn sleep_some_millis(timeout: i64) {
-        sleep(Duration::milliseconds(timeout));
+        thread::sleep(duration::Duration::milliseconds(timeout));
     }
 
     /// This ensures that the one-way pipe works correctly and also serves as an example

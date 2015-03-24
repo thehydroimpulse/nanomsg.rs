@@ -613,7 +613,7 @@ impl Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol, PollFd, PollRequest, PollInOut};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer;
+    /// use std::thread;
     ///
     /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut left_ep = left_socket.bind("ipc:///tmp/poll_doc.ipc").unwrap();
@@ -621,7 +621,7 @@ impl Socket {
     /// let mut right_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut right_ep = right_socket.connect("ipc:///tmp/poll_doc.ipc").unwrap();
     /// 
-    /// timer::sleep(Duration::milliseconds(10));
+    /// thread::sleep(Duration::milliseconds(10));
     ///
     /// // Here some messages may have been sent ...
     ///
@@ -911,7 +911,7 @@ impl io::Read for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer;
+    /// use std::thread;
     /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
@@ -921,7 +921,7 @@ impl io::Read for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// timer::sleep(Duration::milliseconds(50));
+    /// thread::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -963,7 +963,7 @@ impl io::Read for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer;
+    /// use std::thread;
     /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
@@ -972,7 +972,7 @@ impl io::Read for Socket {
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
     /// 
-    /// timer::sleep(Duration::milliseconds(50));
+    /// thread::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1019,7 +1019,7 @@ impl io::Read for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer;
+    /// use std::thread;
     /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
@@ -1028,7 +1028,7 @@ impl io::Read for Socket {
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
     /// 
-    /// timer::sleep(Duration::milliseconds(50));
+    /// thread::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1089,7 +1089,7 @@ impl io::Write for Socket {
     /// #![allow(unstable)]
     /// use nanomsg::{Socket, Protocol};
     /// use std::time::duration::Duration;
-    /// use std::old_io::timer;
+    /// use std::thread;
     /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
@@ -1099,7 +1099,7 @@ impl io::Write for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// timer::sleep(Duration::milliseconds(50));
+    /// thread::sleep(Duration::milliseconds(50));
     /// 
     /// match push_socket.write_all(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1157,7 +1157,6 @@ mod tests {
     use super::result::NanoErrorKind::*;
 
     use std::time::duration::Duration;
-    use std::old_io::timer;
     use std::io::{Read, Write};
 
     use std::sync::{Arc, Barrier};
@@ -1306,7 +1305,7 @@ mod tests {
     }
 
     fn sleep_some_millis(millis: i64) {
-        timer::sleep(Duration::milliseconds(millis));
+        thread::sleep(Duration::milliseconds(millis));
     }
 
     #[test]
