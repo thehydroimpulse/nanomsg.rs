@@ -1,4 +1,4 @@
-#![feature(core, std_misc, thread_sleep)]
+#![feature(std_misc, thread_sleep, convert)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -19,7 +19,7 @@ fn client(topic: &str) {
     let mut endpoint = socket.connect(CLIENT_DEVICE_URL).unwrap();
 
     match setopt {
-        Ok(_) => println!("Subscribed to '{}'.", topic.as_slice()),
+        Ok(_) => println!("Subscribed to '{}'.", topic),
         Err(err) => println!("Client failed to subscribe '{}'.", err)
     }
 
@@ -27,7 +27,7 @@ fn client(topic: &str) {
     loop {
         match socket.read_to_string(&mut msg) {
             Ok(_) => {
-                println!("Recv '{}'.", msg.as_slice());
+                println!("Recv '{}'.", msg);
                 msg.clear()
             },
             Err(err) => {
@@ -52,7 +52,7 @@ fn server(topic: &str) {
     loop {
         let msg = format!("{} #{}", topic,  count);
         match socket.write_all(msg.as_bytes()) {
-            Ok(..) => println!("Published '{}'.", msg.as_slice()),
+            Ok(..) => println!("Published '{}'.", msg),
             Err(err) => {
                 println!("Server failed to publish '{}'.", err);
                 break
@@ -73,7 +73,7 @@ fn device(topic: &str) {
     let mut back_endpoint = back_socket.bind(SERVER_DEVICE_URL).unwrap();
 
     match setopt {
-        Ok(_) => println!("Subscribed to '{}'.", topic.as_slice()),
+        Ok(_) => println!("Subscribed to '{}'.", topic),
         Err(err) => println!("Device failed to subscribe '{}'.", err)
     }
 
@@ -99,10 +99,10 @@ fn main() {
         return usage()
     }
 
-    match args[1].as_slice() {
-        "client" => client(args[2].as_slice()),
-        "server" => server(args[2].as_slice()),
-        "device" => device(args[2].as_slice()),
+    match args[1].as_ref() {
+        "client" => client(args[2].as_ref()),
+        "server" => server(args[2].as_ref()),
+        "device" => device(args[2].as_ref()),
         _ => usage()
     }
 }

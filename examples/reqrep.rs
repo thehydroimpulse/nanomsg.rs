@@ -1,4 +1,4 @@
-#![feature(core, std_misc, thread_sleep)]
+#![feature(std_misc, thread_sleep, convert)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -25,7 +25,7 @@ fn client() {
         let request = format!("Request #{}", count);
 
         match socket.write_all(request.as_bytes()) {
-            Ok(..) => println!("Send '{}'.", request.as_slice()),
+            Ok(..) => println!("Send '{}'.", request),
             Err(err) => {
                 println!("Client failed to send request '{}'.", err);
                 break
@@ -34,7 +34,7 @@ fn client() {
 
         match socket.read_to_string(&mut reply) {
             Ok(_) => {
-                println!("Recv '{}'.", reply.as_slice());
+                println!("Recv '{}'.", reply);
                 reply.clear()
             },
             Err(err) => {
@@ -63,11 +63,11 @@ fn server() {
 
         match socket.read_to_string(&mut request) {
             Ok(_) => {
-                println!("Recv '{}'.", request.as_slice());
+                println!("Recv '{}'.", request);
 
-                let reply = format!("{} -> Reply #{}", request.as_slice(), count);
+                let reply = format!("{} -> Reply #{}", request, count);
                 match socket.write_all(reply.as_bytes()) {
-                    Ok(..) => println!("Sent '{}'.", reply.as_slice()),
+                    Ok(..) => println!("Sent '{}'.", reply),
                     Err(err) => {
                         println!("Server failed to send reply '{}'.", err);
                         break
@@ -115,7 +115,7 @@ fn main() {
         return usage()
     }
 
-    match args[1].as_slice() {
+    match args[1].as_ref() {
         "client" => client(),
         "server" => server(),
         "device" => device(),

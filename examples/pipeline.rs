@@ -1,4 +1,4 @@
-#![feature(core, std_misc, thread_sleep)]
+#![feature(std_misc, thread_sleep, convert)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
@@ -18,7 +18,7 @@ fn collector() {
 
     loop {
         match socket.read_to_string(&mut text) {
-            Ok(_) => println!("Collected work result for '{}'.", text.as_slice()),
+            Ok(_) => println!("Collected work result for '{}'.", text),
             Err(err) => {
                 println!("Collector failed '{}'.", err);
                 break
@@ -41,7 +41,7 @@ fn worker() {
     loop {
         match input.read_to_string(&mut msg) {
             Ok(_) => {
-                println!("Worker received '{}'.", msg.as_slice());
+                println!("Worker received '{}'.", msg);
                 thread::sleep(sleep_duration); // fake some work ...
                 output.write_all(msg.as_bytes());
                 msg.clear();
@@ -91,7 +91,7 @@ fn main() {
         return usage()
     }
 
-    match args[1].as_slice() {
+    match args[1].as_ref() {
         "worker" => worker(),
         "feeder" => feeder(),
         "collector" => collector(),

@@ -1,5 +1,5 @@
 use libc::c_int;
-use libnanomsg;
+use nanomsg_sys;
 use result::{NanoResult,last_nano_error};
 use std::marker::NoCopy;
 
@@ -29,7 +29,7 @@ impl Endpoint {
     #[unstable]
     pub fn shutdown(&mut self) -> NanoResult<()> {
 
-        let ret = unsafe { libnanomsg::nn_shutdown(self.socket, self.value) };
+        let ret = unsafe { nanomsg_sys::nn_shutdown(self.socket, self.value) };
 
         if ret == -1 as c_int {
             Err(last_nano_error())

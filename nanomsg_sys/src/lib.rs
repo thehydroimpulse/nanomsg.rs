@@ -1,4 +1,4 @@
-#![feature(libc)]
+#![feature(libc, std_misc, thread_sleep)]
 #![allow(non_camel_case_types)]
 #[link(name = "nanomsg", kind = "static")]
 
