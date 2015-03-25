@@ -1,5 +1,5 @@
 use libc;
-use libnanomsg;
+use nanomsg_sys;
 
 use std::str;
 use std::fmt;
@@ -15,39 +15,39 @@ pub type NanoResult<T> = Result<T, NanoError>;
 #[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
 pub enum NanoErrorKind {
     Unknown                    = 0isize,
-    OperationNotSupported      = libnanomsg::ENOTSUP          as isize,
-    ProtocolNotSupported       = libnanomsg::EPROTONOSUPPORT  as isize,
-    NoBufferSpace              = libnanomsg::ENOBUFS          as isize,
-    NetworkDown                = libnanomsg::ENETDOWN         as isize,
-    AddressInUse               = libnanomsg::EADDRINUSE       as isize,
-    AddressNotAvailable        = libnanomsg::EADDRNOTAVAIL    as isize,
-    ConnectionRefused          = libnanomsg::ECONNREFUSED     as isize,
-    OperationNowInProgress     = libnanomsg::EINPROGRESS      as isize,
-    NotSocket                  = libnanomsg::ENOTSOCK         as isize,
-    AddressFamilyNotSupported  = libnanomsg::EAFNOSUPPORT     as isize,
-    WrongProtocol              = libnanomsg::EPROTO           as isize,
-    TryAgain                   = libnanomsg::EAGAIN           as isize,
-    BadFileDescriptor          = libnanomsg::EBADF            as isize,
-    InvalidArgument            = libnanomsg::EINVAL           as isize,
-    TooManyOpenFiles           = libnanomsg::EMFILE           as isize,
-    BadAddress                 = libnanomsg::EFAULT           as isize,
-    PermissionDenied           = libnanomsg::EACCESS          as isize,
-    NetworkReset               = libnanomsg::ENETRESET        as isize,
-    NetworkUnreachable         = libnanomsg::ENETUNREACH      as isize,
-    HostUnreachable            = libnanomsg::EHOSTUNREACH     as isize,
-    NotConnected               = libnanomsg::ENOTCONN         as isize,
-    MessageTooLong             = libnanomsg::EMSGSIZE         as isize,
-    TimedOut                   = libnanomsg::ETIMEDOUT        as isize,
-    ConnectionAbort            = libnanomsg::ECONNABORTED     as isize,
-    ConnectionReset            = libnanomsg::ECONNRESET       as isize,
-    ProtocolNotAvailable       = libnanomsg::ENOPROTOOPT      as isize,
-    AlreadyConnected           = libnanomsg::EISCONN          as isize,
-    SocketTypeNotSupported     = libnanomsg::ESOCKTNOSUPPORT  as isize,
-    Terminating                = libnanomsg::ETERM            as isize,
-    NameTooLong                = libnanomsg::ENAMETOOLONG     as isize,
-    NoDevice                   = libnanomsg::ENODEV           as isize,
-    FileStateMismatch          = libnanomsg::EFSM             as isize,
-    Interrupted                = libnanomsg::EINTR            as isize
+    OperationNotSupported      = nanomsg_sys::ENOTSUP          as isize,
+    ProtocolNotSupported       = nanomsg_sys::EPROTONOSUPPORT  as isize,
+    NoBufferSpace              = nanomsg_sys::ENOBUFS          as isize,
+    NetworkDown                = nanomsg_sys::ENETDOWN         as isize,
+    AddressInUse               = nanomsg_sys::EADDRINUSE       as isize,
+    AddressNotAvailable        = nanomsg_sys::EADDRNOTAVAIL    as isize,
+    ConnectionRefused          = nanomsg_sys::ECONNREFUSED     as isize,
+    OperationNowInProgress     = nanomsg_sys::EINPROGRESS      as isize,
+    NotSocket                  = nanomsg_sys::ENOTSOCK         as isize,
+    AddressFamilyNotSupported  = nanomsg_sys::EAFNOSUPPORT     as isize,
+    WrongProtocol              = nanomsg_sys::EPROTO           as isize,
+    TryAgain                   = nanomsg_sys::EAGAIN           as isize,
+    BadFileDescriptor          = nanomsg_sys::EBADF            as isize,
+    InvalidArgument            = nanomsg_sys::EINVAL           as isize,
+    TooManyOpenFiles           = nanomsg_sys::EMFILE           as isize,
+    BadAddress                 = nanomsg_sys::EFAULT           as isize,
+    PermissionDenied           = nanomsg_sys::EACCESS          as isize,
+    NetworkReset               = nanomsg_sys::ENETRESET        as isize,
+    NetworkUnreachable         = nanomsg_sys::ENETUNREACH      as isize,
+    HostUnreachable            = nanomsg_sys::EHOSTUNREACH     as isize,
+    NotConnected               = nanomsg_sys::ENOTCONN         as isize,
+    MessageTooLong             = nanomsg_sys::EMSGSIZE         as isize,
+    TimedOut                   = nanomsg_sys::ETIMEDOUT        as isize,
+    ConnectionAbort            = nanomsg_sys::ECONNABORTED     as isize,
+    ConnectionReset            = nanomsg_sys::ECONNRESET       as isize,
+    ProtocolNotAvailable       = nanomsg_sys::ENOPROTOOPT      as isize,
+    AlreadyConnected           = nanomsg_sys::EISCONN          as isize,
+    SocketTypeNotSupported     = nanomsg_sys::ESOCKTNOSUPPORT  as isize,
+    Terminating                = nanomsg_sys::ETERM            as isize,
+    NameTooLong                = nanomsg_sys::ENAMETOOLONG     as isize,
+    NoDevice                   = nanomsg_sys::ENODEV           as isize,
+    FileStateMismatch          = nanomsg_sys::EFSM             as isize,
+    Interrupted                = nanomsg_sys::EINTR            as isize
 }
 
 #[derive(PartialEq, Copy)]
@@ -71,7 +71,7 @@ impl NanoError {
         let error_kind = maybe_error_kind.unwrap_or(Unknown);
 
         unsafe {
-            let c_ptr: *const libc::c_char = libnanomsg::nn_strerror(nn_errno);
+            let c_ptr: *const libc::c_char = nanomsg_sys::nn_strerror(nn_errno);
             let c_str = CStr::from_ptr(c_ptr);
             let bytes = c_str.to_bytes();
             let desc = str::from_utf8(bytes).unwrap_or("Error");
@@ -84,18 +84,18 @@ impl NanoError {
 impl FromError<io::Error> for NanoError {
     fn from_error(err: io::Error) -> NanoError {
         match err.kind() {
-            io::ErrorKind::PermissionDenied    => NanoError::from_nn_errno(libnanomsg::EACCESS),
-            io::ErrorKind::ConnectionRefused   => NanoError::from_nn_errno(libnanomsg::ECONNREFUSED),
-            io::ErrorKind::ConnectionReset     => NanoError::from_nn_errno(libnanomsg::ECONNRESET),
-            io::ErrorKind::ConnectionAborted   => NanoError::from_nn_errno(libnanomsg::ECONNABORTED),
-            io::ErrorKind::NotConnected        => NanoError::from_nn_errno(libnanomsg::ENOTCONN),
-            io::ErrorKind::AddrInUse           => NanoError::from_nn_errno(libnanomsg::EADDRINUSE),
-            io::ErrorKind::AddrNotAvailable    => NanoError::from_nn_errno(libnanomsg::EADDRNOTAVAIL),
-            io::ErrorKind::AlreadyExists       => NanoError::from_nn_errno(libnanomsg::EISCONN),
-            io::ErrorKind::WouldBlock          => NanoError::from_nn_errno(libnanomsg::EAGAIN),
-            io::ErrorKind::InvalidInput        => NanoError::from_nn_errno(libnanomsg::EINVAL),
-            io::ErrorKind::TimedOut            => NanoError::from_nn_errno(libnanomsg::ETIMEDOUT),
-            io::ErrorKind::Interrupted         => NanoError::from_nn_errno(libnanomsg::EINTR),
+            io::ErrorKind::PermissionDenied    => NanoError::from_nn_errno(nanomsg_sys::EACCESS),
+            io::ErrorKind::ConnectionRefused   => NanoError::from_nn_errno(nanomsg_sys::ECONNREFUSED),
+            io::ErrorKind::ConnectionReset     => NanoError::from_nn_errno(nanomsg_sys::ECONNRESET),
+            io::ErrorKind::ConnectionAborted   => NanoError::from_nn_errno(nanomsg_sys::ECONNABORTED),
+            io::ErrorKind::NotConnected        => NanoError::from_nn_errno(nanomsg_sys::ENOTCONN),
+            io::ErrorKind::AddrInUse           => NanoError::from_nn_errno(nanomsg_sys::EADDRINUSE),
+            io::ErrorKind::AddrNotAvailable    => NanoError::from_nn_errno(nanomsg_sys::EADDRNOTAVAIL),
+            io::ErrorKind::AlreadyExists       => NanoError::from_nn_errno(nanomsg_sys::EISCONN),
+            io::ErrorKind::WouldBlock          => NanoError::from_nn_errno(nanomsg_sys::EAGAIN),
+            io::ErrorKind::InvalidInput        => NanoError::from_nn_errno(nanomsg_sys::EINVAL),
+            io::ErrorKind::TimedOut            => NanoError::from_nn_errno(nanomsg_sys::ETIMEDOUT),
+            io::ErrorKind::Interrupted         => NanoError::from_nn_errno(nanomsg_sys::EINTR),
             _                                  => NanoError::new("Other", Unknown)
         }
     }
@@ -133,7 +133,7 @@ impl fmt::Display for NanoError {
     }
 }
 pub fn last_nano_error() -> NanoError {
-    let nn_errno = unsafe { libnanomsg::nn_errno() };
+    let nn_errno = unsafe { nanomsg_sys::nn_errno() };
 
     NanoError::from_nn_errno(nn_errno)
 }
@@ -141,7 +141,7 @@ pub fn last_nano_error() -> NanoError {
 #[cfg(test)]
 #[allow(unused_must_use)]
 mod tests {
-    use libnanomsg;
+    use nanomsg_sys;
     use libc;
     use super::NanoErrorKind::*;
     use super::NanoErrorKind;
@@ -162,10 +162,10 @@ mod tests {
 
     #[test]
     fn can_convert_error_code_to_error_kind() {
-        assert_convert_error_code_to_error_kind(libnanomsg::ENOTSUP, OperationNotSupported);
-        assert_convert_error_code_to_error_kind(libnanomsg::EPROTONOSUPPORT, ProtocolNotSupported);
-        assert_convert_error_code_to_error_kind(libnanomsg::EADDRINUSE, AddressInUse);
-        assert_convert_error_code_to_error_kind(libnanomsg::EHOSTUNREACH, HostUnreachable);
+        assert_convert_error_code_to_error_kind(nanomsg_sys::ENOTSUP, OperationNotSupported);
+        assert_convert_error_code_to_error_kind(nanomsg_sys::EPROTONOSUPPORT, ProtocolNotSupported);
+        assert_convert_error_code_to_error_kind(nanomsg_sys::EADDRINUSE, AddressInUse);
+        assert_convert_error_code_to_error_kind(nanomsg_sys::EHOSTUNREACH, HostUnreachable);
     }
 
     fn check_error_kind_match(nano_err_kind: NanoErrorKind, io_err_kind: io::ErrorKind) {
