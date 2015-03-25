@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.3.1"
+version = "0.3.2"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
