@@ -19,6 +19,6 @@ readme = "./README.md"
 keywords = ["nanomsg", "binding", "network", "pub", "sub"]
 license = "MIT"
 
-[dependencies.nanomsg_sys]
+[dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
 version = "0.1.1"
