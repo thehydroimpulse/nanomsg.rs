@@ -1,4 +1,6 @@
-use libc;
+extern crate libc;
+
+use libc::{c_int, c_char};
 use nanomsg_sys;
 
 use std::str;
