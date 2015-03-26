@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.3.0](http://img.shields.io/badge/cargo-0.3.0-orange.svg?style=flat)
+![Cargo 0.3.2](http://img.shields.io/badge/cargo-0.3.2-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs)
 
@@ -25,7 +25,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "^0.3.0"
+nanomsg = "^0.3.2"
 ```
 
 Simply import the crate to use it:
