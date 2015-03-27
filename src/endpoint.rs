@@ -31,7 +31,7 @@ impl Endpoint {
 
         let ret = unsafe { nanomsg_sys::nn_shutdown(self.socket, self.value) };
 
-        if ret == -1 as c_int {
+        if ret == -1 {
             Err(last_nano_error())
         } else {
             Ok(())
