@@ -141,10 +141,10 @@ impl nn_pollfd {
             (true, true) => NN_POLL_IN_AND_OUT,
             (false, true) => NN_POLLOUT,
             (true, false) => NN_POLLIN,
-            (false, false) => 0 as c_short
+            (false, false) => 0
         };
 
-        nn_pollfd { fd: socket, events: ev , revents: 0i16 as c_short }
+        nn_pollfd { fd: socket, events: ev , revents: 0 }
     }
 
     pub fn pollin_result(&self) -> bool {
@@ -293,7 +293,7 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_int, c_void, size_t, c_char, c_short};
+    use libc::{c_int, c_void, size_t, c_char};
     use std::slice;
     use std::ptr;
     use std::mem::transmute;
@@ -331,7 +331,7 @@ mod tests {
 
     fn test_receive(socket: c_int, expected: &str) {
         let mut buf: *mut u8 = ptr::null_mut();
-        let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0 as c_int) };
+        let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0) };
         assert!(bytes >= 0);
         let msg = unsafe { slice::from_raw_parts_mut(buf, bytes as usize) };
         assert_eq!(msg, expected.as_bytes());
@@ -514,13 +514,13 @@ mod tests {
         let url = "ipc:///tmp/poll_should_work.ipc";
         let s1 = test_create_socket(AF_SP, NN_PAIR);
         let s2 = test_create_socket(AF_SP, NN_PAIR);
-        let pollfd1 = nn_pollfd { fd: s1, events: 3i16 as c_short, revents: 0i16 as c_short };
-        let pollfd2 = nn_pollfd { fd: s2, events: 3i16 as c_short, revents: 0i16 as c_short };
+        let pollfd1 = nn_pollfd { fd: s1, events: 3i16, revents: 0i16 };
+        let pollfd2 = nn_pollfd { fd: s2, events: 3i16, revents: 0i16 };
         let mut fd_vector: Vec<nn_pollfd> = vec![pollfd1, pollfd2];
         let fd_ptr = fd_vector.as_mut_ptr();
 
-        let poll_result = unsafe { nn_poll(fd_ptr, 2 as c_int, 0 as c_int) as usize };
-        let fd_slice = fd_vector.as_mut_slice();
+        let poll_result = unsafe { nn_poll(fd_ptr, 2, 0) as usize };
+        let fd_slice = &mut fd_vector[..];
         assert_eq!(0, poll_result);
         assert_eq!(0, fd_slice[0].revents);
         assert_eq!(0, fd_slice[1].revents);
@@ -529,7 +529,7 @@ mod tests {
         test_connect(s2, url.as_ptr() as *const i8);
         sleep_some_millis(10);
 
-        let poll_result2 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
+        let poll_result2 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result2);
         assert_eq!(NN_POLLOUT, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);
@@ -538,7 +538,7 @@ mod tests {
         test_send(s2, msg);
         sleep_some_millis(10);
 
-        let poll_result3 = unsafe { nn_poll(fd_ptr, 2 as c_int, 10 as c_int) as usize };
+        let poll_result3 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result3);
         assert_eq!(NN_POLLOUT + NN_POLLIN, fd_slice[0].revents);
         assert_eq!(NN_POLLOUT, fd_slice[1].revents);
