@@ -520,7 +520,7 @@ mod tests {
         let fd_ptr = fd_vector.as_mut_ptr();
 
         let poll_result = unsafe { nn_poll(fd_ptr, 2, 0) as usize };
-        let fd_slice = fd_vector.as_mut_slice();
+        let fd_slice = &mut fd_vector[..];
         assert_eq!(0, poll_result);
         assert_eq!(0, fd_slice[0].revents);
         assert_eq!(0, fd_slice[1].revents);

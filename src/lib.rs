@@ -626,7 +626,7 @@ impl Socket {
     /// // Here some messages may have been sent ...
     ///
     /// let mut pollfd_vec: Vec<PollFd> = vec![left_socket.new_pollfd(PollInOut::InOut), right_socket.new_pollfd(PollInOut::InOut)];
-    /// let mut poll_req = PollRequest::new(pollfd_vec.as_mut_slice());
+    /// let mut poll_req = PollRequest::new(&mut pollfd_vec[..]);
     /// let timeout = Duration::milliseconds(10);
     /// let poll_result = Socket::poll(&mut poll_req, &timeout);
     ///
@@ -1829,7 +1829,7 @@ mod tests {
 
         // TODO : find some simpler/shorter/better way to intialize a poll request
         let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
-        let mut pollreq_slice = pollreq_vector.as_mut_slice();
+        let mut pollreq_slice = &mut pollreq_vector[..];
         let mut request = PollRequest::new(pollreq_slice);
         let timeout = Duration::milliseconds(10);
         {
