@@ -1,4 +1,4 @@
-#![feature(libc, core, std_misc, collections, io, thread_sleep, convert)]
+#![feature(libc, core, std_misc, collections)]
 
 extern crate libc;
 extern crate nanomsg_sys;
@@ -19,7 +19,7 @@ use std::mem::size_of;
 use std::time::duration::Duration;
 use std::marker::NoCopy;
 use std::slice;
-use std::error::FromError;
+use std::convert::From;
 
 pub mod result;
 pub mod endpoint;
@@ -214,7 +214,7 @@ macro_rules! io_error_guard(
     ($ret:ident) => (
         if $ret == -1 {
             let nano_err = last_nano_error();
-            let io_err = FromError::from_error(nano_err);
+            let io_err = From::from(nano_err);
             return Err(io_err);
         }
     )
@@ -1070,7 +1070,7 @@ impl io::Read for Socket {
                 },
                 Err(_) => {
                     nanomsg_sys::nn_freemsg(msg as *mut c_void);
-                    Err(io::Error::new(io::ErrorKind::Other, "UTF8 conversion failed !", None))
+                    Err(io::Error::new(io::ErrorKind::Other, "UTF8 conversion failed !"))
                 },
             }
         }
@@ -1304,10 +1304,6 @@ mod tests {
         }
     }
 
-    fn sleep_some_millis(millis: i64) {
-        thread::sleep(Duration::milliseconds(millis));
-    }
-
     #[test]
     fn pipeline() {
 
@@ -1319,7 +1315,7 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         test_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
@@ -1341,7 +1337,7 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         test_zc_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
@@ -1404,7 +1400,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         test_write(&mut right_socket, b"foobar");
         test_read(&mut left_socket, b"foobar");
@@ -1430,7 +1426,7 @@ mod tests {
         let mut sock3 = test_create_socket(Bus);
         test_connect(&mut sock3, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let msg = b"foobar";
         test_write(&mut sock1, msg);
@@ -1458,7 +1454,7 @@ mod tests {
         test_subscribe(&mut sock3, "bar");
         test_connect(&mut sock3, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let msg1 = b"foobar";
         test_write(&mut sock1, msg1);
@@ -1487,7 +1483,7 @@ mod tests {
         let mut sock3 = test_create_socket(Respondent);
         test_connect(&mut sock3, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let deadline = Duration::milliseconds(500);
         match sock1.set_survey_deadline(&deadline) {
@@ -1713,7 +1709,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         test_write(&mut right_socket, b"ok");
         test_read_to_string(&mut left_socket, "ok".as_ref());
@@ -1735,7 +1731,7 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1744,7 +1740,7 @@ mod tests {
         }
 
         test_write(&mut push_socket, b"foobar");
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1769,7 +1765,7 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
@@ -1778,7 +1774,7 @@ mod tests {
         }
 
         test_write(&mut push_socket, b"foobar");
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
@@ -1802,7 +1798,7 @@ mod tests {
 
         let mut push_socket = test_create_socket(Push);
         test_bind(&mut push_socket, url);
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         match push_socket.nb_write(b"barfoo") {
             Ok(_) => panic!("Nothing should have been sent !"),
@@ -1822,7 +1818,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let pollfd1 = left_socket.new_pollfd(PollInOut::InOut);
         let pollfd2 = right_socket.new_pollfd(PollInOut::InOut);
@@ -1848,7 +1844,7 @@ mod tests {
         }
 
         test_write(&mut right_socket, b"foobar");
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
         {
             let poll_result = Socket::poll(&mut request, &timeout);
 

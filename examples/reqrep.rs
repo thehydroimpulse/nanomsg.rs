@@ -1,11 +1,9 @@
-#![feature(std_misc, thread_sleep, convert)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
 
-use std::time::duration;
 use std::thread;
 
 use std::io::{Read, Write};
@@ -18,7 +16,6 @@ fn client() {
     let mut endpoint = socket.connect(CLIENT_DEVICE_URL).unwrap();
     let mut count = 1u32;
 
-    let sleep_duration = duration::Duration::milliseconds(100);
     let mut reply = String::new();
 
     loop {
@@ -42,7 +39,7 @@ fn client() {
                 break
             }
         }
-        thread::sleep(sleep_duration);
+        thread::sleep_ms(100);
         count += 1;
     }
 
@@ -54,7 +51,6 @@ fn server() {
     let mut endpoint = socket.connect(SERVER_DEVICE_URL).unwrap();
     let mut count = 1u32;
 
-    let sleep_duration = duration::Duration::milliseconds(400);
     let mut request = String::new();
 
     println!("Server is ready.");
@@ -74,7 +70,7 @@ fn server() {
                     }
                 }
                 request.clear();
-                thread::sleep(sleep_duration);
+                thread::sleep_ms(400);
                 count += 1;
             },
             Err(err) => {
