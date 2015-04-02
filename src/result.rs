@@ -6,7 +6,7 @@ use nanomsg_sys;
 use std::str;
 use std::fmt;
 use std::io;
-use std::error::FromError;
+use std::convert::From;
 use std::num::FromPrimitive;
 use std::ffi::CStr;
 
@@ -83,8 +83,8 @@ impl NanoError {
     }
 }
 
-impl FromError<io::Error> for NanoError {
-    fn from_error(err: io::Error) -> NanoError {
+impl From<io::Error> for NanoError {
+    fn from(err: io::Error) -> NanoError {
         match err.kind() {
             io::ErrorKind::PermissionDenied    => NanoError::from_nn_errno(nanomsg_sys::EACCESS),
             io::ErrorKind::ConnectionRefused   => NanoError::from_nn_errno(nanomsg_sys::ECONNREFUSED),
@@ -103,22 +103,22 @@ impl FromError<io::Error> for NanoError {
     }
 }
 
-impl FromError<NanoError> for io::Error {
-    fn from_error(err: NanoError) -> io::Error {
+impl From<NanoError> for io::Error {
+    fn from(err: NanoError) -> io::Error {
         match err.kind {
-            NanoErrorKind::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  err.description, None ),
-            NanoErrorKind::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, err.description, None ),
-            NanoErrorKind::ConnectionReset       => io::Error::new(io::ErrorKind::ConnectionReset,   err.description, None ),
-            NanoErrorKind::ConnectionAbort       => io::Error::new(io::ErrorKind::ConnectionAborted, err.description, None ),
-            NanoErrorKind::NotConnected          => io::Error::new(io::ErrorKind::NotConnected,      err.description, None ),
-            NanoErrorKind::AddressInUse          => io::Error::new(io::ErrorKind::AddrInUse,         err.description, None ),
-            NanoErrorKind::AddressNotAvailable   => io::Error::new(io::ErrorKind::AddrNotAvailable,  err.description, None ),
-            NanoErrorKind::AlreadyConnected      => io::Error::new(io::ErrorKind::AlreadyExists,     err.description, None ),
-            NanoErrorKind::TryAgain              => io::Error::new(io::ErrorKind::WouldBlock,        err.description, None ),
-            NanoErrorKind::InvalidArgument       => io::Error::new(io::ErrorKind::InvalidInput,      err.description, None ),
-            NanoErrorKind::TimedOut              => io::Error::new(io::ErrorKind::TimedOut,          err.description, None ),
-            NanoErrorKind::Interrupted           => io::Error::new(io::ErrorKind::Interrupted,       err.description, None ),
-            _                                    => io::Error::new(io::ErrorKind::Other,             err.description, None )
+            NanoErrorKind::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  err.description ),
+            NanoErrorKind::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, err.description ),
+            NanoErrorKind::ConnectionReset       => io::Error::new(io::ErrorKind::ConnectionReset,   err.description ),
+            NanoErrorKind::ConnectionAbort       => io::Error::new(io::ErrorKind::ConnectionAborted, err.description ),
+            NanoErrorKind::NotConnected          => io::Error::new(io::ErrorKind::NotConnected,      err.description ),
+            NanoErrorKind::AddressInUse          => io::Error::new(io::ErrorKind::AddrInUse,         err.description ),
+            NanoErrorKind::AddressNotAvailable   => io::Error::new(io::ErrorKind::AddrNotAvailable,  err.description ),
+            NanoErrorKind::AlreadyConnected      => io::Error::new(io::ErrorKind::AlreadyExists,     err.description ),
+            NanoErrorKind::TryAgain              => io::Error::new(io::ErrorKind::WouldBlock,        err.description ),
+            NanoErrorKind::InvalidArgument       => io::Error::new(io::ErrorKind::InvalidInput,      err.description ),
+            NanoErrorKind::TimedOut              => io::Error::new(io::ErrorKind::TimedOut,          err.description ),
+            NanoErrorKind::Interrupted           => io::Error::new(io::ErrorKind::Interrupted,       err.description ),
+            _                                    => io::Error::new(io::ErrorKind::Other,             err.description )
         }
     }
 }
@@ -149,7 +149,7 @@ mod tests {
     use super::NanoErrorKind;
     use super::NanoError;
     use std::io;
-    use std::error::FromError;
+    use std::convert::From;
     use std::num::FromPrimitive;
 
     fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
@@ -172,7 +172,7 @@ mod tests {
 
     fn check_error_kind_match(nano_err_kind: NanoErrorKind, io_err_kind: io::ErrorKind) {
         let nano_err = NanoError::from_nn_errno(nano_err_kind as libc::c_int);
-        let io_err: io::Error = FromError::from_error(nano_err);
+        let io_err: io::Error = From::from(nano_err);
 
         assert_eq!(io_err_kind, io_err.kind())
     }
@@ -189,8 +189,8 @@ mod tests {
 
     #[test]
     fn nano_err_can_be_converted_from_io_err() {
-        let io_err = io::Error::new(io::ErrorKind::TimedOut, "Timed out", None);
-        let nano_err: NanoError = FromError::from_error(io_err);
+        let io_err = io::Error::new(io::ErrorKind::TimedOut, "Timed out");
+        let nano_err: NanoError = From::from(io_err);
 
         assert_eq!(NanoErrorKind::TimedOut, nano_err.kind)
     }

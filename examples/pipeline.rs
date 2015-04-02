@@ -1,11 +1,9 @@
-#![feature(std_misc, thread_sleep, convert)]
 #![allow(unused_must_use)]
 
 extern crate nanomsg;
 
 use nanomsg::{Socket, Protocol};
 
-use std::time::duration;
 use std::thread;
 use std::string::String;
 
@@ -36,13 +34,12 @@ fn worker() {
     input.connect("ipc:///tmp/pipeline_worker.ipc");
     output.connect("ipc:///tmp/pipeline_collector.ipc");
 
-    let sleep_duration = duration::Duration::milliseconds(300);
-
     loop {
         match input.read_to_string(&mut msg) {
             Ok(_) => {
                 println!("Worker received '{}'.", msg);
-                thread::sleep(sleep_duration); // fake some work ...
+
+                thread::sleep_ms(300); // fake some work ...
                 output.write_all(msg.as_bytes());
                 msg.clear();
             },
@@ -57,7 +54,6 @@ fn worker() {
 fn feeder() {
     let mut socket = Socket::new(Protocol::Push).unwrap();
     let mut endpoint = socket.bind("ipc:///tmp/pipeline_worker.ipc").unwrap();
-    let sleep_duration = duration::Duration::milliseconds(100);
     let mut count = 1u32;
 
     loop {
@@ -65,7 +61,7 @@ fn feeder() {
         let msg_bytes = msg.as_bytes();
         match socket.write_all(msg_bytes) {
             Ok(_) => {
-                thread::sleep(sleep_duration);
+                thread::sleep_ms(100);
                 count += 1;
             }
             Err(err) => {

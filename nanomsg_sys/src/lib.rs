@@ -1,4 +1,4 @@
-#![feature(libc, std_misc, thread_sleep)]
+#![feature(libc)]
 #![allow(non_camel_case_types)]
 #[link(name = "nanomsg", kind = "static")]
 
@@ -298,8 +298,6 @@ mod tests {
     use std::ptr;
     use std::mem::transmute;
 
-    use std::time::duration;
-
     use std::sync::{Arc, Barrier};
     use std::thread;
 
@@ -343,10 +341,6 @@ mod tests {
         let topic_ptr = topic.as_ptr();
         let topic_raw_ptr = topic_ptr as *const c_void;
         assert!(unsafe { nn_setsockopt (socket, NN_SUB, NN_SUB_SUBSCRIBE, topic_raw_ptr, topic_len) } >= 0);
-    }
-
-    fn sleep_some_millis(timeout: i64) {
-        thread::sleep(duration::Duration::milliseconds(timeout));
     }
 
     /// This ensures that the one-way pipe works correctly and also serves as an example
@@ -416,7 +410,7 @@ mod tests {
         let sock3 = test_create_socket(AF_SP, NN_BUS);
         let sock3_read_endpoint = test_connect(sock3, url.as_ptr() as *const i8);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let msg = "foobar";
         test_send(sock1, msg);
@@ -451,7 +445,7 @@ mod tests {
         let topic2 = "bar";
         test_subscribe(sub_sock2, topic2);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let msg1 = "foobar";
         test_send(pub_sock, msg1);
@@ -485,7 +479,7 @@ mod tests {
         let resp_sock2 = test_create_socket(AF_SP, NN_RESPONDENT);
         let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr() as *const i8);
 
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let survey = "are_you_there";
         test_send(surv_sock, survey);
@@ -527,7 +521,7 @@ mod tests {
 
         test_bind(s1, url.as_ptr() as *const i8);
         test_connect(s2, url.as_ptr() as *const i8);
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let poll_result2 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result2);
@@ -536,7 +530,7 @@ mod tests {
 
         let msg = "foobar";
         test_send(s2, msg);
-        sleep_some_millis(10);
+        thread::sleep_ms(10);
 
         let poll_result3 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result3);
