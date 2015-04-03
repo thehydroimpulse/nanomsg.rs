@@ -1,4 +1,4 @@
-#![feature(libc, core, std_misc, collections)]
+#![feature(libc, core, std_misc, collections, negate_unsigned)]
 
 extern crate libc;
 extern crate nanomsg_sys;
@@ -27,7 +27,7 @@ pub mod endpoint;
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
 /// (such as only being able to receive messages and not send 'em).
-#[derive(Debug, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
     ///
@@ -87,7 +87,7 @@ impl Protocol {
     }
 }
 
-#[derive(Debug, PartialEq, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Transport {
     /// In-process transport
     Inproc = (nanomsg_sys::NN_INPROC) as isize,
@@ -111,7 +111,7 @@ pub struct Socket {
     no_copy_marker: NoCopy
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub enum PollInOut {
     /// Check whether at least one message can be received from the socket without blocking.
     In,
@@ -121,7 +121,7 @@ pub enum PollInOut {
     InOut,
 }
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 /// A request for polling a socket and the poll result.
 /// To create the request, see `Socket::new_pollfd`.
 /// To get the result, see `PollFd::can_read` and `PollFd::can_write`.

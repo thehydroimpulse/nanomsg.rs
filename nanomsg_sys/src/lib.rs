@@ -1,4 +1,4 @@
-#![feature(libc)]
+#![feature(libc, negate_unsigned)]
 #![allow(non_camel_case_types)]
 #[link(name = "nanomsg", kind = "static")]
 
@@ -128,7 +128,7 @@ mod posix_consts {
 }
 
 #[repr(C)]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct nn_pollfd  {
     fd: c_int,
     events: c_short,

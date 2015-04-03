@@ -52,7 +52,7 @@ pub enum NanoErrorKind {
     Interrupted                = nanomsg_sys::EINTR            as isize
 }
 
-#[derive(PartialEq, Copy)]
+#[derive(PartialEq, Clone, Copy)]
 pub struct NanoError {
     pub description: &'static str,
     pub kind: NanoErrorKind
