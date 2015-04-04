@@ -22,3 +22,6 @@ license = "MIT"
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
 version = "0.1.2"
+
+[dependencies]
+libc = "0.1.5"
