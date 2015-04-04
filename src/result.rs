@@ -7,16 +7,15 @@ use std::str;
 use std::fmt;
 use std::io;
 use std::convert::From;
-use std::num::FromPrimitive;
 use std::ffi::CStr;
+use std::result;
+use std::error;
 
-pub use self::NanoErrorKind::*;
+pub type Result<T> = result::Result<T, Error>;
 
-pub type NanoResult<T> = Result<T, NanoError>;
-
-#[derive(Debug, Clone, PartialEq, FromPrimitive, Copy)]
-pub enum NanoErrorKind {
-    Unknown                    = 0isize,
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum Error {
+    Unknown                    = 0 as isize,
     OperationNotSupported      = nanomsg_sys::ENOTSUP          as isize,
     ProtocolNotSupported       = nanomsg_sys::EPROTONOSUPPORT  as isize,
     NoBufferSpace              = nanomsg_sys::ENOBUFS          as isize,
@@ -30,7 +29,7 @@ pub enum NanoErrorKind {
     WrongProtocol              = nanomsg_sys::EPROTO           as isize,
     TryAgain                   = nanomsg_sys::EAGAIN           as isize,
     BadFileDescriptor          = nanomsg_sys::EBADF            as isize,
-    InvalidArgument            = nanomsg_sys::EINVAL           as isize,
+    InvalidInput               = nanomsg_sys::EINVAL           as isize,
     TooManyOpenFiles           = nanomsg_sys::EMFILE           as isize,
     BadAddress                 = nanomsg_sys::EFAULT           as isize,
     PermissionDenied           = nanomsg_sys::EACCESS          as isize,
@@ -40,7 +39,7 @@ pub enum NanoErrorKind {
     NotConnected               = nanomsg_sys::ENOTCONN         as isize,
     MessageTooLong             = nanomsg_sys::EMSGSIZE         as isize,
     TimedOut                   = nanomsg_sys::ETIMEDOUT        as isize,
-    ConnectionAbort            = nanomsg_sys::ECONNABORTED     as isize,
+    ConnectionAborted          = nanomsg_sys::ECONNABORTED     as isize,
     ConnectionReset            = nanomsg_sys::ECONNRESET       as isize,
     ProtocolNotAvailable       = nanomsg_sys::ENOPROTOOPT      as isize,
     AlreadyConnected           = nanomsg_sys::EISCONN          as isize,
@@ -52,92 +51,127 @@ pub enum NanoErrorKind {
     Interrupted                = nanomsg_sys::EINTR            as isize
 }
 
-#[derive(PartialEq, Clone, Copy)]
-pub struct NanoError {
-    pub description: &'static str,
-    pub kind: NanoErrorKind
-}
-
-impl NanoError {
-    #[unstable]
-    pub fn new(description: &'static str, kind: NanoErrorKind) -> NanoError {
-        NanoError {
-            description: description,
-            kind: kind
-        }
+impl Error {
+    pub fn to_raw(&self) -> c_int {
+        *self as c_int
     }
 
-    #[unstable]
-    pub fn from_nn_errno(nn_errno: libc::c_int) -> NanoError {
-        let maybe_error_kind = FromPrimitive::from_isize(nn_errno as isize);
-        let error_kind = maybe_error_kind.unwrap_or(Unknown);
+    pub fn from_raw(raw: c_int) -> Error {
+        match raw {
+            nanomsg_sys::ENOTSUP         => Error::OperationNotSupported    ,
+            nanomsg_sys::EPROTONOSUPPORT => Error::ProtocolNotSupported     ,
+            nanomsg_sys::ENOBUFS         => Error::NoBufferSpace            ,
+            nanomsg_sys::ENETDOWN        => Error::NetworkDown              ,
+            nanomsg_sys::EADDRINUSE      => Error::AddressInUse             ,
+            nanomsg_sys::EADDRNOTAVAIL   => Error::AddressNotAvailable      ,
+            nanomsg_sys::ECONNREFUSED    => Error::ConnectionRefused        ,
+            nanomsg_sys::EINPROGRESS     => Error::OperationNowInProgress   ,
+            nanomsg_sys::ENOTSOCK        => Error::NotSocket                ,
+            nanomsg_sys::EAFNOSUPPORT    => Error::AddressFamilyNotSupported,
+            nanomsg_sys::EPROTO          => Error::WrongProtocol            ,
+            nanomsg_sys::EAGAIN          => Error::TryAgain                 ,
+            nanomsg_sys::EBADF           => Error::BadFileDescriptor        ,
+            nanomsg_sys::EINVAL          => Error::InvalidInput             ,
+            nanomsg_sys::EMFILE          => Error::TooManyOpenFiles         ,
+            nanomsg_sys::EFAULT          => Error::BadAddress               ,
+            nanomsg_sys::EACCESS         => Error::PermissionDenied         ,
+            nanomsg_sys::ENETRESET       => Error::NetworkReset             ,
+            nanomsg_sys::ENETUNREACH     => Error::NetworkUnreachable       ,
+            nanomsg_sys::EHOSTUNREACH    => Error::HostUnreachable          ,
+            nanomsg_sys::ENOTCONN        => Error::NotConnected             ,
+            nanomsg_sys::EMSGSIZE        => Error::MessageTooLong           ,
+            nanomsg_sys::ETIMEDOUT       => Error::TimedOut                 ,
+            nanomsg_sys::ECONNABORTED    => Error::ConnectionAborted        ,
+            nanomsg_sys::ECONNRESET      => Error::ConnectionReset          ,
+            nanomsg_sys::ENOPROTOOPT     => Error::ProtocolNotAvailable     ,
+            nanomsg_sys::EISCONN         => Error::AlreadyConnected         ,
+            nanomsg_sys::ESOCKTNOSUPPORT => Error::SocketTypeNotSupported   ,
+            nanomsg_sys::ETERM           => Error::Terminating              ,
+            nanomsg_sys::ENAMETOOLONG    => Error::NameTooLong              ,
+            nanomsg_sys::ENODEV          => Error::NoDevice                 ,
+            nanomsg_sys::EFSM            => Error::FileStateMismatch        ,
+            nanomsg_sys::EINTR           => Error::Interrupted              ,
+            _                            => Error::Unknown
+        }
+    }
+}
 
+impl error::Error for Error {
+    fn description(&self) -> &str {
         unsafe {
+            let nn_errno = *self as c_int;
             let c_ptr: *const libc::c_char = nanomsg_sys::nn_strerror(nn_errno);
             let c_str = CStr::from_ptr(c_ptr);
             let bytes = c_str.to_bytes();
             let desc = str::from_utf8(bytes).unwrap_or("Error");
 
-            NanoError::new(desc, error_kind)
+            desc
         }
     }
 }
 
-impl From<io::Error> for NanoError {
-    fn from(err: io::Error) -> NanoError {
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
         match err.kind() {
-            io::ErrorKind::PermissionDenied    => NanoError::from_nn_errno(nanomsg_sys::EACCESS),
-            io::ErrorKind::ConnectionRefused   => NanoError::from_nn_errno(nanomsg_sys::ECONNREFUSED),
-            io::ErrorKind::ConnectionReset     => NanoError::from_nn_errno(nanomsg_sys::ECONNRESET),
-            io::ErrorKind::ConnectionAborted   => NanoError::from_nn_errno(nanomsg_sys::ECONNABORTED),
-            io::ErrorKind::NotConnected        => NanoError::from_nn_errno(nanomsg_sys::ENOTCONN),
-            io::ErrorKind::AddrInUse           => NanoError::from_nn_errno(nanomsg_sys::EADDRINUSE),
-            io::ErrorKind::AddrNotAvailable    => NanoError::from_nn_errno(nanomsg_sys::EADDRNOTAVAIL),
-            io::ErrorKind::AlreadyExists       => NanoError::from_nn_errno(nanomsg_sys::EISCONN),
-            io::ErrorKind::WouldBlock          => NanoError::from_nn_errno(nanomsg_sys::EAGAIN),
-            io::ErrorKind::InvalidInput        => NanoError::from_nn_errno(nanomsg_sys::EINVAL),
-            io::ErrorKind::TimedOut            => NanoError::from_nn_errno(nanomsg_sys::ETIMEDOUT),
-            io::ErrorKind::Interrupted         => NanoError::from_nn_errno(nanomsg_sys::EINTR),
-            _                                  => NanoError::new("Other", Unknown)
+            io::ErrorKind::PermissionDenied    => Error::PermissionDenied,
+            io::ErrorKind::ConnectionRefused   => Error::ConnectionRefused,
+            io::ErrorKind::ConnectionReset     => Error::ConnectionReset,
+            io::ErrorKind::ConnectionAborted   => Error::ConnectionAborted,
+            io::ErrorKind::NotConnected        => Error::NotConnected,
+            io::ErrorKind::AddrInUse           => Error::AddressInUse,
+            io::ErrorKind::AddrNotAvailable    => Error::AddressNotAvailable,
+            io::ErrorKind::AlreadyExists       => Error::AlreadyConnected,
+            io::ErrorKind::WouldBlock          => Error::TryAgain,
+            io::ErrorKind::InvalidInput        => Error::InvalidInput,
+            io::ErrorKind::TimedOut            => Error::TimedOut,
+            io::ErrorKind::Interrupted         => Error::Interrupted,
+            _                                  => Error::Unknown
         }
     }
 }
 
-impl From<NanoError> for io::Error {
-    fn from(err: NanoError) -> io::Error {
-        match err.kind {
-            NanoErrorKind::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  err.description ),
-            NanoErrorKind::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, err.description ),
-            NanoErrorKind::ConnectionReset       => io::Error::new(io::ErrorKind::ConnectionReset,   err.description ),
-            NanoErrorKind::ConnectionAbort       => io::Error::new(io::ErrorKind::ConnectionAborted, err.description ),
-            NanoErrorKind::NotConnected          => io::Error::new(io::ErrorKind::NotConnected,      err.description ),
-            NanoErrorKind::AddressInUse          => io::Error::new(io::ErrorKind::AddrInUse,         err.description ),
-            NanoErrorKind::AddressNotAvailable   => io::Error::new(io::ErrorKind::AddrNotAvailable,  err.description ),
-            NanoErrorKind::AlreadyConnected      => io::Error::new(io::ErrorKind::AlreadyExists,     err.description ),
-            NanoErrorKind::TryAgain              => io::Error::new(io::ErrorKind::WouldBlock,        err.description ),
-            NanoErrorKind::InvalidArgument       => io::Error::new(io::ErrorKind::InvalidInput,      err.description ),
-            NanoErrorKind::TimedOut              => io::Error::new(io::ErrorKind::TimedOut,          err.description ),
-            NanoErrorKind::Interrupted           => io::Error::new(io::ErrorKind::Interrupted,       err.description ),
-            _                                    => io::Error::new(io::ErrorKind::Other,             err.description )
+impl From<Error> for io::Error {
+    fn from(err: Error) -> io::Error {
+        let as_std_error: &error::Error = &err;
+        let description = as_std_error.description();
+        match err {
+            Error::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  description ),
+            Error::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, description ),
+            Error::ConnectionReset       => io::Error::new(io::ErrorKind::ConnectionReset,   description ),
+            Error::ConnectionAborted     => io::Error::new(io::ErrorKind::ConnectionAborted, description ),
+            Error::NotConnected          => io::Error::new(io::ErrorKind::NotConnected,      description ),
+            Error::AddressInUse          => io::Error::new(io::ErrorKind::AddrInUse,         description ),
+            Error::AddressNotAvailable   => io::Error::new(io::ErrorKind::AddrNotAvailable,  description ),
+            Error::AlreadyConnected      => io::Error::new(io::ErrorKind::AlreadyExists,     description ),
+            Error::TryAgain              => io::Error::new(io::ErrorKind::WouldBlock,        description ),
+            Error::InvalidInput          => io::Error::new(io::ErrorKind::InvalidInput,      description ),
+            Error::TimedOut              => io::Error::new(io::ErrorKind::TimedOut,          description ),
+            Error::Interrupted           => io::Error::new(io::ErrorKind::Interrupted,       description ),
+            _                            => io::Error::new(io::ErrorKind::Other,             description )
         }
     }
 }
 
-impl fmt::Debug for NanoError {
+impl fmt::Debug for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "An error has ocurred: {}", self.description)
+        let as_std_error: &error::Error = self;
+        let description = as_std_error.description();
+        write!(formatter, "{}", description)
     }
 }
 
-impl fmt::Display for NanoError {
+impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "An error has ocurred: {}", self.description)
+        let as_std_error: &error::Error = self;
+        let description = as_std_error.description();
+        write!(formatter, "{}", description)
     }
 }
-pub fn last_nano_error() -> NanoError {
+
+pub fn last_nano_error() -> Error {
     let nn_errno = unsafe { nanomsg_sys::nn_errno() };
 
-    NanoError::from_nn_errno(nn_errno)
+    Error::from_raw(nn_errno)
 }
 
 #[cfg(test)]
@@ -145,53 +179,44 @@ pub fn last_nano_error() -> NanoError {
 mod tests {
     use nanomsg_sys;
     use libc;
-    use super::NanoErrorKind::*;
-    use super::NanoErrorKind;
-    use super::NanoError;
+    use super::{Error};
     use std::io;
     use std::convert::From;
-    use std::num::FromPrimitive;
 
-    fn assert_convert_error_code_to_error_kind(error_code: libc::c_int, expected_error_kind: NanoErrorKind) {
-        let i64_error_code = error_code as i64;
-        let converted_error_kind = FromPrimitive::from_i64(i64_error_code);
-
-        match converted_error_kind {
-            Some(error_kind) => assert_eq!(expected_error_kind, error_kind),
-            None => panic!("Failed to convert error code to NanoErrorKind")
-        }
+    fn assert_convert_error_code_to_error(error_code: libc::c_int, expected_error: Error) {
+        let converted_error = Error::from_raw(error_code);
+        assert_eq!(expected_error, converted_error)
     }
 
     #[test]
-    fn can_convert_error_code_to_error_kind() {
-        assert_convert_error_code_to_error_kind(nanomsg_sys::ENOTSUP, OperationNotSupported);
-        assert_convert_error_code_to_error_kind(nanomsg_sys::EPROTONOSUPPORT, ProtocolNotSupported);
-        assert_convert_error_code_to_error_kind(nanomsg_sys::EADDRINUSE, AddressInUse);
-        assert_convert_error_code_to_error_kind(nanomsg_sys::EHOSTUNREACH, HostUnreachable);
+    fn can_convert_error_code_to_error() {
+        assert_convert_error_code_to_error(nanomsg_sys::ENOTSUP, Error::OperationNotSupported);
+        assert_convert_error_code_to_error(nanomsg_sys::EPROTONOSUPPORT, Error::ProtocolNotSupported);
+        assert_convert_error_code_to_error(nanomsg_sys::EADDRINUSE, Error::AddressInUse);
+        assert_convert_error_code_to_error(nanomsg_sys::EHOSTUNREACH, Error::HostUnreachable);
     }
 
-    fn check_error_kind_match(nano_err_kind: NanoErrorKind, io_err_kind: io::ErrorKind) {
-        let nano_err = NanoError::from_nn_errno(nano_err_kind as libc::c_int);
+    fn check_error_kind_match(nano_err: Error, io_err_kind: io::ErrorKind) {
         let io_err: io::Error = From::from(nano_err);
 
         assert_eq!(io_err_kind, io_err.kind())
     }
 
     #[test]
-    fn check_to_ioerror() {
-        check_error_kind_match(NanoErrorKind::TimedOut, io::ErrorKind::TimedOut);
-        check_error_kind_match(NanoErrorKind::PermissionDenied, io::ErrorKind::PermissionDenied);
-        check_error_kind_match(NanoErrorKind::ConnectionRefused, io::ErrorKind::ConnectionRefused);
-        check_error_kind_match(NanoErrorKind::OperationNotSupported, io::ErrorKind::Other);
-        check_error_kind_match(NanoErrorKind::NotConnected, io::ErrorKind::NotConnected);
-        check_error_kind_match(NanoErrorKind::Interrupted, io::ErrorKind::Interrupted);
+    fn nano_err_can_be_converted_to_io_err() {
+        check_error_kind_match(Error::TimedOut, io::ErrorKind::TimedOut);
+        check_error_kind_match(Error::PermissionDenied, io::ErrorKind::PermissionDenied);
+        check_error_kind_match(Error::ConnectionRefused, io::ErrorKind::ConnectionRefused);
+        check_error_kind_match(Error::OperationNotSupported, io::ErrorKind::Other);
+        check_error_kind_match(Error::NotConnected, io::ErrorKind::NotConnected);
+        check_error_kind_match(Error::Interrupted, io::ErrorKind::Interrupted);
     }
 
     #[test]
     fn nano_err_can_be_converted_from_io_err() {
         let io_err = io::Error::new(io::ErrorKind::TimedOut, "Timed out");
-        let nano_err: NanoError = From::from(io_err);
+        let nano_err: Error = From::from(io_err);
 
-        assert_eq!(NanoErrorKind::TimedOut, nano_err.kind)
+        assert_eq!(Error::TimedOut, nano_err)
     }
 }

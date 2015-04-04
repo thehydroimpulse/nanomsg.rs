@@ -1,5 +1,5 @@
 language: rust
-
+rust: 1.0.0-beta
 env:
   global:
     - secure: "hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ="

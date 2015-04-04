@@ -1,5 +1,4 @@
-#![feature(libc, negate_unsigned)]
-#![allow(non_camel_case_types)]
+#![allow(non_camel_case_types, non_snake_case)]
 #[link(name = "nanomsg", kind = "static")]
 
 extern crate libc;
@@ -12,7 +11,10 @@ pub const AF_SP_RAW: c_int = 2;
 pub const NN_PROTO_PIPELINE: c_int = 5;
 pub const NN_PUSH: c_int = NN_PROTO_PIPELINE * 16 + 0;
 pub const NN_PULL: c_int = NN_PROTO_PIPELINE * 16 + 1;
-pub const NN_MSG: size_t = -1;
+//pub const NN_MSG: size_t = -1;
+pub fn NN_MSG() -> size_t {
+    size_t::max_value()
+}
 pub const NN_PROTO_REQREP: c_int = 3;
 pub const NN_REQ: c_int = NN_PROTO_REQREP * 16 + 0;
 pub const NN_REP: c_int = NN_PROTO_REQREP * 16 + 1;
@@ -329,7 +331,7 @@ mod tests {
 
     fn test_receive(socket: c_int, expected: &str) {
         let mut buf: *mut u8 = ptr::null_mut();
-        let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG, 0) };
+        let bytes = unsafe { nn_recv(socket, transmute(&mut buf), NN_MSG(), 0) };
         assert!(bytes >= 0);
         let msg = unsafe { slice::from_raw_parts_mut(buf, bytes as usize) };
         assert_eq!(msg, expected.as_bytes());

@@ -1,9 +1,7 @@
-#![feature(libc, core, std_misc, collections, negate_unsigned)]
-
-extern crate libc;
 extern crate nanomsg_sys;
+extern crate libc;
 
-pub use result::{NanoResult, NanoError, NanoErrorKind};
+pub use result::{Result, Error};
 pub use endpoint::Endpoint;
 
 use nanomsg_sys::nn_pollfd;
@@ -16,8 +14,6 @@ use std::ptr;
 use result::last_nano_error;
 use std::io;
 use std::mem::size_of;
-use std::time::duration::Duration;
-use std::marker::NoCopy;
 use std::slice;
 use std::convert::From;
 
@@ -107,8 +103,7 @@ impl Transport {
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
 pub struct Socket {
-    socket: c_int,
-    no_copy_marker: NoCopy
+    socket: c_int
 }
 
 #[derive(Clone, Copy)]
@@ -244,7 +239,7 @@ impl Socket {
     /// - `TooManyOpenFiles` : The limit on the total number of open SP sockets or OS limit for file descriptors has been reached.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn new(protocol: Protocol) -> NanoResult<Socket> {
+    pub fn new(protocol: Protocol) -> Result<Socket> {
         Socket::create_socket(nanomsg_sys::AF_SP, protocol)
     }
 
@@ -263,17 +258,17 @@ impl Socket {
     /// // And now `Socket::device(&s1, &s2)` can be called to create the device.
     /// ```
     #[unstable]
-    pub fn new_for_device(protocol: Protocol) -> NanoResult<Socket> {
+    pub fn new_for_device(protocol: Protocol) -> Result<Socket> {
         Socket::create_socket(nanomsg_sys::AF_SP_RAW, protocol)
     }
 
-    fn create_socket(domain: c_int, protocol: Protocol) -> NanoResult<Socket> {
+    fn create_socket(domain: c_int, protocol: Protocol) -> Result<Socket> {
         let socket = unsafe {
             nanomsg_sys::nn_socket(domain, protocol.to_raw())
         };
 
         error_guard!(socket);
-        Ok(Socket { socket: socket, no_copy_marker: NoCopy })
+        Ok(Socket {socket: socket})
     }
 
     /// Creating a new socket through `Socket::new` does **not**
@@ -315,10 +310,10 @@ impl Socket {
     /// - `AddressInUse` : The requested local endpoint is already in use.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn bind(&mut self, addr: &str) -> NanoResult<Endpoint> {
+    pub fn bind(&mut self, addr: &str) -> Result<Endpoint> {
         let c_addr = CString::new(addr.as_bytes());
         if c_addr.is_err() {
-            return Err(NanoError::from_nn_errno(nanomsg_sys::EINVAL));
+            return Err(Error::from_raw(nanomsg_sys::EINVAL));
         }
         let ret = unsafe { nanomsg_sys::nn_bind(self.socket, c_addr.unwrap().as_ptr()) };
 
@@ -355,10 +350,10 @@ impl Socket {
     /// - `NoDevice` : Address specifies a nonexistent interface.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn connect(&mut self, addr: &str) -> NanoResult<Endpoint> {
+    pub fn connect(&mut self, addr: &str) -> Result<Endpoint> {
         let c_addr = CString::new(addr.as_bytes());
         if c_addr.is_err() {
-            return Err(NanoError::from_nn_errno(nanomsg_sys::EINVAL));
+            return Err(Error::from_raw(nanomsg_sys::EINVAL));
         }
         let ret = unsafe { nanomsg_sys::nn_connect(self.socket, c_addr.unwrap().as_ptr()) };
 
@@ -369,12 +364,12 @@ impl Socket {
     /// Non-blocking version of the `read` function.
     /// Returns the number of read bytes on success.
     /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
-    /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    /// An error with the `Error::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
     /// # Example
     ///
     /// ```rust
-    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    /// use nanomsg::{Socket, Protocol, Error};
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_doc.ipc").unwrap();
@@ -385,7 +380,7 @@ impl Socket {
     ///         println!("Read {} bytes !", count); 
     ///         // here we can process the message stored in `buffer`
     ///     },
-    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///     Err(Error::TryAgain) => {
     ///         println!("Nothing to be read for the moment ...");
     ///         // here we can use the CPU for something else and try again later
     ///     },
@@ -402,7 +397,7 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read(&mut self, buf: &mut [u8]) -> NanoResult<usize> {
+    pub fn nb_read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
@@ -414,13 +409,13 @@ impl Socket {
 
     /// Non-blocking version of the `read_to_end` function.
     /// Copy the message allocated by nanomsg into the buffer on success.
-    /// An error with the `NanoErrorKind::TryAgain` kind is returned if there's no message to receive for the moment.
+    /// An error with the `Error::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
     /// # Example:
     ///
     /// ```rust
     /// #![allow(unstable)]
-    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    /// use nanomsg::{Socket, Protocol, Error};
     ///
     /// let mut socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut endpoint = socket.connect("ipc:///tmp/nb_read_to_end_doc.ipc").unwrap();
@@ -431,7 +426,7 @@ impl Socket {
     ///         println!("Read message {} bytes !", buffer.len()); 
     ///         // here we can process the message stored in `buffer`
     ///     },
-    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///     Err(Error::TryAgain) => {
     ///         println!("Nothing to be read for the moment ...");
     ///         // here we can use the CPU for something else and try again later
     ///     },
@@ -448,37 +443,40 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> NanoResult<usize> {
+    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, nanomsg_sys::NN_DONTWAIT)
+            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), nanomsg_sys::NN_DONTWAIT)
         };
 
         error_guard!(ret);
 
         let ret = ret as usize;
+        buf.reserve(ret);
         unsafe {
             let bytes = slice::from_raw_parts(msg, ret);
-            buf.push_all(bytes);
+            for byte in bytes.iter() {
+                buf.push(*byte);
+            }
             nanomsg_sys::nn_freemsg(msg as *mut c_void);
             Ok(ret)
         }
     }
 
     /// Non-blocking version of the `write` function.
-    /// An error with the `NanoErrorKind::TryAgain` kind is returned if the message cannot be sent at the moment.
+    /// An error with the `Error::TryAgain` kind is returned if the message cannot be sent at the moment.
     ///
     /// # Example:
     ///
     /// ```rust
-    /// use nanomsg::{Socket, Protocol, NanoError, NanoErrorKind};
+    /// use nanomsg::{Socket, Protocol, Error};
     ///
     /// let mut socket = Socket::new(Protocol::Push).unwrap();
     /// let mut endpoint = socket.connect("ipc:///tmp/nb_write_doc.ipc").unwrap();
     ///
     /// match socket.nb_write(b"foobar") {
     ///     Ok(_) => { println!("Message sent !"); },
-    ///     Err(NanoError {description: _, kind: NanoErrorKind::TryAgain}) => {
+    ///     Err(Error::TryAgain) => {
     ///         println!("Receiver not ready, message can't be sent for the moment ...");
     ///     },
     ///     Err(err) => panic!("Problem while writing: {}", err)
@@ -494,7 +492,7 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn nb_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
+    pub fn nb_write(&mut self, buf: &[u8]) -> Result<usize> {
         let buf_ptr = buf.as_ptr() as *const c_void;
         let buf_len = buf.len() as size_t;
         let ret = unsafe { nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) };
@@ -542,11 +540,11 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn zc_write(&mut self, buf: &[u8]) -> NanoResult<usize> {
+    pub fn zc_write(&mut self, buf: &[u8]) -> Result<usize> {
         let ptr = buf.as_ptr() as *const c_void;
         let ptr_addr = &ptr as *const _ as *const c_void;
         let len = buf.len();
-        let ret = unsafe { nanomsg_sys::nn_send(self.socket, ptr_addr, nanomsg_sys::NN_MSG, 0) };
+        let ret = unsafe { nanomsg_sys::nn_send(self.socket, ptr_addr, nanomsg_sys::NN_MSG(), 0) };
 
         error_guard!(ret);
         Ok(len)
@@ -563,7 +561,7 @@ impl Socket {
     /// - `InvalidArgument` : Supplied allocation type is invalid.
     /// - `Unknown` : Out of memory.
     #[unstable]
-    pub fn allocate_msg<'a>(len: usize) -> NanoResult<&'a mut [u8]> {
+    pub fn allocate_msg<'a>(len: usize) -> Result<&'a mut [u8]> {
         unsafe { 
             let ptr = nanomsg_sys::nn_allocmsg(len as size_t, 0) as *mut u8;
             let ptr_value = ptr as isize;
@@ -582,7 +580,7 @@ impl Socket {
     ///
     /// - `BadAddress` : The message pointer is invalid.
     #[unstable]
-    pub fn free_msg<'a>(msg: &'a mut [u8]) -> NanoResult<()> {
+    pub fn free_msg<'a>(msg: &'a mut [u8]) -> Result<()> {
         unsafe { 
             let ptr = msg.as_mut_ptr() as *mut c_void;
             let ret = nanomsg_sys::nn_freemsg(ptr);
@@ -610,9 +608,7 @@ impl Socket {
     /// # Example
     ///
     /// ```rust
-    /// #![feature(std_misc, thread_sleep)]
     /// use nanomsg::{Socket, Protocol, PollFd, PollRequest, PollInOut};
-    /// use std::time::duration::Duration;
     /// use std::thread;
     ///
     /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
@@ -621,14 +617,14 @@ impl Socket {
     /// let mut right_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut right_ep = right_socket.connect("ipc:///tmp/poll_doc.ipc").unwrap();
     /// 
-    /// thread::sleep(Duration::milliseconds(10));
+    /// thread::sleep_ms(10);
     ///
     /// // Here some messages may have been sent ...
     ///
     /// let mut pollfd_vec: Vec<PollFd> = vec![left_socket.new_pollfd(PollInOut::InOut), right_socket.new_pollfd(PollInOut::InOut)];
     /// let mut poll_req = PollRequest::new(&mut pollfd_vec[..]);
-    /// let timeout = Duration::milliseconds(10);
-    /// let poll_result = Socket::poll(&mut poll_req, &timeout);
+    /// let timeout = 10;
+    /// let poll_result = Socket::poll(&mut poll_req, timeout);
     ///
     /// if poll_req.get_fds()[0].can_write() {
     ///     // left_socket socket can send a message ...
@@ -646,21 +642,20 @@ impl Socket {
     /// - `Timeout` : No event was signaled before the specified timeout.
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn poll(request: &mut PollRequest, timeout: &Duration) -> NanoResult<usize> {
+    pub fn poll(request: &mut PollRequest, timeout: isize) -> Result<usize> {
         let nn_fds = request.get_nn_fds();
         let len = request.len() as c_int;
-        let millis = timeout.num_milliseconds() as c_int;
-        let ret = unsafe { nanomsg_sys::nn_poll(nn_fds, len, millis) } as usize;
+        let ret = unsafe { nanomsg_sys::nn_poll(nn_fds, len, timeout as c_int) };
 
         error_guard!(ret);
 
         if ret == 0 {
-            return Err(NanoError::new("TimedOut", NanoErrorKind::TimedOut));
+            return Err(Error::TimedOut);
         }
 
         request.copy_poll_result();
 
-        Ok(ret)
+        Ok(ret as usize)
     }
 
     /// Starts a device to forward messages between two sockets.
@@ -678,7 +673,7 @@ impl Socket {
     /// - `InvalidArgument` : Either one of the socket is not an AF_SP_RAW socket; or the two sockets don’t belong to the same protocol; or the directionality of the sockets doesn’t fit (e.g. attempt to join two SINK sockets to form a device).
     /// - `Terminating` : The library is terminating.
     #[unstable]
-    pub fn device(socket1: &Socket, socket2: &Socket) -> NanoResult<()> {
+    pub fn device(socket1: &Socket, socket2: &Socket) -> Result<()> {
         let ret = unsafe { nanomsg_sys::nn_device(socket1.socket, socket2.socket) };
 
         error_guard!(ret);
@@ -698,7 +693,7 @@ impl Socket {
         unsafe { nanomsg_sys::nn_term() };
     }
 
-    fn set_socket_options_c_int(&self, level: c_int, option: c_int, val: c_int) -> NanoResult<()> {
+    fn set_socket_options_c_int(&self, level: c_int, option: c_int, val: c_int) -> Result<()> {
         let val_ptr = &val as *const _ as *const c_void;
 
         let ret = unsafe {
@@ -713,10 +708,10 @@ impl Socket {
         Ok(())
     }
 
-    fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> NanoResult<()> {
+    fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> Result<()> {
         let c_val = CString::new(val.as_bytes());
         if c_val.is_err() {
-            return Err(NanoError::from_nn_errno(nanomsg_sys::EINVAL));
+            return Err(Error::from_raw(nanomsg_sys::EINVAL));
         }
         let ptr = c_val.unwrap().as_ptr() as *const c_void;
         let ret = unsafe {
@@ -732,19 +727,19 @@ impl Socket {
     }
 
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
-    /// Negative value means infinite linger. Default value is 1 second.
+    /// Negative value means infinite linger. Default value is 1000 (1 second).
     #[unstable]
-    pub fn set_linger(&mut self, linger: &Duration) -> NanoResult<()> {
+    pub fn set_linger(&mut self, linger: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_LINGER,
-                                      linger.num_milliseconds() as c_int)
+                                      linger as c_int)
     }
 
     /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer, 
     /// exactly one message may be buffered in addition to the data in the send buffer.
     /// Default value is 128kB.
     #[unstable]
-    pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> NanoResult<()> {
+    pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDBUF,
                                       size_in_bytes as c_int)
@@ -754,7 +749,7 @@ impl Socket {
     /// exactly one message may be buffered in addition to the data in the receive buffer.
     /// Default value is 128kB.
     #[unstable]
-    pub fn set_receive_buffer_size(&mut self, size_in_bytes: usize) -> NanoResult<()> {
+    pub fn set_receive_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVBUF,
                                       size_in_bytes as c_int)
@@ -764,20 +759,20 @@ impl Socket {
     /// If message cannot be sent within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
     #[unstable]
-    pub fn set_send_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
+    pub fn set_send_timeout(&mut self, timeout: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDTIMEO,
-                                      timeout.num_milliseconds() as c_int)
+                                      timeout as c_int)
     }
 
     /// The timeout for recv operation on the socket.
     /// If message cannot be received within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
     #[unstable]
-    pub fn set_receive_timeout(&mut self, timeout: &Duration) -> NanoResult<()> {
+    pub fn set_receive_timeout(&mut self, timeout: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVTIMEO,
-                                      timeout.num_milliseconds() as c_int)
+                                      timeout as c_int)
     }
 
     /// For connection-based transports such as TCP, this option specifies how long to wait,
@@ -785,10 +780,10 @@ impl Socket {
     /// Note that actual reconnect interval may be randomised to some extent to prevent severe reconnection storms.
     /// Default value is 100 milliseconds.
     #[unstable]
-    pub fn set_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+    pub fn set_reconnect_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RECONNECT_IVL,
-                                      interval.num_milliseconds() as c_int)
+                                      interval as c_int)
     }
 
     /// This option is to be used only in addition to `set_reconnect_interval` option.
@@ -799,10 +794,10 @@ impl Socket {
     /// If `max_reconnect_interval` is less than `reconnect_interval`, it is ignored.
     /// Default value is 0.
     #[unstable]
-    pub fn set_max_reconnect_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+    pub fn set_max_reconnect_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RECONNECT_IVL_MAX,
-                                      interval.num_milliseconds() as c_int)
+                                      interval as c_int)
     }
 
     /// Sets outbound priority for endpoints subsequently added to the socket. 
@@ -811,7 +806,7 @@ impl Socket {
     /// peers with high priority take precedence over peers with low priority.
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
     #[unstable]
-    pub fn set_send_priority(&mut self, priority: u8) -> NanoResult<()> {
+    pub fn set_send_priority(&mut self, priority: u8) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDPRIO,
                                       priority as c_int)
@@ -823,7 +818,7 @@ impl Socket {
     /// from peer with lower priority. 
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
     #[unstable]
-    pub fn set_receive_priority(&mut self, priority: u8) -> NanoResult<()> {
+    pub fn set_receive_priority(&mut self, priority: u8) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVPRIO,
                                       priority as c_int)
@@ -833,7 +828,7 @@ impl Socket {
     /// If set to false, both IPv4 and IPv6 addresses are used.
     /// Default value is true.
     #[unstable]
-    pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> NanoResult<()> {
+    pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_IPV4ONLY,
                                       ipv4_only as c_int)
@@ -843,7 +838,7 @@ impl Socket {
     /// Default value is "socket.N" where N is socket integer.
     /// **This option is experimental, see `Socket::env` for details**
     #[unstable]
-    pub fn set_socket_name(&mut self, name: &str) -> NanoResult<()> {
+    pub fn set_socket_name(&mut self, name: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SOL_SOCKET,
                                     nanomsg_sys::NN_SOCKET_NAME,
                                     name)
@@ -853,7 +848,7 @@ impl Socket {
     /// It also disables delaying of TCP acknowledgments.
     /// Using this option improves latency at the expense of throughput.
     #[unstable]
-    pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> NanoResult<()> {
+    pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_TCP,
                                       nanomsg_sys::NN_TCP_NODELAY,
                                       tcp_nodelay as c_int)
@@ -864,7 +859,7 @@ impl Socket {
     /// Type of the option is string.
     /// A single `Sub` socket can handle multiple subscriptions.
     #[unstable]
-    pub fn subscribe(&mut self, topic: &str) -> NanoResult<()> {
+    pub fn subscribe(&mut self, topic: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_SUBSCRIBE,
                                     topic)
@@ -872,7 +867,7 @@ impl Socket {
 
     /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
     #[unstable]
-    pub fn unsubscribe(&mut self, topic: &str) -> NanoResult<()> {
+    pub fn unsubscribe(&mut self, topic: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_UNSUBSCRIBE,
                                     topic)
@@ -882,20 +877,20 @@ impl Socket {
     /// Once the deadline expires, receive function will return `Timeout` error and all subsequent responses to the survey will be silently dropped.
     /// The deadline is measured in milliseconds. Default value is 1 second.
     #[unstable]
-    pub fn set_survey_deadline(&mut self, deadline: &Duration) -> NanoResult<()> {
+    pub fn set_survey_deadline(&mut self, deadline: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SURVEYOR,
                                       nanomsg_sys::NN_SURVEYOR_DEADLINE,
-                                      deadline.num_milliseconds() as c_int)
+                                      deadline as c_int)
     }
 
     /// This option is defined on the full `Req` socket.
     /// If reply is not received in specified amount of milliseconds, the request will be automatically resent.
     /// The type of this option is int. Default value is 1 minute.
     #[unstable]
-    pub fn set_request_resend_interval(&mut self, interval: &Duration) -> NanoResult<()> {
+    pub fn set_request_resend_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_REQ,
                                       nanomsg_sys::NN_REQ_RESEND_IVL,
-                                      interval.num_milliseconds() as c_int)
+                                      interval as c_int)
     }
 
 }
@@ -908,9 +903,7 @@ impl io::Read for Socket {
     /// # Example
     ///
     /// ```rust
-    /// #![feature(std_misc, thread_sleep)]
     /// use nanomsg::{Socket, Protocol};
-    /// use std::time::duration::Duration;
     /// use std::thread;
     /// use std::io::{Read, Write};
     ///
@@ -921,7 +914,7 @@ impl io::Read for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// thread::sleep(Duration::milliseconds(50));
+    /// thread::sleep_ms(50);
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -960,9 +953,7 @@ impl io::Read for Socket {
     /// # Example:
     ///
     /// ```rust
-    /// #![feature(std_misc, thread_sleep)]
     /// use nanomsg::{Socket, Protocol};
-    /// use std::time::duration::Duration;
     /// use std::thread;
     /// use std::io::{Read, Write};
     ///
@@ -972,7 +963,7 @@ impl io::Read for Socket {
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
     /// 
-    /// thread::sleep(Duration::milliseconds(50));
+    /// thread::sleep_ms(50);
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -999,13 +990,16 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Other` : The library is terminating.
     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) };
+        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), 0) };
 
         io_error_guard!(ret);
 
         let ret = ret as usize;
         let bytes = unsafe { slice::from_raw_parts(msg, ret) };
-        buf.push_all(bytes);
+        buf.reserve(ret);
+        for byte in bytes.iter() {
+            buf.push(*byte);
+        }
         unsafe { nanomsg_sys::nn_freemsg(msg as *mut c_void) };
         Ok(ret)
     }
@@ -1016,9 +1010,7 @@ impl io::Read for Socket {
     /// # Example:
     ///
     /// ```rust
-    /// #![feature(std_misc, thread_sleep)]
     /// use nanomsg::{Socket, Protocol};
-    /// use std::time::duration::Duration;
     /// use std::thread;
     /// use std::io::{Read, Write};
     ///
@@ -1028,7 +1020,7 @@ impl io::Read for Socket {
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
     /// 
-    /// thread::sleep(Duration::milliseconds(50));
+    /// thread::sleep_ms(50);
     /// 
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1055,7 +1047,7 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) };
+        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), 0) };
 
         io_error_guard!(ret);
 
@@ -1086,9 +1078,7 @@ impl io::Write for Socket {
     /// # Example:
     ///
     /// ```rust
-    /// #![feature(std_misc, thread_sleep)]
     /// use nanomsg::{Socket, Protocol};
-    /// use std::time::duration::Duration;
     /// use std::thread;
     /// use std::io::{Read, Write};
     ///
@@ -1099,7 +1089,7 @@ impl io::Write for Socket {
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
     /// 
-    /// thread::sleep(Duration::milliseconds(50));
+    /// thread::sleep_ms(50);
     /// 
     /// match push_socket.write_all(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
@@ -1150,13 +1140,11 @@ impl Drop for Socket {
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
-    use {Socket, Protocol, PollRequest, PollFd, Endpoint, PollInOut};
+    use {Socket, Protocol, PollRequest, PollFd, Endpoint, PollInOut, Error};
     use libc::c_int;
     use nanomsg_sys;
     use super::Protocol::*;
-    use super::result::NanoErrorKind::*;
 
-    use std::time::duration::Duration;
     use std::io::{Read, Write};
 
     use std::sync::{Arc, Barrier};
@@ -1485,8 +1473,7 @@ mod tests {
 
         thread::sleep_ms(10);
 
-        let deadline = Duration::milliseconds(500);
-        match sock1.set_survey_deadline(&deadline) {
+        match sock1.set_survey_deadline(500) {
             Ok(socket) => socket,
             Err(err) => panic!("{}", err)
         };
@@ -1512,8 +1499,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let linger = Duration::milliseconds(1024);
-        match socket.set_linger(&linger) {
+        match socket.set_linger(1024) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change linger on the socket: {}", err)
         }
@@ -1554,8 +1540,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let timeout = Duration::milliseconds(-2);
-        match socket.set_send_timeout(&timeout) {
+        match socket.set_send_timeout(-2) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change send timeout on the socket: {}", err)
         }
@@ -1568,8 +1553,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let timeout = Duration::milliseconds(200);
-        match socket.set_receive_timeout(&timeout) {
+        match socket.set_receive_timeout(200) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change receive timeout on the socket: {}", err)
         }
@@ -1582,8 +1566,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let interval = Duration::milliseconds(142);
-        match socket.set_reconnect_interval(&interval) {
+        match socket.set_reconnect_interval(142) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
         }
@@ -1596,8 +1579,7 @@ mod tests {
 
         let mut socket = test_create_socket(Pair);
 
-        let interval = Duration::milliseconds(666);
-        match socket.set_max_reconnect_interval(&interval) {
+        match socket.set_max_reconnect_interval(666) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
         }
@@ -1662,8 +1644,7 @@ mod tests {
 
         let mut socket = test_create_socket(Req);
 
-        let interval = Duration::milliseconds(60042);
-        match socket.set_request_resend_interval(&interval) {
+        match socket.set_request_resend_interval(60042) {
             Ok(..) => {},
             Err(err) => panic!("Failed to change request resend interval on the socket: {}", err)
         }
@@ -1736,7 +1717,7 @@ mod tests {
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
             Ok(_) => panic!("Nothing should have been received !"),
-            Err(err) => assert_eq!(err.kind, TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain)
         }
 
         test_write(&mut push_socket, b"foobar");
@@ -1770,7 +1751,7 @@ mod tests {
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
             Ok(_) => panic!("Nothing should have been received !"),
-            Err(err) => assert_eq!(err.kind, TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain)
         }
 
         test_write(&mut push_socket, b"foobar");
@@ -1802,7 +1783,7 @@ mod tests {
 
         match push_socket.nb_write(b"barfoo") {
             Ok(_) => panic!("Nothing should have been sent !"),
-            Err(err) => assert_eq!(err.kind, TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain)
         }
 
         drop(push_socket);
@@ -1827,9 +1808,9 @@ mod tests {
         let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
         let mut pollreq_slice = &mut pollreq_vector[..];
         let mut request = PollRequest::new(pollreq_slice);
-        let timeout = Duration::milliseconds(10);
+        let timeout = 10;
         {
-            let poll_result = Socket::poll(&mut request, &timeout);
+            let poll_result = Socket::poll(&mut request, timeout);
 
             match poll_result {
                 Ok(count) => assert_eq!(2, count),
@@ -1846,7 +1827,7 @@ mod tests {
         test_write(&mut right_socket, b"foobar");
         thread::sleep_ms(10);
         {
-            let poll_result = Socket::poll(&mut request, &timeout);
+            let poll_result = Socket::poll(&mut request, timeout);
 
             match poll_result {
                 Ok(count) => assert_eq!(2, count),
