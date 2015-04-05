@@ -131,15 +131,9 @@ impl PollFd {
 
     fn convert(&self) -> nn_pollfd {
         let (pollin, pollout) = match self.check_pollinout {
-            PollInOut::In => {
-                (true, false)
-            },
-            PollInOut::Out => {
-                (false, true)
-            },
-            PollInOut::InOut => {
-                (true, true)
-            },
+            PollInOut::In    => (true,  false),
+            PollInOut::Out   => (false, true),
+            PollInOut::InOut => (true,  true),
         };
         nn_pollfd::new(self.socket, pollin, pollout)
     }
@@ -178,7 +172,7 @@ impl<'a> PollRequest<'a> {
         self.fds.len()
     }
 
-    /// Returs a reference to the socket requests, so they can be checked.
+    /// Returns a reference to the socket requests, so they can be checked.
     #[unstable]
     pub fn get_fds(&'a self) -> &'a [PollFd] {
         self.fds
@@ -263,9 +257,7 @@ impl Socket {
     }
 
     fn create_socket(domain: c_int, protocol: Protocol) -> Result<Socket> {
-        let socket = unsafe {
-            nanomsg_sys::nn_socket(domain, protocol.to_raw())
-        };
+        let socket = unsafe { nanomsg_sys::nn_socket(domain, protocol.to_raw()) };
 
         error_guard!(socket);
         Ok(Socket {socket: socket})
@@ -401,7 +393,9 @@ impl Socket {
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_ptr = buf_ptr as *mut c_void;
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, c_buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) };
+        let ret = unsafe { 
+            nanomsg_sys::nn_recv(self.socket, c_buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) 
+        };
 
         error_guard!(ret);
         Ok(ret as usize)
@@ -446,21 +440,17 @@ impl Socket {
     pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), nanomsg_sys::NN_DONTWAIT)
+            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, nanomsg_sys::NN_DONTWAIT)
         };
 
         error_guard!(ret);
 
         let ret = ret as usize;
+        let bytes = unsafe { slice::from_raw_parts(msg, ret) };
         buf.reserve(ret);
-        unsafe {
-            let bytes = slice::from_raw_parts(msg, ret);
-            for byte in bytes.iter() {
-                buf.push(*byte);
-            }
-            nanomsg_sys::nn_freemsg(msg as *mut c_void);
-            Ok(ret)
-        }
+        buf.extend(bytes.iter().cloned());
+        unsafe { nanomsg_sys::nn_freemsg(msg as *mut c_void) };
+        Ok(ret)
     }
 
     /// Non-blocking version of the `write` function.
@@ -495,7 +485,9 @@ impl Socket {
     pub fn nb_write(&mut self, buf: &[u8]) -> Result<usize> {
         let buf_ptr = buf.as_ptr() as *const c_void;
         let buf_len = buf.len() as size_t;
-        let ret = unsafe { nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) };
+        let ret = unsafe { 
+            nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) 
+        };
 
         error_guard!(ret);
         Ok(buf_len as usize)
@@ -544,7 +536,7 @@ impl Socket {
         let ptr = buf.as_ptr() as *const c_void;
         let ptr_addr = &ptr as *const _ as *const c_void;
         let len = buf.len();
-        let ret = unsafe { nanomsg_sys::nn_send(self.socket, ptr_addr, nanomsg_sys::NN_MSG(), 0) };
+        let ret = unsafe { nanomsg_sys::nn_send(self.socket, ptr_addr, nanomsg_sys::NN_MSG, 0) };
 
         error_guard!(ret);
         Ok(len)
@@ -990,16 +982,14 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Other` : The library is terminating.
     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), 0) };
+        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) };
 
         io_error_guard!(ret);
 
         let ret = ret as usize;
         let bytes = unsafe { slice::from_raw_parts(msg, ret) };
         buf.reserve(ret);
-        for byte in bytes.iter() {
-            buf.push(*byte);
-        }
+        buf.extend(bytes.iter().cloned());
         unsafe { nanomsg_sys::nn_freemsg(msg as *mut c_void) };
         Ok(ret)
     }
@@ -1047,7 +1037,9 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG(), 0) };
+        let ret = unsafe { 
+            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) 
+        };
 
         io_error_guard!(ret);
 
