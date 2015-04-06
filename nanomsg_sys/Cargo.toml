@@ -1,7 +1,7 @@
 [package]
 
 name = "nanomsg-sys"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Benoît Labaere"
