@@ -25,7 +25,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "^0.3.2"
+nanomsg = "^0.3.3"
 ```
 
 Simply import the crate to use it:
