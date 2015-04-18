@@ -1335,7 +1335,7 @@ mod tests {
         let finish_line_pull = finish_line.clone();
         let finish_line_push = finish_line.clone();
 
-        let push_thread = thread::scoped(move || {
+        let push_thread = thread::spawn(move || {
             let mut push_socket = test_create_socket(Push);
             
             test_bind(&mut push_socket, url);
@@ -1344,7 +1344,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        let pull_thread = thread::scoped(move|| {
+        let pull_thread = thread::spawn(move|| {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
