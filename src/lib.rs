@@ -139,13 +139,11 @@ impl PollFd {
     }
 
     /// Checks whether at least one message can be received from the socket without blocking.
-    #[unstable]
     pub fn can_read(&self) -> bool {
         self.check_pollin_result
     }
 
     /// Checks whether at least one message can be sent to the fd socket without blocking.
-    #[unstable]
     pub fn can_write(&self) -> bool {
         self.check_pollout_result
     }
@@ -161,7 +159,6 @@ pub struct PollRequest<'a> {
 
 impl<'a> PollRequest<'a> {
     /// Creates a request from the specified individualsocket requests.
-    #[unstable]
     pub fn new(fds: &'a mut [PollFd]) -> PollRequest<'a> {
         let nn_fds = fds.iter().map(|fd| fd.convert()).collect();
 
@@ -173,7 +170,6 @@ impl<'a> PollRequest<'a> {
     }
 
     /// Returns a reference to the socket requests, so they can be checked.
-    #[unstable]
     pub fn get_fds(&'a self) -> &'a [PollFd] {
         self.fds
     }
@@ -232,7 +228,6 @@ impl Socket {
     /// - `InvalidArgument` : Unknown protocol.
     /// - `TooManyOpenFiles` : The limit on the total number of open SP sockets or OS limit for file descriptors has been reached.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn new(protocol: Protocol) -> Result<Socket> {
         Socket::create_socket(nanomsg_sys::AF_SP, protocol)
     }
@@ -251,7 +246,6 @@ impl Socket {
     /// 
     /// // And now `Socket::device(&s1, &s2)` can be called to create the device.
     /// ```
-    #[unstable]
     pub fn new_for_device(protocol: Protocol) -> Result<Socket> {
         Socket::create_socket(nanomsg_sys::AF_SP_RAW, protocol)
     }
@@ -301,7 +295,6 @@ impl Socket {
     /// - `NoDevice` : Address specifies a nonexistent interface.
     /// - `AddressInUse` : The requested local endpoint is already in use.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn bind(&mut self, addr: &str) -> Result<Endpoint> {
         let c_addr = CString::new(addr.as_bytes());
         if c_addr.is_err() {
@@ -341,7 +334,6 @@ impl Socket {
     /// - `ProtocolNotSupported` : The requested transport protocol is not supported.
     /// - `NoDevice` : Address specifies a nonexistent interface.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn connect(&mut self, addr: &str) -> Result<Endpoint> {
         let c_addr = CString::new(addr.as_bytes());
         if c_addr.is_err() {
@@ -388,7 +380,6 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn nb_read(&mut self, buf: &mut [u8]) -> Result<usize> {
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_mut_ptr();
@@ -436,7 +427,6 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
         let ret = unsafe {
@@ -481,7 +471,6 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn nb_write(&mut self, buf: &[u8]) -> Result<usize> {
         let buf_ptr = buf.as_ptr() as *const c_void;
         let buf_len = buf.len() as size_t;
@@ -531,7 +520,6 @@ impl Socket {
     /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn zc_write(&mut self, buf: &[u8]) -> Result<usize> {
         let ptr = buf.as_ptr() as *const c_void;
         let ptr_addr = &ptr as *const _ as *const c_void;
@@ -552,7 +540,6 @@ impl Socket {
     ///
     /// - `InvalidArgument` : Supplied allocation type is invalid.
     /// - `Unknown` : Out of memory.
-    #[unstable]
     pub fn allocate_msg<'a>(len: usize) -> Result<&'a mut [u8]> {
         unsafe { 
             let ptr = nanomsg_sys::nn_allocmsg(len as size_t, 0) as *mut u8;
@@ -571,7 +558,6 @@ impl Socket {
     /// # Error
     ///
     /// - `BadAddress` : The message pointer is invalid.
-    #[unstable]
     pub fn free_msg<'a>(msg: &'a mut [u8]) -> Result<()> {
         unsafe { 
             let ptr = msg.as_mut_ptr() as *mut c_void;
@@ -584,7 +570,6 @@ impl Socket {
 
     /// Creates a poll request for the socket with the specified check criteria.
     /// - **pollinout:** See `PollInOut` for options
-    #[unstable]
     pub fn new_pollfd(&self, pollinout: PollInOut) -> PollFd {
         PollFd {
             socket: self.socket,
@@ -633,7 +618,6 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Timeout` : No event was signaled before the specified timeout.
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn poll(request: &mut PollRequest, timeout: isize) -> Result<usize> {
         let nn_fds = request.get_nn_fds();
         let len = request.len() as c_int;
@@ -664,7 +648,6 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `InvalidArgument` : Either one of the socket is not an AF_SP_RAW socket; or the two sockets don’t belong to the same protocol; or the directionality of the sockets doesn’t fit (e.g. attempt to join two SINK sockets to form a device).
     /// - `Terminating` : The library is terminating.
-    #[unstable]
     pub fn device(socket1: &Socket, socket2: &Socket) -> Result<()> {
         let ret = unsafe { nanomsg_sys::nn_device(socket1.socket, socket2.socket) };
 
@@ -680,7 +663,6 @@ impl Socket {
     /// Similarly, any subsequent attempt to invoke a socket function other than `drop` after `terminate` was called will result in `Terminating` error.
     /// If waiting inside a polling function, the call will unblock with both read and write signaled.
     /// The `terminate` function itself is non-blocking.
-    #[unstable]
     pub fn terminate() {
         unsafe { nanomsg_sys::nn_term() };
     }
@@ -720,7 +702,6 @@ impl Socket {
 
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
     /// Negative value means infinite linger. Default value is 1000 (1 second).
-    #[unstable]
     pub fn set_linger(&mut self, linger: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_LINGER,
@@ -730,7 +711,6 @@ impl Socket {
     /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer, 
     /// exactly one message may be buffered in addition to the data in the send buffer.
     /// Default value is 128kB.
-    #[unstable]
     pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDBUF,
@@ -740,7 +720,6 @@ impl Socket {
     /// Size of the receive buffer, in bytes. To prevent blocking for messages larger than the buffer,
     /// exactly one message may be buffered in addition to the data in the receive buffer.
     /// Default value is 128kB.
-    #[unstable]
     pub fn set_receive_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVBUF,
@@ -750,7 +729,6 @@ impl Socket {
     /// The timeout for send operation on the socket.
     /// If message cannot be sent within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
-    #[unstable]
     pub fn set_send_timeout(&mut self, timeout: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDTIMEO,
@@ -760,7 +738,6 @@ impl Socket {
     /// The timeout for recv operation on the socket.
     /// If message cannot be received within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
-    #[unstable]
     pub fn set_receive_timeout(&mut self, timeout: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVTIMEO,
@@ -771,7 +748,6 @@ impl Socket {
     /// when connection is broken before trying to re-establish it.
     /// Note that actual reconnect interval may be randomised to some extent to prevent severe reconnection storms.
     /// Default value is 100 milliseconds.
-    #[unstable]
     pub fn set_reconnect_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RECONNECT_IVL,
@@ -785,7 +761,6 @@ impl Socket {
     /// reconnect interval is based only on `reconnect_interval`.
     /// If `max_reconnect_interval` is less than `reconnect_interval`, it is ignored.
     /// Default value is 0.
-    #[unstable]
     pub fn set_max_reconnect_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RECONNECT_IVL_MAX,
@@ -797,7 +772,6 @@ impl Socket {
     /// However, if the socket type sends each message to a single peer (or a limited set of peers),
     /// peers with high priority take precedence over peers with low priority.
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
-    #[unstable]
     pub fn set_send_priority(&mut self, priority: u8) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_SNDPRIO,
@@ -809,7 +783,6 @@ impl Socket {
     /// When receiving a message, messages from peer with higher priority are received before messages
     /// from peer with lower priority. 
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
-    #[unstable]
     pub fn set_receive_priority(&mut self, priority: u8) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_RCVPRIO,
@@ -819,7 +792,6 @@ impl Socket {
     /// If set to true, only IPv4 addresses are used.
     /// If set to false, both IPv4 and IPv6 addresses are used.
     /// Default value is true.
-    #[unstable]
     pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
                                       nanomsg_sys::NN_IPV4ONLY,
@@ -829,7 +801,6 @@ impl Socket {
     /// Socket name for error reporting and statistics.
     /// Default value is "socket.N" where N is socket integer.
     /// **This option is experimental, see `Socket::env` for details**
-    #[unstable]
     pub fn set_socket_name(&mut self, name: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SOL_SOCKET,
                                     nanomsg_sys::NN_SOCKET_NAME,
@@ -839,7 +810,6 @@ impl Socket {
     /// This option, when set to `true`, disables Nagle’s algorithm.
     /// It also disables delaying of TCP acknowledgments.
     /// Using this option improves latency at the expense of throughput.
-    #[unstable]
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_TCP,
                                       nanomsg_sys::NN_TCP_NODELAY,
@@ -850,7 +820,6 @@ impl Socket {
     /// Subscribes for a particular topic.
     /// Type of the option is string.
     /// A single `Sub` socket can handle multiple subscriptions.
-    #[unstable]
     pub fn subscribe(&mut self, topic: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_SUBSCRIBE,
@@ -858,7 +827,6 @@ impl Socket {
     }
 
     /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
-    #[unstable]
     pub fn unsubscribe(&mut self, topic: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_UNSUBSCRIBE,
@@ -868,7 +836,6 @@ impl Socket {
     /// Specifies how long to wait for responses to the survey.
     /// Once the deadline expires, receive function will return `Timeout` error and all subsequent responses to the survey will be silently dropped.
     /// The deadline is measured in milliseconds. Default value is 1 second.
-    #[unstable]
     pub fn set_survey_deadline(&mut self, deadline: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SURVEYOR,
                                       nanomsg_sys::NN_SURVEYOR_DEADLINE,
@@ -878,7 +845,6 @@ impl Socket {
     /// This option is defined on the full `Req` socket.
     /// If reply is not received in specified amount of milliseconds, the request will be automatically resent.
     /// The type of this option is int. Default value is 1 minute.
-    #[unstable]
     pub fn set_request_resend_interval(&mut self, interval: isize) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_REQ,
                                       nanomsg_sys::NN_REQ_RESEND_IVL,
