@@ -11,7 +11,6 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
-    #[unstable]
     pub fn new(value: c_int, socket: c_int) -> Endpoint {
         Endpoint { value: value, socket: socket }
     }
@@ -20,7 +19,6 @@ impl Endpoint {
     /// The call will return immediately, however, 
     /// the library will try to deliver any outstanding outbound messages to the endpoint 
     /// for the time specified by `Socket::set_linger`.
-    #[unstable]
     pub fn shutdown(&mut self) -> Result<()> {
         let ret = unsafe { nanomsg_sys::nn_shutdown(self.socket, self.value) };
 
