@@ -17,4 +17,4 @@ links = "nanomsg"
 build = "build.rs"
 
 [dependencies]
-libc = "0.1.6"
+libc = "0.1.7"
