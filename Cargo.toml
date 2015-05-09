@@ -24,4 +24,4 @@ path = "./nanomsg_sys"
 version = "0.1.4"
 
 [dependencies]
-libc = "0.1.6"
+libc = "0.1.7"
