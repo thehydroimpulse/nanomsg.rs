@@ -39,11 +39,11 @@ extern crate nanomsg;
 The basis of Nanomsg is a `Socket`. Each socket can be of a certain type. The type of a socket defines it's behaviour and limitations (such as only being able to send and not receive).
 
 ```rust
-use nanomsg::{Socket, NanoResult, Protocol};
+use nanomsg::{Socket, Protocol, Error};
 
 /// Creating a new `Pull` socket type. Pull sockets can only receive messages
 /// from a `Push` socket type.
-fn create_socket() -> NanoResult<()> {
+fn create_socket() -> Result<(), Error> {
     let mut socket = try!(Socket::new(Protocol::Pull));
     Ok(())
 }
@@ -53,11 +53,11 @@ Now, each socket that is created can be bound to *multiple* endpoints. Each bind
 we'll take advantage of the `try!` macro.
 
 ```rust
-use nanomsg::{Socket, NanoResult, Protocol};
+use nanomsg::{Socket, Protocol, Error};
 
 /// Creating a new `Pull` socket type. Pull sockets can only receive messages
 /// from a `Push` socket type.
-fn create_socket() -> NanoResult<()> {
+fn create_socket() -> Result<(), Error> {
     let mut socket = try!(Socket::new(Protocol::Pull));
     
     // Create a new endpoint bound to the following protocol string. This returns
@@ -74,26 +74,28 @@ Because this is a `Pull` socket, we'll implement reading any messages we receive
 
 ```rust
 // ... After the endpoint we created, we'll start reading some data.
+let mut msg = String::new();
 loop {
-    let msg = try!(socket.read_to_string());
+    try!(socket.read_to_string(&mut msg));
     println!("We got a message: {}", &*msg);
+    msg.clear();
 }
 // ...
 ```
 
-That's awesome! But... we have no packets being sent to the socket, so we'll read nothing. To fix this, let's implement
-the accompanying pair `Push` socket.
+That's awesome! But... we have no packets being sent to the socket, so we'll read nothing. To fix this, let's implement the accompanying pair `Push` socket.
 
 ```rust
-use nanomsg::{Socket, Protocol, NanoResult};
+use nanomsg::{Socket, Protocol, Error};
 
-fn pusher() -> NanoResult<()> {
+fn pusher() -> Result<(), Error> {
     let mut socket = try!(Socket::new(Protocol::Push));
     let mut endpoint = try!(socket.connect("ipc:///tmp/pipeline.ipc"));
 
     socket.write(b"message in a bottle");
 
     endpoint.shutdown();
+    Ok(())
 }
 ```
 
