@@ -1400,7 +1400,7 @@ mod tests {
         test_subscribe(&mut sock3, "bar");
         test_connect(&mut sock3, url);
 
-        thread::sleep_ms(10);
+        thread::sleep_ms(100);
 
         let msg1 = b"foobar";
         test_write(&mut sock1, msg1);
