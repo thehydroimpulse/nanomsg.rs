@@ -292,6 +292,8 @@ extern {
 
     /// http://nanomsg.org/v0.4/nn_device.3.html
     pub fn nn_device(socket1: c_int, socket2: c_int) -> c_int;
+
+    pub fn nn_symbol(index: c_int, value: *mut c_int) -> *const c_char;
 }
 
 #[cfg(test)]
@@ -304,6 +306,8 @@ mod tests {
 
     use std::sync::{Arc, Barrier};
     use std::thread;
+    use std::ffi::CStr;
+    use std::str;
 
     fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
         let sock = unsafe { nn_socket(domain, protocol) };
@@ -596,5 +600,118 @@ mod tests {
     #[test]
     fn should_create_a_pipeline_mt2() {
         test_multithread_pipeline("ipc:///tmp/should_create_a_pipeline_mt2.ipc")
+    }
+
+    #[test]
+    fn constants_should_match_return_of_symbol_func() {
+        unsafe {
+            let mut index: c_int = 0;
+            loop {
+                let mut c_value: c_int = -1;
+                let c_name_ptr = nn_symbol(index, &mut c_value);
+
+                if c_name_ptr.is_null() {
+                   break;
+                }
+
+                let c_name_str = CStr::from_ptr(c_name_ptr);
+                let c_name_bytes = c_name_str.to_bytes();
+                let c_name = str::from_utf8(c_name_bytes).unwrap();
+                let mb_rust_value = get_constant_value_by_name(c_name);
+
+                if mb_rust_value.is_some() {
+                    let rust_value = mb_rust_value.unwrap();
+                    if c_value != rust_value {
+                        panic!("Constant {} value mismatch: {} != {}", c_name, c_value, rust_value);
+                    }
+                }
+
+                index = index + 1;
+            }
+        }
+    }
+
+    fn get_constant_value_by_name(name: &str) -> Option<c_int> {
+        match name {
+            "AF_SP" => Some(AF_SP),
+            "AF_SP_RAW" => Some(AF_SP_RAW),
+            "NN_PROTO_PIPELINE" => Some(NN_PROTO_PIPELINE),
+            "NN_PUSH" => Some(NN_PUSH),
+            "NN_PULL" => Some(NN_PULL),
+            "NN_PROTO_REQREP" => Some(NN_PROTO_REQREP),
+            "NN_REQ" => Some(NN_REQ),
+            "NN_REP" => Some(NN_REP),
+            "NN_REQ_RESEND_IVL" => Some(NN_REQ_RESEND_IVL),
+            "NN_PROTO_PAIR" => Some(NN_PROTO_PAIR),
+            "NN_PAIR" => Some(NN_PAIR),
+            "NN_PROTO_BUS" => Some(NN_PROTO_BUS),
+            "NN_BUS" => Some(NN_BUS),
+            "NN_PROTO_PUBSUB" => Some(NN_PROTO_PUBSUB),
+            "NN_PUB" => Some(NN_PUB),
+            "NN_SUB" => Some(NN_SUB),
+            "NN_SUB_SUBSCRIBE" => Some(NN_SUB_SUBSCRIBE),
+            "NN_SUB_UNSUBSCRIBE" => Some(NN_SUB_UNSUBSCRIBE),
+            "NN_PROTO_SURVEY" => Some(NN_PROTO_SURVEY),
+            "NN_SURVEYOR" => Some(NN_SURVEYOR),
+            "NN_RESPONDENT" => Some(NN_RESPONDENT),
+            "NN_SURVEYOR_DEADLINE" => Some(NN_SURVEYOR_DEADLINE),
+            "NN_SOCKADDR_MAX" => Some(NN_SOCKADDR_MAX),
+            "NN_SOL_SOCKET" => Some(NN_SOL_SOCKET),
+            "NN_LINGER" => Some(NN_LINGER),
+            "NN_SNDBUF" => Some(NN_SNDBUF),
+            "NN_RCVBUF" => Some(NN_RCVBUF),
+            "NN_SNDTIMEO" => Some(NN_SNDTIMEO),
+            "NN_RCVTIMEO" => Some(NN_RCVTIMEO),
+            "NN_RECONNECT_IVL" => Some(NN_RECONNECT_IVL),
+            "NN_RECONNECT_IVL_MAX" => Some(NN_RECONNECT_IVL_MAX),
+            "NN_SNDPRIO" => Some(NN_SNDPRIO),
+            "NN_RCVPRIO" => Some(NN_RCVPRIO),
+            "NN_SNDFD" => Some(NN_SNDFD),
+            "NN_RCVFD" => Some(NN_RCVFD),
+            "NN_DOMAIN" => Some(NN_DOMAIN),
+            "NN_PROTOCOL" => Some(NN_PROTOCOL),
+            "NN_IPV4ONLY" => Some(NN_IPV4ONLY),
+            "NN_SOCKET_NAME" => Some(NN_SOCKET_NAME),
+            "NN_DONTWAIT" => Some(NN_DONTWAIT),
+            "NN_INPROC" => Some(NN_INPROC),
+            "NN_IPC" => Some(NN_IPC),
+            "NN_TCP" => Some(NN_TCP),
+            "NN_TCP_NODELAY" => Some(NN_TCP_NODELAY),
+            "ETERM" => Some(ETERM),
+            "EFSM" => Some(EFSM),
+            "ENAMETOOLONG" => Some(ENAMETOOLONG),
+            "ENODEV" => Some(ENODEV),
+            "EINTR" => Some(EINTR),
+            "NN_HAUSNUMERO" => Some(NN_HAUSNUMERO),
+            "ENOTSUP " => Some(ENOTSUP ),
+            "EPROTONOSUPPORT" => Some(EPROTONOSUPPORT),
+            "ENOBUFS" => Some(ENOBUFS),
+            "ENETDOWN" => Some(ENETDOWN),
+            "EADDRINUSE" => Some(EADDRINUSE),
+            "EADDRNOTAVAIL" => Some(EADDRNOTAVAIL),
+            "ECONNREFUSED" => Some(ECONNREFUSED),
+            "EINPROGRESS" => Some(EINPROGRESS),
+            "ENOTSOCK" => Some(ENOTSOCK),
+            "EAFNOSUPPORT" => Some(EAFNOSUPPORT),
+            "EPROTO " => Some(EPROTO ),
+            "EAGAIN" => Some(EAGAIN),
+            "EBADF" => Some(EBADF),
+            "EINVAL" => Some(EINVAL),
+            "EMFILE" => Some(EMFILE),
+            "EFAULT" => Some(EFAULT),
+            "EACCESS" => Some(EACCESS),
+            "ENETRESET" => Some(ENETRESET),
+            "ENETUNREACH" => Some(ENETUNREACH),
+            "EHOSTUNREACH" => Some(EHOSTUNREACH),
+            "ENOTCONN" => Some(ENOTCONN),
+            "EMSGSIZE" => Some(EMSGSIZE),
+            "ETIMEDOUT" => Some(ETIMEDOUT),
+            "ECONNABORTED" => Some(ECONNABORTED),
+            "ECONNRESET" => Some(ECONNRESET),
+            "ENOPROTOOPT" => Some(ENOPROTOOPT),
+            "EISCONN" => Some(EISCONN),
+            "ESOCKTNOSUPPORT" => Some(ESOCKTNOSUPPORT),
+            _ => None
+        }
     }
 }
