@@ -95,6 +95,10 @@ mod posix_consts {
 mod posix_consts {
     use libc::c_int;
 
+    pub const ENAMETOOLONG: c_int = 38;
+    pub const ENODEV: c_int = 19;
+    pub const EINTR: c_int = 4;
+    
     pub const NN_HAUSNUMERO: c_int = 156384712;
 
     pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
@@ -108,7 +112,7 @@ mod posix_consts {
     pub const ENOTSOCK: c_int = NN_HAUSNUMERO + 9;
     pub const EAFNOSUPPORT: c_int = NN_HAUSNUMERO + 10;
     pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
-    pub const EAGAIN: c_int = NN_HAUSNUMERO + 12;
+    pub const EAGAIN: c_int = 11;
     pub const EBADF: c_int = NN_HAUSNUMERO + 13;
     pub const EINVAL: c_int = NN_HAUSNUMERO + 14;
     pub const EMFILE: c_int = NN_HAUSNUMERO + 15;

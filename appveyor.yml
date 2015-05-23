@@ -1,0 +1,28 @@
+os:
+  - MinGW
+
+install:
+  - cd ..
+  # Download And Compile nanomsg
+  - ps: Start-FileDownload 'http://download.nanomsg.org/nanomsg-0.5-beta.zip'
+  - 7z x nanomsg-0.5-beta.zip
+  - cd nanomsg-0.5-beta
+  - cmake . && msbuild nanomsg.sln
+  # Fix nanomsg Library Directory
+  - mv .\Debug .\.libs
+  # Return To Git Directory
+  - cd ..\nanomsg-rs
+  # Download And Install Rust
+  - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-nightly-i686-pc-windows-gnu.exe'
+  - rust-nightly-i686-pc-windows-gnu.exe /VERYSILENT /NORESTART /DIR="C:\Rust"
+  - SET PATH=%PATH%;C:\MinGW\bin
+  - SET PATH=%PATH%;C:\Rust\bin
+  - gcc -v
+  - rustc -V
+  - cargo -V
+
+build_script:
+  - cargo build
+
+test_script:
+  - cargo test
