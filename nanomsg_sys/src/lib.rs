@@ -94,41 +94,41 @@ mod posix_consts {
 #[cfg(windows)]
 mod posix_consts {
     use libc::c_int;
-
-    pub const ENAMETOOLONG: c_int = 38;
-    pub const ENODEV: c_int = 19;
-    pub const EINTR: c_int = 4;
     
     pub const NN_HAUSNUMERO: c_int = 156384712;
 
-    pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
-    pub const EPROTONOSUPPORT: c_int = NN_HAUSNUMERO + 2;
-    pub const ENOBUFS: c_int = NN_HAUSNUMERO + 3;
-    pub const ENETDOWN: c_int = NN_HAUSNUMERO + 4;
-    pub const EADDRINUSE: c_int = NN_HAUSNUMERO + 5;
-    pub const EADDRNOTAVAIL: c_int = NN_HAUSNUMERO + 6;
-    pub const ECONNREFUSED: c_int = NN_HAUSNUMERO + 7;
-    pub const EINPROGRESS: c_int = NN_HAUSNUMERO + 8;
-    pub const ENOTSOCK: c_int = NN_HAUSNUMERO + 9;
-    pub const EAFNOSUPPORT: c_int = NN_HAUSNUMERO + 10;
-    pub const EPROTO : c_int = NN_HAUSNUMERO + 11;
-    pub const EAGAIN: c_int = 11;
-    pub const EBADF: c_int = NN_HAUSNUMERO + 13;
-    pub const EINVAL: c_int = NN_HAUSNUMERO + 14;
-    pub const EMFILE: c_int = NN_HAUSNUMERO + 15;
-    pub const EFAULT: c_int = NN_HAUSNUMERO + 16;
-    pub const EACCESS: c_int = NN_HAUSNUMERO + 17;
-    pub const ENETRESET: c_int = NN_HAUSNUMERO + 18;
-    pub const ENETUNREACH: c_int = NN_HAUSNUMERO + 19;
-    pub const EHOSTUNREACH: c_int = NN_HAUSNUMERO + 20;
-    pub const ENOTCONN: c_int = NN_HAUSNUMERO + 21;
-    pub const EMSGSIZE: c_int = NN_HAUSNUMERO + 22;
-    pub const ETIMEDOUT: c_int = NN_HAUSNUMERO + 23;
-    pub const ECONNABORTED: c_int = NN_HAUSNUMERO + 24;
-    pub const ECONNRESET: c_int = NN_HAUSNUMERO + 25;
-    pub const ENOPROTOOPT: c_int = NN_HAUSNUMERO + 26;
-    pub const EISCONN: c_int = NN_HAUSNUMERO + 27;
+    pub const ENOTSUP:         c_int = NN_HAUSNUMERO + 1;
+    pub const EPROTO:          c_int = NN_HAUSNUMERO + 11;
+    pub const EACCESS:         c_int = NN_HAUSNUMERO + 17;
+    pub const EISCONN:         c_int = NN_HAUSNUMERO + 27;
     pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
+    
+    pub const EINTR:           c_int = 4;
+    pub const EBADF:           c_int = 9;
+    pub const EAGAIN:          c_int = 11;
+    pub const EFAULT:          c_int = 14;
+    pub const ENODEV:          c_int = 19;
+    pub const EINVAL:          c_int = 22;
+    pub const EMFILE:          c_int = 24;
+    pub const ENAMETOOLONG:    c_int = 38;
+    pub const EADDRINUSE:      c_int = 100;
+    pub const EADDRNOTAVAIL:   c_int = 101;
+    pub const EAFNOSUPPORT:    c_int = 102;
+    pub const ECONNABORTED:    c_int = 106;
+    pub const ECONNREFUSED:    c_int = 107;
+    pub const ECONNRESET:      c_int = 108;
+    pub const EHOSTUNREACH:    c_int = 110;
+    pub const EINPROGRESS:     c_int = 112;
+    pub const EMSGSIZE:        c_int = 115;
+    pub const ENETDOWN:        c_int = 116;
+    pub const ENETRESET:       c_int = 117;
+    pub const ENETUNREACH:     c_int = 118;
+    pub const ENOBUFS:         c_int = 119;
+    pub const ENOPROTOOPT:     c_int = 123;
+    pub const ENOTCONN:        c_int = 126;
+    pub const ENOTSOCK:        c_int = 128;
+    pub const EPROTONOSUPPORT: c_int = 135;
+    pub const ETIMEDOUT:       c_int = 138;
 }
 
 #[repr(C)]
@@ -453,7 +453,7 @@ mod tests {
         let topic2 = "bar";
         test_subscribe(sub_sock2, topic2);
 
-        thread::sleep_ms(10);
+        thread::sleep_ms(100);
 
         let msg1 = "foobar";
         test_send(pub_sock, msg1);
