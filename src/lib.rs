@@ -1359,6 +1359,80 @@ mod tests {
     }
 
     #[test]
+    fn connect_push_to_multi_ep() {
+
+        let url1 = "ipc:///tmp/connect_push_to_multi_ep_1.ipc";
+        let url2 = "ipc:///tmp/connect_push_to_multi_ep_2.ipc";
+
+        let mut server1 = test_create_socket(Pull);
+        test_bind(&mut server1, url1);
+
+        let mut server2 = test_create_socket(Pull);
+        test_bind(&mut server2, url2);
+
+        let mut client = test_create_socket(Push);
+        test_connect(&mut client, url1);
+        test_connect(&mut client, url2);
+
+        thread::sleep_ms(10);
+
+        test_write(&mut client, b"foobar");
+        thread::sleep_ms(10);
+
+        let mut read_count = 0;
+        let mut block_count = 0;
+        let mut buf = [0u8; 6];
+        match server1.nb_read(&mut buf) {
+            Ok(count) => {
+                assert_eq!(count, 6);
+                read_count = read_count + 1;
+            },
+            Err(err) => {
+                assert_eq!(err, Error::TryAgain);
+                block_count = block_count + 1;
+            }
+        }
+        match server2.nb_read(&mut buf) {
+            Ok(count) => {
+                assert_eq!(count, 6);
+                read_count = read_count + 1;
+            },
+            Err(err) => {
+                assert_eq!(err, Error::TryAgain);
+                block_count = block_count + 1;
+            }
+        }
+        assert_eq!(read_count, 1);
+        assert_eq!(block_count, 1);
+    }
+
+    #[test]
+    fn bind_pull_to_multi_ep() {
+
+        let url1 = "ipc:///tmp/bind_pull_to_multi_ep_1.ipc";
+        let url2 = "ipc:///tmp/bind_pull_to_multi_ep_2.ipc";
+
+        let mut server = test_create_socket(Pull);
+        test_bind(&mut server, url1);
+        test_bind(&mut server, url2);
+
+        let mut client1 = test_create_socket(Push);
+        test_connect(&mut client1, url1);
+
+        let mut client2 = test_create_socket(Push);
+        test_connect(&mut client2, url2);
+
+        thread::sleep_ms(10);
+
+        test_write(&mut client1, b"foobar");
+        test_write(&mut client2, b"foobaz");
+        thread::sleep_ms(10);
+
+        test_read(&mut server, b"foobar");
+        test_read(&mut server, b"foobaz");
+    }
+
+    #[test]
     fn bus() {
 
         let url = "ipc:///tmp/bus.ipc";
