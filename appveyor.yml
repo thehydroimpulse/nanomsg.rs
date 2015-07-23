@@ -5,9 +5,9 @@ install:
   # Go To libnanomsg Destination Directory
   - cd ..
   # Download And Compile libnanomsg
-  - ps: Start-FileDownload 'http://download.nanomsg.org/nanomsg-0.5-beta.zip'
-  - 7z x nanomsg-0.5-beta.zip
-  - cd nanomsg-0.5-beta
+  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/releases/download/0.6-beta/nanomsg-0.6-beta.zip'
+  - 7z x nanomsg-0.6-beta.zip
+  - cd nanomsg-0.6-beta
   - cmake . && msbuild nanomsg.sln
   # Fix libnanomsg Library Directory Name
   - mv .\Debug .\.libs
@@ -28,5 +28,5 @@ build_script:
 test_script:
   - cargo test
   # Move libnanomsg To Test nanomsg_sys
-  - mv ../nanomsg-0.5-beta ./nanomsg-0.5-beta && cd nanomsg_sys
+  - mv ../nanomsg-0.6-beta ./nanomsg-0.6-beta && cd nanomsg_sys
   - cargo test

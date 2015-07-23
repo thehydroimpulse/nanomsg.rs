@@ -1,10 +1,10 @@
 [package]
 
 name = "nanomsg-sys"
-version = "0.1.4"
+version = "0.2.0"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
-  "Benoît Labaere"
+  "Benoît Labaere <benoit.labaere@gmail.com>"
 ]
 
 license = "MIT"
@@ -17,4 +17,4 @@ links = "nanomsg"
 build = "build.rs"
 
 [dependencies]
-libc = "0.1.7"
+libc = "0.1.8"

@@ -27,8 +27,8 @@ pub const NN_SUB: c_int = NN_PROTO_PUBSUB * 16 + 1;
 pub const NN_SUB_SUBSCRIBE: c_int = 1;
 pub const NN_SUB_UNSUBSCRIBE: c_int = 2;
 pub const NN_PROTO_SURVEY: c_int = 6;
-pub const NN_SURVEYOR: c_int = NN_PROTO_SURVEY * 16 + 0;
-pub const NN_RESPONDENT: c_int = NN_PROTO_SURVEY * 16 + 1;
+pub const NN_SURVEYOR: c_int = NN_PROTO_SURVEY * 16 + 2;
+pub const NN_RESPONDENT: c_int = NN_PROTO_SURVEY * 16 + 3;
 pub const NN_SURVEYOR_DEADLINE: c_int = 1;
 
 

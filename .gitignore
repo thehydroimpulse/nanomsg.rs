@@ -31,4 +31,5 @@ target/
 *.tar.gz
 nanomsg-0.4-beta
 nanomsg-0.5-beta
+nanomsg-0.6-beta
 Cargo.lock
