@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.3.4](http://img.shields.io/badge/cargo-0.3.4-orange.svg?style=flat)
+![Cargo 0.4.0](http://img.shields.io/badge/cargo-0.4.0-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
@@ -15,7 +15,7 @@ Nanomsg is a modern messaging library that is the successor to ZeroMQ, written i
 
 ### Requirements
 
-* Nanomsg 0.5.0
+* Nanomsg 0.6.0
 
 Installing nanomsg:
 
@@ -27,7 +27,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "^0.3.4"
+nanomsg = "^0.4.0"
 ```
 
 Simply import the crate to use it:

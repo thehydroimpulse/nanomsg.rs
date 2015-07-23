@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.3.4"
+version = "0.4.0"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
@@ -8,7 +8,7 @@ authors = [
   "Dennis Lawler",
   "Zachary Tong",
   "Dan Burkert",
-  "Benoît Labaere"
+  "Benoît Labaere <benoit.labaere@gmail.com>"
 ]
 
 description = "A high-level, Rust idiomatic wrapper around nanomsg."
@@ -21,7 +21,7 @@ license = "MIT"
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
-version = "0.1.4"
+version = "0.2.0"
 
 [dependencies]
-libc = "0.1.7"
+libc = "0.1.8"
