@@ -32,4 +32,5 @@ target/
 nanomsg-0.4-beta
 nanomsg-0.5-beta
 nanomsg-0.6-beta
+nanomsg-0.7-beta
 Cargo.lock
