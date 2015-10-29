@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
@@ -21,7 +21,7 @@ license = "MIT"
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
-libc = "0.1.8"
+libc = "0.1.12"

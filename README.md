@@ -15,7 +15,7 @@ Nanomsg is a modern messaging library that is the successor to ZeroMQ, written i
 
 ### Requirements
 
-* Nanomsg 0.6.0
+* Nanomsg 0.7.0
 
 Installing nanomsg:
 
@@ -27,7 +27,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "^0.4.0"
+nanomsg = "^0.4.1"
 ```
 
 Simply import the crate to use it:
