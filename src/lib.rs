@@ -1215,7 +1215,7 @@ mod tests {
 
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
         let mut msg = Socket::allocate_msg(buf.len()).unwrap();
-        for i in (0..buf.len()) {
+        for i in 0..buf.len() {
            msg[i] = buf[i]; 
         }
         match socket.zc_write(msg) {
