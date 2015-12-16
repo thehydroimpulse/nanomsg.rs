@@ -3,7 +3,7 @@
 
 extern crate libc;
 
-use libc::{c_int, c_void, size_t, c_char, c_short};
+pub use libc::*;
 
 pub use posix_consts::*;
 
@@ -69,10 +69,8 @@ pub const ETERM: c_int = posix_consts::NN_HAUSNUMERO + 53;
 pub const EFSM: c_int = posix_consts::NN_HAUSNUMERO + 54;
 
 #[cfg(not(windows))]
-mod posix_consts {
-    use libc::c_int;
-    pub use libc::consts::os::posix88::*;
-
+pub mod posix_consts {
+    use libc::*;
     // NOTE:
     // If the platform you are compiling for fails to implement the posix
     // constant, then add an exception below
@@ -85,14 +83,14 @@ mod posix_consts {
     pub const NN_HAUSNUMERO: c_int = 156384712;
 
     #[cfg(not(any(target_os = "macos", target_os = "ios")))]
-    pub const ENOTSUP : c_int = NN_HAUSNUMERO + 1;
+    pub const ENOTSUP: c_int = NN_HAUSNUMERO + 1;
 
     // nanomsg uses EACCESS as an alias for EACCES
-    pub const EACCESS: c_int = ::libc::consts::os::posix88::EACCES;
+    pub const EACCESS: c_int = ::libc::EACCES;
 }
 
 #[cfg(windows)]
-mod posix_consts {
+pub mod posix_consts {
     use libc::c_int;
     
     pub const NN_HAUSNUMERO: c_int = 156384712;
@@ -299,7 +297,6 @@ extern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc::{c_int, c_void, size_t, c_char};
     use std::slice;
     use std::ptr;
     use std::mem::transmute;
