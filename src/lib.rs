@@ -180,7 +180,7 @@ impl<'a> PollRequest<'a> {
 
     fn copy_poll_result(&mut self) {
 
-        for x in (0..self.fds.len()) {
+        for x in 0..self.fds.len() {
             self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
             self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
         }
