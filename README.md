@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.4.2](http://img.shields.io/badge/cargo-0.4.1-orange.svg?style=flat)
+![Cargo 0.4.2](http://img.shields.io/badge/cargo-0.4.2-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
