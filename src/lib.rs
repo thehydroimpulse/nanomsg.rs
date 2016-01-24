@@ -8,6 +8,7 @@ use nanomsg_sys::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
 use std::ffi::CString;
+use std::cmp;
 use std::mem;
 use std::str;
 use std::ptr;
@@ -346,8 +347,9 @@ impl Socket {
     }
 
     /// Non-blocking version of the `read` function.
-    /// Returns the number of read bytes on success.
     /// Any bytes exceeding the length specified by `buf.len()` will be truncated.
+    /// Returns the number of bytes of the message stored in the buffer on success.
+    /// Please note that it differs from nanomsg's nn_recv which returns the msg size instead.
     /// An error with the `Error::TryAgain` kind is returned if there's no message to receive for the moment.
     ///
     /// # Example
@@ -381,15 +383,16 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     pub fn nb_read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        let buf_len = buf.len() as size_t;
+        let buf_len = buf.len();
         let buf_ptr = buf.as_mut_ptr();
+        let c_buf_len = buf_len as size_t;
         let c_buf_ptr = buf_ptr as *mut c_void;
         let ret = unsafe { 
-            nanomsg_sys::nn_recv(self.socket, c_buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) 
+            nanomsg_sys::nn_recv(self.socket, c_buf_ptr, c_buf_len, nanomsg_sys::NN_DONTWAIT) 
         };
 
         error_guard!(ret);
-        Ok(ret as usize)
+        Ok(cmp::min(ret as usize, buf_len))
     }
 
     /// Non-blocking version of the `read_to_end` function.
@@ -437,8 +440,7 @@ impl Socket {
 
         let ret = ret as usize;
         let bytes = unsafe { slice::from_raw_parts(msg, ret) };
-        buf.reserve(ret);
-        buf.extend(bytes.iter().cloned());
+        buf.extend_from_slice(bytes);
         unsafe { nanomsg_sys::nn_freemsg(msg as *mut c_void) };
         Ok(ret)
     }
@@ -856,7 +858,8 @@ impl Socket {
 impl io::Read for Socket {
     /// Receive a message from the socket and store it in the buffer argument.
     /// Any bytes exceeding the length specified by `buffer.len()` will be truncated.
-    /// Returns the number of bytes in the message on success.
+    /// Returns the number of bytes of the message stored in the buffer on success.
+    /// Please note that it differs from nanomsg's nn_recv which returns the msg size instead.
     ///
     /// # Example
     ///
@@ -897,13 +900,15 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let buf_len = buf.len() as size_t;
+        let buf_len = buf.len();
         let buf_ptr = buf.as_mut_ptr();
+        let c_buf_len = buf_len as size_t;
         let c_buf_ptr = buf_ptr as *mut c_void;
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, c_buf_ptr, buf_len, 0) };
+
+        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, c_buf_ptr, c_buf_len, 0) };
 
         io_error_guard!(ret);
-        Ok(ret as usize)
+        Ok(cmp::min(ret as usize, buf_len))
     }
 
     /// Receive a message from the socket. Copy the message allocated by nanomsg into the buffer on success.
@@ -954,8 +959,7 @@ impl io::Read for Socket {
 
         let ret = ret as usize;
         let bytes = unsafe { slice::from_raw_parts(msg, ret) };
-        buf.reserve(ret);
-        buf.extend(bytes.iter().cloned());
+        buf.extend_from_slice(bytes);
         unsafe { nanomsg_sys::nn_freemsg(msg as *mut c_void) };
         Ok(ret)
     }
@@ -1107,6 +1111,7 @@ mod tests {
 
     use std::sync::{Arc, Barrier};
     use std::thread;
+    use std::time::Duration;
 
     #[test]
     fn check_allocate() {
@@ -1261,9 +1266,31 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_write(&mut push_socket, b"foobar");
+        test_read(&mut pull_socket, b"foobar");
+
+        push_endpoint.shutdown();
+
+        drop(pull_socket);
+        drop(push_socket);
+    }
+
+    #[test]
+    fn read_when_buffer_is_smaller_than_msg_return_buffer_size() {
+
+        let url = "ipc:///tmp/pipeline_truncate.ipc";
+
+        let mut push_socket = test_create_socket(Push);
+        let mut push_endpoint = test_bind(&mut push_socket, url);
+
+        let mut pull_socket = test_create_socket(Pull);
+        test_connect(&mut pull_socket, url);
+
+        thread::sleep(Duration::from_millis(10));
+
+        test_write(&mut push_socket, b"foobarbar");
         test_read(&mut pull_socket, b"foobar");
 
         push_endpoint.shutdown();
@@ -1283,7 +1310,7 @@ mod tests {
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_zc_write(&mut push_socket, b"foobar");
         test_read(&mut pull_socket, b"foobar");
@@ -1346,7 +1373,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_write(&mut right_socket, b"foobar");
         test_read(&mut left_socket, b"foobar");
@@ -1374,10 +1401,10 @@ mod tests {
         test_connect(&mut client, url1);
         test_connect(&mut client, url2);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_write(&mut client, b"foobar");
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let mut read_count = 0;
         let mut block_count = 0;
@@ -1422,11 +1449,11 @@ mod tests {
         let mut client2 = test_create_socket(Push);
         test_connect(&mut client2, url2);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_write(&mut client1, b"foobar");
         test_write(&mut client2, b"foobaz");
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_read(&mut server, b"foobar");
         test_read(&mut server, b"foobaz");
@@ -1446,7 +1473,7 @@ mod tests {
         let mut sock3 = test_create_socket(Bus);
         test_connect(&mut sock3, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let msg = b"foobar";
         test_write(&mut sock1, msg);
@@ -1474,7 +1501,7 @@ mod tests {
         test_subscribe(&mut sock3, "bar");
         test_connect(&mut sock3, url);
 
-        thread::sleep_ms(100);
+        thread::sleep(Duration::from_millis(100));
 
         let msg1 = b"foobar";
         test_write(&mut sock1, msg1);
@@ -1503,7 +1530,7 @@ mod tests {
         let mut sock3 = test_create_socket(Respondent);
         test_connect(&mut sock3, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         match sock1.set_survey_deadline(500) {
             Ok(socket) => socket,
@@ -1722,7 +1749,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         test_write(&mut right_socket, b"ok");
         test_read_to_string(&mut left_socket, "ok".as_ref());
@@ -1744,7 +1771,7 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1753,7 +1780,7 @@ mod tests {
         }
 
         test_write(&mut push_socket, b"foobar");
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
@@ -1778,7 +1805,7 @@ mod tests {
 
         let mut pull_socket = test_create_socket(Pull);
         test_connect(&mut pull_socket, url);
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
@@ -1787,7 +1814,7 @@ mod tests {
         }
 
         test_write(&mut push_socket, b"foobar");
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
@@ -1811,7 +1838,7 @@ mod tests {
 
         let mut push_socket = test_create_socket(Push);
         test_bind(&mut push_socket, url);
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         match push_socket.nb_write(b"barfoo") {
             Ok(_) => panic!("Nothing should have been sent !"),
@@ -1831,7 +1858,7 @@ mod tests {
         let mut right_socket = test_create_socket(Pair);
         test_connect(&mut right_socket, url);
 
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
 
         let pollfd1 = left_socket.new_pollfd(PollInOut::InOut);
         let pollfd2 = right_socket.new_pollfd(PollInOut::InOut);
@@ -1857,7 +1884,7 @@ mod tests {
         }
 
         test_write(&mut right_socket, b"foobar");
-        thread::sleep_ms(10);
+        thread::sleep(Duration::from_millis(10));
         {
             let poll_result = Socket::poll(&mut request, timeout);
 
