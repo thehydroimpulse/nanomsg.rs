@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.4.2](http://img.shields.io/badge/cargo-0.4.2-orange.svg?style=flat)
+![Cargo 0.5.0](http://img.shields.io/badge/cargo-0.5.0-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
@@ -27,7 +27,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "^0.4.2"
+nanomsg = "0.5.0"
 ```
 
 Simply import the crate to use it:
@@ -119,7 +119,7 @@ The MIT License (MIT)
 
 * Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
 * Copyright (c) 2014 Daniel Fagnan [@thehydroimpulse](https://github.com/thehydroimpulse)
-* Copyright (c) 2015 Daniel Fagnan [@blabaere](https://github.com/blabaere)
+* Copyright (c) 2015 Benoît Labaere [@blabaere](https://github.com/blabaere)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
