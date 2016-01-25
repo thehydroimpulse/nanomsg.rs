@@ -18,7 +18,8 @@ install:
   - msiexec /i rust-1.6.0-i686-pc-windows-gnu.msi /passive /norestart
   - SET PATH=%PATH%;C:\MinGW\bin
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust stable 1.6\bin
-  - dir 'C:\Program Files (x86)\'
+  - dir "C:\Program Files (x86)"
+  - dir "C:\Program Files"
   - gcc -v
   - rustc -V
   - cargo -V
