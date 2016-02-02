@@ -17,7 +17,12 @@ use std::io;
 use std::mem::size_of;
 use std::slice;
 use std::convert::From;
+
+#[cfg(unix)]
 use std::os::unix::io::RawFd;
+
+#[cfg(windows)]
+use std::os::windows::raw::SOCKET;
 
 pub mod result;
 pub mod endpoint;
@@ -708,7 +713,7 @@ impl Socket {
         let mut sz: size_t = size_of::<c_int>();
         let val_ptr = &mut val as *mut _ as *mut c_void;
         let sz_ptr = &mut sz as *mut size_t;
-        
+
         let ret = unsafe {
             nanomsg_sys::nn_getsockopt(self.socket,
                                       level,
@@ -723,12 +728,12 @@ impl Socket {
     fn get_socket_option_str(&self, level: c_int, option: c_int, len: size_t) -> Result<CString> {
         let val: Vec<u8> = Vec::with_capacity(len);
         let mut sz: size_t = len; // Copy len so that we don't mutate paramater
-        
+
         let c_val = CString::new(val);
         if c_val.is_err() {
             return Err(Error::from_raw(nanomsg_sys::EINVAL));
         }
-            
+
         let val_ptr = c_val.unwrap().into_raw();
         let sz_ptr = &mut sz as *mut size_t;
 
@@ -737,14 +742,14 @@ impl Socket {
                                        level,
                                        option,
                                        val_ptr as *mut c_void,
-                                       sz_ptr)           
+                                       sz_ptr)
         };
         error_guard!(ret);
         unsafe {
             Ok(CString::from_raw(val_ptr))
         }
     }
-    
+
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
     /// Negative value means infinite linger. Default value is 1000 (1 second).
     pub fn set_linger(&mut self, linger: isize) -> Result<()> {
@@ -862,22 +867,40 @@ impl Socket {
     }
 
     /// Retrieve a file descriptor that is readable when a message can
-    /// be received on the unerlying socket
-    pub fn get_receive_fd(&mut self) -> Result<RawFd> {
-        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                     nanomsg_sys::NN_RCVFD).map(|v: c_int| {
-                                         v as RawFd
-                                     })
-    }
+	/// be received on the unerlying socket
+	#[cfg(unix)]
+	pub fn get_receive_fd(&mut self) -> Result<RawFd> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
+										 v as RawFd
+									 })
+	}
+
+	#[cfg(windows)]
+	pub fn get_receive_fd(&mut self) -> Result<SOCKET> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
+										 v as SOCKET
+									 })
+	}
 
     /// Retrieve a file descriptor that is writeable when a message
-    /// can be sent on the underlying socket
-    pub fn get_send_fd(&mut self) -> Result<RawFd> {
-        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                     nanomsg_sys::NN_SNDFD).map(|v: c_int| {
-                                         v as RawFd
-                                     })
-    }
+	/// can be sent on the underlying socket
+	#[cfg(unix)]
+	pub fn get_send_fd(&mut self) -> Result<RawFd> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
+										 v as RawFd
+									 })
+	}
+
+	#[cfg(windows)]
+	pub fn get_send_fd(&mut self) -> Result<SOCKET> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
+										 v as SOCKET
+									 })
+	}
 
     /// Retrieve the name for this socket for error reporting and
     /// statistics.
