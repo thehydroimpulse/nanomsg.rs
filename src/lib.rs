@@ -18,6 +18,12 @@ use std::mem::size_of;
 use std::slice;
 use std::convert::From;
 
+#[cfg(unix)]
+use std::os::unix::io::RawFd;
+
+#[cfg(windows)]
+use std::os::windows::raw::SOCKET;
+
 pub mod result;
 pub mod endpoint;
 
@@ -702,6 +708,48 @@ impl Socket {
         Ok(())
     }
 
+    fn get_socket_option_c_int(&self, level: c_int, option: c_int) -> Result<c_int> {
+        let mut val: c_int = 0;
+        let mut sz: size_t = size_of::<c_int>();
+        let val_ptr = &mut val as *mut _ as *mut c_void;
+        let sz_ptr = &mut sz as *mut size_t;
+
+        let ret = unsafe {
+            nanomsg_sys::nn_getsockopt(self.socket,
+                                      level,
+                                      option,
+                                      val_ptr,
+                                      sz_ptr)
+        };
+        error_guard!(ret);
+        Ok(val)
+    }
+
+    fn get_socket_option_str(&self, level: c_int, option: c_int, len: size_t) -> Result<CString> {
+        let val: Vec<u8> = Vec::with_capacity(len);
+        let mut sz: size_t = len; // Copy len so that we don't mutate paramater
+
+        let c_val = CString::new(val);
+        if c_val.is_err() {
+            return Err(Error::from_raw(nanomsg_sys::EINVAL));
+        }
+
+        let val_ptr = c_val.unwrap().into_raw();
+        let sz_ptr = &mut sz as *mut size_t;
+
+        let ret = unsafe {
+            nanomsg_sys::nn_getsockopt(self.socket,
+                                       level,
+                                       option,
+                                       val_ptr as *mut c_void,
+                                       sz_ptr)
+        };
+        error_guard!(ret);
+        unsafe {
+            Ok(CString::from_raw(val_ptr))
+        }
+    }
+
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
     /// Negative value means infinite linger. Default value is 1000 (1 second).
     pub fn set_linger(&mut self, linger: isize) -> Result<()> {
@@ -816,6 +864,53 @@ impl Socket {
         self.set_socket_options_c_int(nanomsg_sys::NN_TCP,
                                       nanomsg_sys::NN_TCP_NODELAY,
                                       tcp_nodelay as c_int)
+    }
+
+    /// Retrieve a file descriptor that is readable when a message can
+	/// be received on the unerlying socket
+	#[cfg(unix)]
+	pub fn get_receive_fd(&mut self) -> Result<RawFd> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
+										 v as RawFd
+									 })
+	}
+
+	#[cfg(windows)]
+	pub fn get_receive_fd(&mut self) -> Result<SOCKET> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
+										 v as SOCKET
+									 })
+	}
+
+    /// Retrieve a file descriptor that is writeable when a message
+	/// can be sent on the underlying socket
+	#[cfg(unix)]
+	pub fn get_send_fd(&mut self) -> Result<RawFd> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
+										 v as RawFd
+									 })
+	}
+
+	#[cfg(windows)]
+	pub fn get_send_fd(&mut self) -> Result<SOCKET> {
+		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
+									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
+										 v as SOCKET
+									 })
+	}
+
+    /// Retrieve the name for this socket for error reporting and
+    /// statistics.
+    /// **This option is experimental, see `Socket::env` for details
+    pub fn get_socket_name(&mut self, len: usize) -> Result<String> {
+        self.get_socket_option_str(nanomsg_sys::NN_SOL_SOCKET,
+                                   nanomsg_sys::NN_SOCKET_NAME,
+                                   len).map(|v: CString| {
+                                       v.to_string_lossy().into_owned()
+                                   })
     }
 
     /// Defined on full `Sub` socket.
@@ -1722,6 +1817,36 @@ mod tests {
         }
 
         drop(socket)
+    }
+    
+    #[test]
+    fn should_get_receive_fd() {
+        let mut socket = test_create_socket(Pair);
+
+        match socket.get_receive_fd() {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to get receive file descriptor: {}", err)
+        }
+    }
+
+    #[test]
+    fn should_get_send_fd() {
+        let mut socket = test_create_socket(Pair);
+
+        match socket.get_send_fd() {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to get send file descriptor: {}", err)
+        }
+    }
+
+    #[test]
+    fn should_get_socket_name() {
+        let mut socket = test_create_socket(Pair);
+
+        match socket.get_socket_name(1024) {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to get socket name: {}", err)
+        }
     }
 
     #[test]

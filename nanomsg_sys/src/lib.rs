@@ -211,7 +211,7 @@ extern {
     ///
     /// http://nanomsg.org/v0.4/nn_getsockopt.3.html
     pub fn nn_getsockopt(socket: c_int, level: c_int, option: c_int, optval: *mut c_void,
-                         optvallen: size_t) -> c_int;
+                         optvallen: *mut size_t) -> c_int;
     /// "Adds a local endpoint to the socket s. The endpoint can be then used by other
     /// applications to connect to. The addr argument consists of two parts as follows:
     /// transport://address. The transport specifies the underlying transport protocol
