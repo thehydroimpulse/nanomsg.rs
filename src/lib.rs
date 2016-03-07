@@ -1625,6 +1625,13 @@ mod tests {
         let mut sock3 = test_create_socket(Respondent);
         test_connect(&mut sock3, url);
 
+        sock1.set_send_timeout(250);
+        sock1.set_receive_timeout(250);
+        sock2.set_send_timeout(250);
+        sock2.set_receive_timeout(250);
+        sock3.set_send_timeout(250);
+        sock3.set_receive_timeout(250);
+
         thread::sleep(Duration::from_millis(10));
 
         match sock1.set_survey_deadline(500) {
