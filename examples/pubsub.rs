@@ -5,6 +5,7 @@ extern crate nanomsg;
 use nanomsg::{Socket, Protocol};
 
 use std::thread;
+use std::time::Duration;
 
 use std::io::{Read, Write};
 
@@ -54,7 +55,7 @@ fn server(topic: &str) {
                 break
             }
         }
-        thread::sleep_ms(400);
+        thread::sleep(Duration::from_millis(400));
         count += 1;
     }
 
