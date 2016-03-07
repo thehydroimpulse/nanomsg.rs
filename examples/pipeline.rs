@@ -5,6 +5,7 @@ extern crate nanomsg;
 use nanomsg::{Socket, Protocol};
 
 use std::thread;
+use std::time::Duration;
 use std::string::String;
 
 use std::io::{Read, Write};
@@ -39,7 +40,7 @@ fn worker() {
             Ok(_) => {
                 println!("Worker received '{}'.", msg);
 
-                thread::sleep_ms(300); // fake some work ...
+                thread::sleep(Duration::from_millis(300)); // fake some work ...
                 output.write_all(msg.as_bytes());
                 msg.clear();
             },
@@ -61,7 +62,7 @@ fn feeder() {
         let msg_bytes = msg.as_bytes();
         match socket.write_all(msg_bytes) {
             Ok(_) => {
-                thread::sleep_ms(100);
+                thread::sleep(Duration::from_millis(100));
                 count += 1;
             }
             Err(err) => {
