@@ -1632,7 +1632,7 @@ mod tests {
         sock3.set_send_timeout(250);
         sock3.set_receive_timeout(250);
 
-        thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(50));
 
         match sock1.set_survey_deadline(500) {
             Ok(socket) => socket,
