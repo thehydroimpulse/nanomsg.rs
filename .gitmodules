@@ -1,0 +1,3 @@
+[submodule "nanomsg_sys/nanomsg"]
+	path = nanomsg_sys/nanomsg
+	url = https://github.com/nanomsg/nanomsg
