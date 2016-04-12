@@ -8,18 +8,35 @@ fn main() {
 	if cfg!(target_os = "macos") {
 		base_config.define("NN_HAVE_CLANG", Some("1"));
 		base_config.define("NN_HAVE_OSX", Some("1"));
+		base_config.define("HAVE_KQUEUE", Some("1"));
+		base_config.define("NN_USE_KQUEUE", Some("1"));
 
 	}
 	if cfg!(target_os = "linux") {
-		base_config.define("NN_HAVE_CLANG", Some("1"));
-		base_config.define("NN_HAVE_OSX", Some("1"));
+
+		base_config.define("_GNU_SOURCE", Some("1"));
+		base_config.define("NN_HAVE_GCC", Some("1"));
+		base_config.define("NN_HAVE_LINUX", Some("1"));
+		base_config.define("HAVE_EVENTFD", Some("1"));
+		base_config.define("NN_HAVE_EVENTFD", Some("1"));
+		base_config.define("HAVE_PIPE2", Some("1"));
+		base_config.define("NN_HAVE_PIPE2", Some("1"));
+		base_config.define("NN_HAVE_CLOCK_MONOTONIC", Some("1"));
+		base_config.define("HAVE_CLOCK_GETTIME", Some("1"));
+		base_config.define("HAVE_EPOLL_CREATE", Some("1"));
+		base_config.define("NN_USE_EPOLL", Some("1"));
+		base_config.define("HAVE_ACCEPT4", Some("1"));
+		base_config.define("NN_HAVE_ACCEPT4", Some("1"));
+		base_config.define("NN_HAVE_GETADDRINFO_A", Some("1"));
+		base_config.define("NN_HAVE_SOCKETPAIR", Some("1"));
+		base_config.define("NN_USE_EVENTFD", Some("1"));
 	}
 
 	if cfg!(unix) {
-		base_config.define("NN_HAVE_OSX", Some("1"));
 		base_config.define("HAVE_PTHREAD_PRIO_INHERIT", Some("1"));
 		base_config.define("HAVE_SYS_TYPES_H", Some("1"));
 		base_config.define("HAVE_SYS_STAT_H", Some("1"));
+		base_config.define("HAVE_STRING_H", Some("1"));
 		base_config.define("HAVE_STDLIB_H", Some("1"));
 		base_config.define("HAVE_STRINGS_H", Some("1"));
 		base_config.define("HAVE_MEMORY_H", Some("1"));
@@ -38,8 +55,6 @@ fn main() {
 		base_config.define("NN_HAVE_PIPE", Some("1"));
 		base_config.define("HAVE_POLL", Some("1"));
 		base_config.define("NN_HAVE_POLL", Some("1"));
-		base_config.define("HAVE_KQUEUE", Some("1"));
-		base_config.define("NN_USE_KQUEUE", Some("1"));
 		base_config.define("NN_HAVE_SOCKETPAIR", Some("1"));
 		base_config.define("NN_HAVE_SEMAPHORE", Some("1"));
 		base_config.define("NN_HAVE_MSG_CONTROL", Some("1"));
