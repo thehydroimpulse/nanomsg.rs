@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case)]
 
-#[cfg_attr(linux, link(name = "anl"))]
+#[cfg_attr(target_os = "linux", link(name = "anl"))]
 extern "C" {}
 
 #[link(name = "nanomsg", kind = "static")]
