@@ -1,12 +1,11 @@
 deps:
-	wget https://github.com/nanomsg/nanomsg/releases/download/0.8-beta/nanomsg-0.8-beta.tar.gz
-	tar -xvzf nanomsg-0.8-beta.tar.gz
-	cd nanomsg-0.8-beta && ./configure && make && sudo make install
-	sudo ldconfig
+	wget https://github.com/nanomsg/nanomsg/archive/0.9-beta.tar.gz 
+	tar -xvzf 0.9-beta.tar.gz
+	cd nanomsg-0.9-beta && mkdir build && cd build && cmake .. && cmake --build . && ctest . 
 
 clean:
 	rm -rf target
-	rm -rf nanomsg-0.8-beta
-	rm nanomsg-0.8-beta.tar.gz
+	rm -rf nanomsg-0.9-beta
+	rm nanomsg-0.9-beta.tar.gz
 
 .PHONY: clean deps
