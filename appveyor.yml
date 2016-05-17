@@ -12,6 +12,7 @@ install:
   - cd build
   - cmake ..
   - cmake -DNN_STATIC_LIB:BOOL=ON --build .
+  - SET PATH=%PATH%;C:\MinGW\bin
   - make
   - make install
   # Fix libnanomsg Library Directory Name
