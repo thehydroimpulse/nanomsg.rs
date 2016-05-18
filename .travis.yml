@@ -8,7 +8,7 @@ env:
 
 install:
   - make deps
-  - pkg-config --static --libs nanomsg
+  - pkg-config --libs nanomsg
 
 script:
   - rustc --version

@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case)]
-#[link(name = "nanomsg", kind = "static")]
+//#[link(name = "nanomsg", kind = "static")]
+#[link(name = "nanomsg")]
 
 extern crate libc;
 
