@@ -11,8 +11,8 @@ install:
   - mkdir build
   - cd build
   - cmake ..
-  - cmake -DNN_STATIC_LIB:BOOL=ON --build .
-  - cmake -DNN_STATIC_LIB:BOOL=ON --build . --target install
+  - cmake --build .
+  - cmake --build . --target install
   #- SET PATH=%PATH%;C:\MinGW\bin
   #- echo Current dir is '%CD%'
   #- dir . /s
