@@ -21,12 +21,12 @@ install:
   # Fix libnanomsg Library Directory Name
   # - mv .\Debug .\.libs
   # Return To nanomsg-rs Git Directory
-  - cd ..\..\nanomsg-rs
+  - cd ../../nanomsg-rs
   # Download And Install Rust
   - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.8.0-x86_64-pc-windows-msvc.msi'
   - msiexec /i rust-1.8.0-x86_64-pc-windows-msvc.msi /passive /norestart
-  - dir 'C:\Program Files (x86)'
-  - dir ..\nanomsg-0.9-beta\build
+  - dir 'C:/Program Files (x86)'
+  - dir ../nanomsg-0.9-beta\build
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust stable GNU 1.6\bin
   - rustc -V
   - cargo -V
