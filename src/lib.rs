@@ -851,6 +851,7 @@ impl Socket {
     /// Socket name for error reporting and statistics.
     /// Default value is "socket.N" where N is socket integer.
     /// **This option is experimental, see `Socket::env` for details**
+    #[cfg(not(windows))]
     pub fn set_socket_name(&mut self, name: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SOL_SOCKET,
                                     nanomsg_sys::NN_SOCKET_NAME,
@@ -905,6 +906,7 @@ impl Socket {
     /// Retrieve the name for this socket for error reporting and
     /// statistics.
     /// **This option is experimental, see `Socket::env` for details
+    #[cfg(not(windows))]
     pub fn get_socket_name(&mut self, len: usize) -> Result<String> {
         self.get_socket_option_str(nanomsg_sys::NN_SOL_SOCKET,
                                    nanomsg_sys::NN_SOCKET_NAME,
@@ -1846,7 +1848,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(windows))]
+    #[cfg(not(windows))] // Crashes during appveyor build
     #[test]
     fn should_get_socket_name() {
         let mut socket = test_create_socket(Pair);

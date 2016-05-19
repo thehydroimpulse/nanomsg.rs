@@ -13,13 +13,6 @@ install:
   - cmake ..
   - cmake --build .
   - cmake --build . --target install
-  #- SET PATH=%PATH%;C:\MinGW\bin
-  #- echo Current dir is '%CD%'
-  #- dir . /s
-  #- mingw32-make.exe
-  #- mingw32-make.exe install
-  # Fix libnanomsg Library Directory Name
-  # - mv .\Debug .\.libs
   # Return To nanomsg-rs Git Directory
   - cd ../../nanomsg-rs
   # Download And Install Rust
