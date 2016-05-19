@@ -1789,6 +1789,7 @@ mod tests {
         drop(socket)
     }
 
+    #[cfg(not(windows))]
     #[test]
     fn should_change_socket_name() {
 
