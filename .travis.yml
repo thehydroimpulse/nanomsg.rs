@@ -12,7 +12,7 @@ install:
 
 script:
   - rustc --version
-  - cd nanomsg_sys && cargo test
+  - cd nanomsg_sys && cargo test && cd ..
   - cargo test
   - cargo doc
 
