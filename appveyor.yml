@@ -25,15 +25,18 @@ install:
   # Download And Install Rust
   - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.8.0-x86_64-pc-windows-msvc.msi'
   - start /wait msiexec /i  rust-1.8.0-x86_64-pc-windows-msvc.msi INSTALLDIR="C:\Program Files (x86)\Rust" /quiet /qn /passive /norestart
-  - dir "C:\Program Files (x86)"
   - set PATH=%PATH%;C:\Program Files (x86)\Rust\bin
   - rustc -V
   - cargo -V
 
 build_script:
+  - set LIB=%LIB%;C:\Program Files (x86)\nanomsg\lib
+  - set PATH=%PATH%;C:\Program Files (x86)\nanomsg\bin
   - cargo build
  
 test_script:
+  - set LIB=%LIB%;C:\Program Files (x86)\nanomsg\lib
+  - set PATH=%PATH%;C:\Program Files (x86)\nanomsg\bin
   - cargo test
   # Move libnanomsg To Test nanomsg_sys
   - mv ..\nanomsg-0.9-beta .\nanomsg-0.9-beta && cd nanomsg_sys
