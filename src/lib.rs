@@ -1846,6 +1846,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(windows))]
     #[test]
     fn should_get_socket_name() {
         let mut socket = test_create_socket(Pair);
