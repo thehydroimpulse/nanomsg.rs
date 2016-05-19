@@ -5,7 +5,8 @@ fn main() {
 
 #[cfg(windows)]
 fn main() {
-    println!("cargo:rustc-flags=-L 'C:/Program Files (x86)/nanomsg/lib' -L 'C:/Program Files (x86)/nanomsg/bin' -l nanomsg");
+    println!("cargo:rustc-link-lib=nanomsg");
+    println!("cargo:rustc-link-search=C:/Program Files (x86)/nanomsg/lib");
 }
 
     // let target = env::var("TARGET").unwrap();
