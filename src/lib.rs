@@ -1850,6 +1850,11 @@ mod tests {
     fn should_get_socket_name() {
         let mut socket = test_create_socket(Pair);
 
+        match socket.set_socket_name("bob") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change the socket name: {}", err)
+        }
+
         match socket.get_socket_name(1024) {
             Ok(..) => {},
             Err(err) => panic!("Failed to get socket name: {}", err)
