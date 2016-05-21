@@ -11,7 +11,7 @@ install:
   - pkg-config --libs nanomsg
 
 script:
-  - rustc --version
+  - rustc --version --verbose
   - cd nanomsg_sys && cargo test && cd ..
   - cargo test
   - cargo doc
