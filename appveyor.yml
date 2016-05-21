@@ -1,5 +1,5 @@
-os:
-  - MinGW
+#os:
+#  - MinGW
 
 install:
   # Go To libnanomsg Destination Directory
