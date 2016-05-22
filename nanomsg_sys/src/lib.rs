@@ -1,5 +1,4 @@
 #![allow(non_camel_case_types, non_snake_case)]
-#[link(name = "nanomsg")]
 
 extern crate libc;
 
@@ -170,6 +169,7 @@ impl nn_pollfd {
     }
 }
 
+#[link(name = "nanomsg")]
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
     /// a file descriptor for the newly created socket."
