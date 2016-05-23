@@ -13,7 +13,6 @@ fn main() {
 
 	}
 	if cfg!(target_os = "linux") {
-
 		base_config.define("_GNU_SOURCE", Some("1"));
 		base_config.define("NN_HAVE_GCC", Some("1"));
 		base_config.define("NN_HAVE_LINUX", Some("1"));
@@ -60,6 +59,15 @@ fn main() {
 		base_config.define("NN_HAVE_MSG_CONTROL", Some("1"));
 		base_config.define("NN_USE_PIPE", Some("1"));
 		base_config.define("HAVE_DLFCN_H", Some("1"));
+	}
+
+	if cfg!(windows) {
+		link("ws2_32", false);
+		base_config.define("NN_NO_EXPORTS", Some("1"));
+		base_config.define("NN_STATIC_LIB", Some("1"));
+		base_config.define("NN_HAVE_WINDOWS", Some("1"));
+		base_config.define("NN_USE_WINSOCK", Some("1"));
+		base_config.define("_CRT_SECURE_NO_WARNINGS)", Some("1"));
 	}
 
 	base_config.file("nanomsg/src/core/ep.c");
@@ -180,4 +188,17 @@ fn main() {
 	base_config.file("nanomsg/src/transports/tcpmux/tcpmux.c");
 
 	base_config.compile("libnanomsg.a");
+}
+
+pub fn link(name: &str, bundled: bool) {
+    use std::env::var;
+    let target = var("TARGET").unwrap();
+    let target: Vec<_> = target.split('-').collect();
+    if target.get(2) == Some(&"windows") {
+        println!("cargo:rustc-link-lib=dylib={}", name);
+        if bundled && target.get(3) == Some(&"gnu") {
+            let dir = var("CARGO_MANIFEST_DIR").unwrap();
+            println!("cargo:rustc-link-search=native={}/{}", dir, target[0]);
+        }
+    }
 }
