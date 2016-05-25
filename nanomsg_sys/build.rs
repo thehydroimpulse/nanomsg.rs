@@ -62,7 +62,7 @@ fn main() {
 	}
 
 	if cfg!(windows) {
-		link("mswsock", false);
+		link("Mswsock", false);
 		base_config.define("NN_NO_EXPORTS", Some("1"));
 		base_config.define("NN_STATIC_LIB", Some("1"));
 		base_config.define("NN_HAVE_WINDOWS", Some("1"));
