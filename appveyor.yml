@@ -2,8 +2,8 @@ install:
   # Go To libnanomsg Destination Directory
   - cd ..
   # Download And Compile libnanomsg
-  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/1.0.0.tar.gz'
-  - 7z x 1.0.0.tar.gz
+  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/1.0.0.zip'
+  - 7z x 1.0.0.zip
   - cd nanomsg-1.0.0
   - mkdir build
   - cd build
