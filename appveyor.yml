@@ -1,13 +1,10 @@
-#os:
-#  - MinGW
-
 install:
   # Go To libnanomsg Destination Directory
   - cd ..
   # Download And Compile libnanomsg
-  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/0.9-beta.zip'
-  - 7z x 0.9-beta.zip
-  - cd nanomsg-0.9-beta
+  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/1.0.0.tar.gz'
+  - 7z x 1.0.0.tar.gz
+  - cd nanomsg-1.0.0
   - mkdir build
   - cd build
   - cmake ..
@@ -16,8 +13,8 @@ install:
   # Return To nanomsg-rs Git Directory
   - cd ../../nanomsg-rs
   # Download And Install Rust
-  - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.8.0-i686-pc-windows-msvc.msi'
-  - start /wait msiexec /i  rust-1.8.0-i686-pc-windows-msvc.msi INSTALLDIR="C:\Program Files (x86)\Rust" /quiet /qn /passive /norestart
+  - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.9.0-i686-pc-windows-msvc.msi'
+  - start /wait msiexec /i  rust-1.9.0-i686-pc-windows-msvc.msi INSTALLDIR="C:\Program Files (x86)\Rust" /quiet /qn /passive /norestart
   - set PATH=%PATH%;C:\Program Files (x86)\Rust\bin
   - rustc -V -v
   - cargo -V
@@ -32,5 +29,5 @@ test_script:
   - set PATH=%PATH%;C:\Program Files (x86)\nanomsg\bin
   - cargo test
   # Move libnanomsg To Test nanomsg_sys
-  - mv ..\nanomsg-0.9-beta .\nanomsg-0.9-beta && cd nanomsg_sys
+  - mv ..\nanomsg-1.0.0 .\nanomsg-1.0.0 && cd nanomsg_sys
   - cargo test

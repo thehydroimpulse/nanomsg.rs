@@ -15,7 +15,7 @@ Nanomsg is a modern messaging library that is the successor to ZeroMQ, written i
 
 ### Requirements
 
-* Nanomsg 0.9.0
+* Nanomsg 1.0.0
 
 Installing nanomsg:
 
