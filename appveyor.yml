@@ -7,26 +7,26 @@ install:
   - cd nanomsg-1.0.0
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake -G"Visual Studio 14 Win64" -DNN_ENABLE_DOC=OFF ..
   - cmake --build .
   - cmake --build . --target install
   # Return To nanomsg-rs Git Directory
   - cd ../../nanomsg-rs
   # Download And Install Rust
-  - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.9.0-i686-pc-windows-msvc.msi'
-  - start /wait msiexec /i  rust-1.9.0-i686-pc-windows-msvc.msi INSTALLDIR="C:\Program Files (x86)\Rust" /quiet /qn /passive /norestart
-  - set PATH=%PATH%;C:\Program Files (x86)\Rust\bin
+  - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-1.9.0-x86_64-pc-windows-msvc.msi'
+  - start /wait msiexec /i rust-1.9.0-x86_64-pc-windows-msvc.msi INSTALLDIR="C:\Program Files\Rust" /quiet /qn /passive /norestart
+  - set PATH=%PATH%;C:\Program Files\Rust\bin
   - rustc -V -v
   - cargo -V
 
 build_script:
-  - set LIB=%LIB%;C:\Program Files (x86)\nanomsg\lib
-  - set PATH=%PATH%;C:\Program Files (x86)\nanomsg\bin
+  - set LIB=%LIB%;C:\Program Files\nanomsg\lib
+  - set PATH=%PATH%;C:\Program Files\nanomsg\bin
   - cargo build
  
 test_script:
-  - set LIB=%LIB%;C:\Program Files (x86)\nanomsg\lib
-  - set PATH=%PATH%;C:\Program Files (x86)\nanomsg\bin
+  - set LIB=%LIB%;C:\Program Files\nanomsg\lib
+  - set PATH=%PATH%;C:\Program Files\nanomsg\bin
   - cargo test
   # Move libnanomsg To Test nanomsg_sys
   - mv ..\nanomsg-1.0.0 .\nanomsg-1.0.0 && cd nanomsg_sys
