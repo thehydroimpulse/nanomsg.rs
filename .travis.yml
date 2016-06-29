@@ -8,14 +8,20 @@ env:
 
 install:
   - make deps
+  - pkg-config --libs nanomsg
 
 script:
-  - rustc --version
+  - rustc --version --verbose
+  - cd nanomsg_sys && cargo test && cd ..
   - cargo test
-  - cd nanomsg_sys && cargo test
   - cargo doc
 
 after_success:
   - cp target/doc doc
   - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
   - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash deploy.sh 
+
+addons:
+  apt:
+    packages:
+      - cmake
