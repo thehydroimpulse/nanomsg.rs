@@ -35,6 +35,7 @@ fn main() {
 
 #[cfg(not(feature = "bundled"))]
 fn main() {
+    /*
     // Attempt to use pkg_config to locate nanomsg (search location can be set via environment)
     if pkg_config::find_library("nanomsg").is_err() {
         // If that failed we have some reasonable looking defaults.
@@ -47,4 +48,6 @@ fn main() {
             println!("cargo:rustc-flags=-L /usr/local/lib -l nanomsg");
         }
     }
+    */
+    println!("cargo:rustc-flags=-L /usr/local/lib -l nanomsg");
 }
