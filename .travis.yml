@@ -2,7 +2,7 @@ language: rust
 rust:
   - stable
 
-sudo: false
+sudo: true
 cache: cargo
 
 env:
@@ -10,9 +10,9 @@ env:
     - secure: "hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ="
     - secure: "SSe9EK+/yXgvij1L4kOc7r5Wcx14sbkBkwsk5B2ajiaeIBu5ePBmQ73WZEUw8wF7J7lGKYcHe7gdvbN/r6ag9aTJc1M7R11jjnyNvMI0Eay/8RmW32Zmwmvu7EDUm3kdWZ7EjzB1vd7AWUOeZr1Gt5vHZLiisxIOXVXQ4KUUnq0="
 
-#install:
-#  - make deps
-#  - pkg-config --libs nanomsg
+install:
+  - make deps
+  - pkg-config --libs nanomsg
 
 script:
   - rustc --version --verbose
