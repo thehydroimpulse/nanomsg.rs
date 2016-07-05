@@ -21,7 +21,7 @@ fn main() {
     }
 
     let dst = cmake::Config::new("nanomsg")
-        .define("NN_STATIC_LIB", "ON")
+        //.define("NN_STATIC_LIB", "ON")
         .define("NN_ENABLE_DOC", "OFF")
         .define("NN_TESTS", "OFF")
         .build();
