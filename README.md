@@ -112,7 +112,15 @@ fn pusher() -> Result<(), Error> {
 * Zachary Tong ([@polyfractal](https://github.com/polyfractal))
 * Dan Burkert ([@danburkert](https://github.com/danburkert))
 * Benoît Labaere ([@blabaere](https://github.com/blabaere))
+* Kevin Butler ([@Ryman](https://github.com/Ryman))
+* Andrew ([@GGist](https://github.com/GGist))
 * Chip Collier ([@photex](https://github.com/photex))
+* Zeke Foppa ([@bfops](https://github.com/bfops))
+* Philippe Delrieu ([@musitdev](https://github.com/musitdev))
+* Daniel Kozlowski ([@dkhenry](https://github.com/dkhenry))
+* Vinzent Steinberg ([@vks](https://github.com/vks))
+* Paul Woolcock ([@pwoolcoc](https://github.com/pwoolcoc))
+* Gabriel Martinez ([@mystal](https://github.com/mystal))
 
 ## License
 
@@ -120,7 +128,7 @@ The MIT License (MIT)
 
 * Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
 * Copyright (c) 2014 Daniel Fagnan [@thehydroimpulse](https://github.com/thehydroimpulse)
-* Copyright (c) 2015 Benoît Labaere [@blabaere](https://github.com/blabaere)
+* Copyright (c) 2015-2016 Benoît Labaere [@blabaere](https://github.com/blabaere)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
