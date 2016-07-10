@@ -47,5 +47,4 @@ fn main() {
             println!("cargo:rustc-flags=-L /usr/local/lib -l nanomsg");
         }
     }
-    //println!("cargo:rustc-flags=-L /usr/local/lib -l nanomsg");
 }
