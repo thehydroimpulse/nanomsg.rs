@@ -36,3 +36,6 @@ nanomsg-0.7-beta
 nanomsg-0.8-beta
 nanomsg-0.9-beta
 Cargo.lock
+
+# Cloned nanomsg sources
+nanomsg_sys/nanomsg/
