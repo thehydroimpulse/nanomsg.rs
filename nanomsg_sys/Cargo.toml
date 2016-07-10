@@ -4,7 +4,8 @@ name = "nanomsg-sys"
 version = "0.7.0"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
-  "Benoît Labaere <benoit.labaere@gmail.com>"
+  "Benoît Labaere <benoit.labaere@gmail.com>",
+  "Chip Collier"
 ]
 
 license = "MIT"

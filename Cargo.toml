@@ -8,7 +8,8 @@ authors = [
   "Dennis Lawler",
   "Zachary Tong",
   "Dan Burkert",
-  "Benoît Labaere <benoit.labaere@gmail.com>"
+  "Benoît Labaere <benoit.labaere@gmail.com>",
+  "Chip Collier"
 ]
 
 description = "A high-level, Rust idiomatic wrapper around nanomsg."

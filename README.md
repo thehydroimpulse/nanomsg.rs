@@ -112,6 +112,7 @@ fn pusher() -> Result<(), Error> {
 * Zachary Tong ([@polyfractal](https://github.com/polyfractal))
 * Dan Burkert ([@danburkert](https://github.com/danburkert))
 * Benoît Labaere ([@blabaere](https://github.com/blabaere))
+* Chip Collier ([@photex](https://github.com/photex))
 
 ## License
 
