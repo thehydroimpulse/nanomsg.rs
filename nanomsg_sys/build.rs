@@ -31,6 +31,7 @@ fn main() {
     }
 
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
+    println!("cargo:rustc-link-search=native={}/lib64", dst.display());
 }
 
 #[cfg(not(feature = "bundled"))]
