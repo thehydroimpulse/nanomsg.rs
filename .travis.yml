@@ -23,7 +23,8 @@ script:
   - cargo doc
 
 after_success:
-  - travis-cargo doc-upload
+  - cp target/doc doc
+  - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash deploy.sh 
 
 addons:
   apt:
