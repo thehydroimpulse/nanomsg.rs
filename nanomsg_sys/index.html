@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `nanomsg_sys` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, nanomsg_sys">
+
+    <title>nanomsg_sys - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'nanomsg_sys', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nanomsg_sys</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/nanomsg_sys/nanomsg_sys/src/lib.rs.html#1-720' title='goto source code'>[src]</a></span></h1>
+<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use <a class='mod' href='../libc/index.html' title='libc'>libc</a>::*;</code></td></tr><tr><td><code>pub use <a class='mod' href='../nanomsg_sys/posix_consts/index.html' title='nanomsg_sys::posix_consts'>posix_consts</a>::*;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='posix_consts/index.html'
+                                  title='nanomsg_sys::posix_consts'>posix_consts</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.nn_pollfd.html'
+                                  title='nanomsg_sys::nn_pollfd'>nn_pollfd</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.AF_SP.html'
+                                  title='nanomsg_sys::AF_SP'>AF_SP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.AF_SP_RAW.html'
+                                  title='nanomsg_sys::AF_SP_RAW'>AF_SP_RAW</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.EFSM.html'
+                                  title='nanomsg_sys::EFSM'>EFSM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.ETERM.html'
+                                  title='nanomsg_sys::ETERM'>ETERM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_BUS.html'
+                                  title='nanomsg_sys::NN_BUS'>NN_BUS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_DOMAIN.html'
+                                  title='nanomsg_sys::NN_DOMAIN'>NN_DOMAIN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_DONTWAIT.html'
+                                  title='nanomsg_sys::NN_DONTWAIT'>NN_DONTWAIT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_INPROC.html'
+                                  title='nanomsg_sys::NN_INPROC'>NN_INPROC</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_IPC.html'
+                                  title='nanomsg_sys::NN_IPC'>NN_IPC</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_IPV4ONLY.html'
+                                  title='nanomsg_sys::NN_IPV4ONLY'>NN_IPV4ONLY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_LINGER.html'
+                                  title='nanomsg_sys::NN_LINGER'>NN_LINGER</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_MSG.html'
+                                  title='nanomsg_sys::NN_MSG'>NN_MSG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PAIR.html'
+                                  title='nanomsg_sys::NN_PAIR'>NN_PAIR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_POLLIN.html'
+                                  title='nanomsg_sys::NN_POLLIN'>NN_POLLIN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_POLLOUT.html'
+                                  title='nanomsg_sys::NN_POLLOUT'>NN_POLLOUT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_POLL_IN_AND_OUT.html'
+                                  title='nanomsg_sys::NN_POLL_IN_AND_OUT'>NN_POLL_IN_AND_OUT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTOCOL.html'
+                                  title='nanomsg_sys::NN_PROTOCOL'>NN_PROTOCOL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_BUS.html'
+                                  title='nanomsg_sys::NN_PROTO_BUS'>NN_PROTO_BUS</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_PAIR.html'
+                                  title='nanomsg_sys::NN_PROTO_PAIR'>NN_PROTO_PAIR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_PIPELINE.html'
+                                  title='nanomsg_sys::NN_PROTO_PIPELINE'>NN_PROTO_PIPELINE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_PUBSUB.html'
+                                  title='nanomsg_sys::NN_PROTO_PUBSUB'>NN_PROTO_PUBSUB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_REQREP.html'
+                                  title='nanomsg_sys::NN_PROTO_REQREP'>NN_PROTO_REQREP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PROTO_SURVEY.html'
+                                  title='nanomsg_sys::NN_PROTO_SURVEY'>NN_PROTO_SURVEY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PUB.html'
+                                  title='nanomsg_sys::NN_PUB'>NN_PUB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PULL.html'
+                                  title='nanomsg_sys::NN_PULL'>NN_PULL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_PUSH.html'
+                                  title='nanomsg_sys::NN_PUSH'>NN_PUSH</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RCVBUF.html'
+                                  title='nanomsg_sys::NN_RCVBUF'>NN_RCVBUF</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RCVFD.html'
+                                  title='nanomsg_sys::NN_RCVFD'>NN_RCVFD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RCVPRIO.html'
+                                  title='nanomsg_sys::NN_RCVPRIO'>NN_RCVPRIO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RCVTIMEO.html'
+                                  title='nanomsg_sys::NN_RCVTIMEO'>NN_RCVTIMEO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RECONNECT_IVL.html'
+                                  title='nanomsg_sys::NN_RECONNECT_IVL'>NN_RECONNECT_IVL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RECONNECT_IVL_MAX.html'
+                                  title='nanomsg_sys::NN_RECONNECT_IVL_MAX'>NN_RECONNECT_IVL_MAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_REP.html'
+                                  title='nanomsg_sys::NN_REP'>NN_REP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_REQ.html'
+                                  title='nanomsg_sys::NN_REQ'>NN_REQ</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_REQ_RESEND_IVL.html'
+                                  title='nanomsg_sys::NN_REQ_RESEND_IVL'>NN_REQ_RESEND_IVL</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_RESPONDENT.html'
+                                  title='nanomsg_sys::NN_RESPONDENT'>NN_RESPONDENT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SNDBUF.html'
+                                  title='nanomsg_sys::NN_SNDBUF'>NN_SNDBUF</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SNDFD.html'
+                                  title='nanomsg_sys::NN_SNDFD'>NN_SNDFD</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SNDPRIO.html'
+                                  title='nanomsg_sys::NN_SNDPRIO'>NN_SNDPRIO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SNDTIMEO.html'
+                                  title='nanomsg_sys::NN_SNDTIMEO'>NN_SNDTIMEO</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SOCKADDR_MAX.html'
+                                  title='nanomsg_sys::NN_SOCKADDR_MAX'>NN_SOCKADDR_MAX</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SOCKET_NAME.html'
+                                  title='nanomsg_sys::NN_SOCKET_NAME'>NN_SOCKET_NAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SOL_SOCKET.html'
+                                  title='nanomsg_sys::NN_SOL_SOCKET'>NN_SOL_SOCKET</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SUB.html'
+                                  title='nanomsg_sys::NN_SUB'>NN_SUB</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SUB_SUBSCRIBE.html'
+                                  title='nanomsg_sys::NN_SUB_SUBSCRIBE'>NN_SUB_SUBSCRIBE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SUB_UNSUBSCRIBE.html'
+                                  title='nanomsg_sys::NN_SUB_UNSUBSCRIBE'>NN_SUB_UNSUBSCRIBE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SURVEYOR.html'
+                                  title='nanomsg_sys::NN_SURVEYOR'>NN_SURVEYOR</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_SURVEYOR_DEADLINE.html'
+                                  title='nanomsg_sys::NN_SURVEYOR_DEADLINE'>NN_SURVEYOR_DEADLINE</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_TCP.html'
+                                  title='nanomsg_sys::NN_TCP'>NN_TCP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NN_TCP_NODELAY.html'
+                                  title='nanomsg_sys::NN_TCP_NODELAY'>NN_TCP_NODELAY</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_allocmsg.html'
+                                  title='nanomsg_sys::nn_allocmsg'>nn_allocmsg</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_allocmsg.3.html">http://nanomsg.org/v0.4/nn_allocmsg.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_bind.html'
+                                  title='nanomsg_sys::nn_bind'>nn_bind</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Adds a local endpoint to the socket s. The endpoint can be then used by other
+applications to connect to. The addr argument consists of two parts as follows:
+transport://address. The transport specifies the underlying transport protocol
+to use. The meaning of the address part is specific to the underlying transport
+protocol.&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_close.html'
+                                  title='nanomsg_sys::nn_close'>nn_close</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Closes the socket s. Any buffered inbound messages that were not yet received
+by the application will be discarded. The library will try to deliver
+any outstanding outbound messages for the time specified by NN_LINGER socket
+option. The call will block in the meantime.&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_connect.html'
+                                  title='nanomsg_sys::nn_connect'>nn_connect</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Adds a remote endpoint to the socket s. The library would then try to connect to the
+specified remote endpoint. The addr argument consists of two parts as follows:
+transport://address. The transport specifies the underlying transport protocol to use.
+The meaning of the address part is specific to the underlying transport protocol.&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_device.html'
+                                  title='nanomsg_sys::nn_device'>nn_device</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_device.3.html">http://nanomsg.org/v0.4/nn_device.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_errno.html'
+                                  title='nanomsg_sys::nn_errno'>nn_errno</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_errno.3.html">http://nanomsg.org/v0.4/nn_errno.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_freemsg.html'
+                                  title='nanomsg_sys::nn_freemsg'>nn_freemsg</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_freemsg.3.html">http://nanomsg.org/v0.4/nn_freemsg.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_getsockopt.html'
+                                  title='nanomsg_sys::nn_getsockopt'>nn_getsockopt</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Retrieves the value for the option. The level argument specifies the protocol
+level at which the option resides. For generic socket-level options use NN_SOL_SOCKET
+level. For socket-type-specific options use socket type for level argument
+(e.g. NN_SUB). For transport-specific options use ID of the transport as the
+level argument (e.g. NN_TCP).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_poll.html'
+                                  title='nanomsg_sys::nn_poll'>nn_poll</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_poll.3.html">http://nanomsg.org/v0.4/nn_poll.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_reallocmsg.html'
+                                  title='nanomsg_sys::nn_reallocmsg'>nn_reallocmsg</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_reallocmsg.3.html">http://nanomsg.org/v0.4/nn_reallocmsg.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_recv.html'
+                                  title='nanomsg_sys::nn_recv'>nn_recv</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Receive a message from the socket s and store it in the buffer referenced by the buf
+argument. Any bytes exceeding the length specified by the len argument will be truncated.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_recvmsg.html'
+                                  title='nanomsg_sys::nn_recvmsg'>nn_recvmsg</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_recvmsg.3.html">http://nanomsg.org/v0.4/nn_recvmsg.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_send.html'
+                                  title='nanomsg_sys::nn_send'>nn_send</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;The function will send a message containing the data from buffer pointed to by buf
+parameter to the socket s. The message will be len bytes long. Alternatively, to send
+a buffer allocated by nn_allocmsg(3) function set the buf parameter to point to the
+pointer to the buffer and len parameter to NN_MSG constant. In this case a successful
+call to nn_send will deallocate the buffer. Trying to deallocate it afterwards will
+result in undefined behaviour.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_sendmsg.html'
+                                  title='nanomsg_sys::nn_sendmsg'>nn_sendmsg</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_sendmsg.3.html">http://nanomsg.org/v0.4/nn_sendmsg.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_setsockopt.html'
+                                  title='nanomsg_sys::nn_setsockopt'>nn_setsockopt</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Sets the value of the option. The level argument specifies the protocol level
+at which the option resides. For generic socket-level options use NN_SOL_SOCKET
+level. For socket-type-specific options use socket type for level argument
+(e.g. NN_SUB). For transport-specific options use ID of the transport as
+the level argument (e.g. NN_TCP).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_shutdown.html'
+                                  title='nanomsg_sys::nn_shutdown'>nn_shutdown</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Removes an endpoint from socket s. how parameter specifies the ID of the endpoint to
+remove as returned by prior call to nn_bind(3) or nn_connect(3). nn_shutdown() call
+will return immediately, however, the library will try to deliver any outstanding
+outbound messages to the endpoint for the time specified by NN_LINGER socket option.&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_socket.html'
+                                  title='nanomsg_sys::nn_socket'>nn_socket</a></td>
+                           <td class='docblock short'>
+                                <p>&quot;Creates an SP socket with specified domain and protocol. Returns
+a file descriptor for the newly created socket.&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_strerror.html'
+                                  title='nanomsg_sys::nn_strerror'>nn_strerror</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_strerror.3.html">http://nanomsg.org/v0.4/nn_strerror.3.html</a></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_symbol.html'
+                                  title='nanomsg_sys::nn_symbol'>nn_symbol</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.nn_term.html'
+                                  title='nanomsg_sys::nn_term'>nn_term</a></td>
+                           <td class='docblock short'>
+                                <p><a href="http://nanomsg.org/v0.4/nn_term.3.html">http://nanomsg.org/v0.4/nn_term.3.html</a></p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "nanomsg_sys";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

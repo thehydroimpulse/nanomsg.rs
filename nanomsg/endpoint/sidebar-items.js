@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Endpoint","An endpoint created for a specific socket. Each endpoint is identified by a unique return value that can be further passed to a shutdown function. The shutdown is done through the endpoint itself and not the Socket"]]});

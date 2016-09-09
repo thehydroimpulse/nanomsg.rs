@@ -9,7 +9,9 @@
 
     <title>nanomsg - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
+    
 
     
     
@@ -24,113 +26,145 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         
-        <p class='location'></p>
-    </section>
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'nanomsg', ty: 'mod', relpath: '../'};</script>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
     </nav>
 
     <section id='main' class="content mod">
-<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nanomsg</a><wbr></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
-            <a id="collapse-all" href="#">[-]
-            </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-0' href='../src/nanomsg/lib.rs.html#1-1657'>[src]</a></span></h1>
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nanomsg</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/nanomsg/src/lib.rs.html#1-2044' title='goto source code'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
-<table><tr><td><code>pub use result::{<a class='type' href='../nanomsg/result/type.NanoResult.html' title='nanomsg::result::NanoResult'>NanoResult</a>, <a class='struct' href='../nanomsg/result/struct.NanoError.html' title='nanomsg::result::NanoError'>NanoError</a>, <a class='enum' href='../nanomsg/result/enum.NanoErrorKind.html' title='nanomsg::result::NanoErrorKind'>NanoErrorKind</a>};</code></td></tr><tr><td><code>pub use endpoint::<a class='struct' href='../nanomsg/endpoint/struct.Endpoint.html' title='nanomsg::endpoint::Endpoint'>Endpoint</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr><td><code>pub use result::{<a class='type' href='../nanomsg/result/type.Result.html' title='nanomsg::result::Result'>Result</a>, <a class='enum' href='../nanomsg/result/enum.Error.html' title='nanomsg::result::Error'>Error</a>};</code></td></tr><tr><td><code>pub use endpoint::<a class='struct' href='../nanomsg/endpoint/struct.Endpoint.html' title='nanomsg::endpoint::Endpoint'>Endpoint</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='mod' href='endpoint/index.html'
-                               title='nanomsg::endpoint'>endpoint</a></td>
-                        <td class='docblock short'></td>
-                    </tr>
-                
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='mod' href='result/index.html'
-                               title='nanomsg::result'>result</a></td>
-                        <td class='docblock short'></td>
-                    </tr>
-                </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='endpoint/index.html'
+                                  title='nanomsg::endpoint'>endpoint</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='result/index.html'
+                                  title='nanomsg::result'>result</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.PollFd.html'
-                               title='nanomsg::PollFd'>PollFd</a></td>
-                        <td class='docblock short'><p>A request for polling a socket and the poll result.
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PollFd.html'
+                                  title='nanomsg::PollFd'>PollFd</a></td>
+                           <td class='docblock short'>
+                                <p>A request for polling a socket and the poll result.
 To create the request, see <code>Socket::new_pollfd</code>.
 To get the result, see <code>PollFd::can_read</code> and <code>PollFd::can_write</code>.</p>
-</td>
-                    </tr>
-                
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.PollRequest.html'
-                               title='nanomsg::PollRequest'>PollRequest</a></td>
-                        <td class='docblock short'><p>A request for polling a set of sockets and the poll results.
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PollRequest.html'
+                                  title='nanomsg::PollRequest'>PollRequest</a></td>
+                           <td class='docblock short'>
+                                <p>A request for polling a set of sockets and the poll results.
 To create the request, see <code>PollRequest::new</code>.</p>
-</td>
-                    </tr>
-                
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.Socket.html'
-                               title='nanomsg::Socket'>Socket</a></td>
-                        <td class='docblock short'><p>A type-safe socket wrapper around nanomsg&#39;s own socket implementation. This
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Socket.html'
+                                  title='nanomsg::Socket'>Socket</a></td>
+                           <td class='docblock short'>
+                                <p>A type-safe socket wrapper around nanomsg&#39;s own socket implementation. This
 provides a safe interface for dealing with initializing the sockets, sending
 and receiving messages.</p>
-</td>
-                    </tr>
-                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='enum' href='enum.Protocol.html'
-                               title='nanomsg::Protocol'>Protocol</a></td>
-                        <td class='docblock short'><p>Type-safe protocols that Nanomsg uses. Each socket
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.PollInOut.html'
+                                  title='nanomsg::PollInOut'>PollInOut</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Protocol.html'
+                                  title='nanomsg::Protocol'>Protocol</a></td>
+                           <td class='docblock short'>
+                                <p>Type-safe protocols that Nanomsg uses. Each socket
 is bound to a single protocol that has specific behaviour
-(such as only being able to receive messages and not send &#39;em).</p>
-</td>
-                    </tr>
-                </table></section>
+(such as only being able to receive messages and not send them).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Transport.html'
+                                  title='nanomsg::Transport'>Transport</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
         </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
-        </div>
-    </div>
+    </aside>
 
     
 
@@ -142,6 +176,6 @@ is bound to a single protocol that has specific behaviour
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>
