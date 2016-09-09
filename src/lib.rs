@@ -29,7 +29,7 @@ pub mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
-/// (such as only being able to receive messages and not send 'em).
+/// (such as only being able to receive messages and not send them).
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
