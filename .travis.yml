@@ -1,7 +1,7 @@
 language: rust
 rust: stable
 cache: cargo
-sudo: false
+sudo: true
 os: linux
 
 env:
