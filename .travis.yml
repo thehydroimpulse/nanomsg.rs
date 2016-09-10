@@ -5,8 +5,8 @@ sudo: true
 os: linux
 env:
   global:
-  - secure: hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ=
-  - secure: SSe9EK+/yXgvij1L4kOc7r5Wcx14sbkBkwsk5B2ajiaeIBu5ePBmQ73WZEUw8wF7J7lGKYcHe7gdvbN/r6ag9aTJc1M7R11jjnyNvMI0Eay/8RmW32Zmwmvu7EDUm3kdWZ7EjzB1vd7AWUOeZr1Gt5vHZLiisxIOXVXQ4KUUnq0=
+#  - secure: hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ=
+#  - secure: SSe9EK+/yXgvij1L4kOc7r5Wcx14sbkBkwsk5B2ajiaeIBu5ePBmQ73WZEUw8wF7J7lGKYcHe7gdvbN/r6ag9aTJc1M7R11jjnyNvMI0Eay/8RmW32Zmwmvu7EDUm3kdWZ7EjzB1vd7AWUOeZr1Gt5vHZLiisxIOXVXQ4KUUnq0=
   - secure: BZn0b/FB0KBIjHoUv8bzBq2ia+0/qyWlNEpxNdo98UKjHGpScrLxVNFweA4T7Nfy6qBqLPH6IQm4o9SvLn8+nfUBa0jecTlM1iM1wFgmWnoo0SArYGKOzxy3KLAHRuBNHOdzVHxOCmUXOJkwijBRP02slH56amUnl8cIUoI8kKA=
   
 before_script:
