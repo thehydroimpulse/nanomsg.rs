@@ -1,13 +1,4 @@
 #![allow(non_camel_case_types, non_snake_case)]
-<<<<<<< HEAD
-
-#[cfg_attr(target_os = "linux", link(name = "anl"))]
-extern "C" {}
-
-#[link(name = "nanomsg", kind = "static")]
-=======
->>>>>>> 6a356eac77d60d0f4b23d3b1ffcebb49b1026829
-
 extern crate libc;
 
 pub use libc::*;
