@@ -29,7 +29,7 @@ pub mod endpoint;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
-/// (such as only being able to receive messages and not send 'em).
+/// (such as only being able to receive messages and not send them).
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
     /// Used to implement the client application that sends requests and receives replies.
@@ -40,7 +40,7 @@ pub enum Protocol {
     /// Used to implement the stateless worker that receives requests and sends replies.
     Rep = (nanomsg_sys::NN_REP) as isize,
 
-    /// This socket is used to send messages to a cluster of load-balanced nodes. 
+    /// This socket is used to send messages to a cluster of load-balanced nodes.
     /// Receive operation is not implemented on this socket type.
     Push = (nanomsg_sys::NN_PUSH) as isize,
 
@@ -49,7 +49,7 @@ pub enum Protocol {
     Pull = (nanomsg_sys::NN_PULL) as isize,
 
     /// Socket for communication with exactly one peer.
-    /// Each party can send messages at any time. 
+    /// Each party can send messages at any time.
     /// If the peer is not available or send buffer is full subsequent calls to `write`
     /// will block until it’s possible to send the message.
     Pair = (nanomsg_sys::NN_PAIR) as isize,
@@ -74,11 +74,11 @@ pub enum Protocol {
     /// The survey is delivered to all the connected respondents.
     /// Once the query is sent, the socket can be used to receive the responses.
     /// When the survey deadline expires, receive will return Timeout error.
-    /// 
+    ///
     /// **See also:** `Socket::set_survey_deadline`
     Surveyor = (nanomsg_sys::NN_SURVEYOR) as isize,
 
-    /// Use to respond to the survey. 
+    /// Use to respond to the survey.
     /// Survey is received using receive function, response is sent using send function
     /// This socket can be connected to at most one peer.
     Respondent = (nanomsg_sys::NN_RESPONDENT) as isize
@@ -250,7 +250,7 @@ impl Socket {
     /// let mut s2 = Socket::new_for_device(Protocol::Rep).unwrap();
     /// let ep1 = s1.bind("ipc:///tmp/new_for_device1.ipc").unwrap();
     /// let ep2 = s2.bind("ipc:///tmp/new_for_device2.ipc").unwrap();
-    /// 
+    ///
     /// // And now `Socket::device(&s1, &s2)` can be called to create the device.
     /// ```
     pub fn new_for_device(protocol: Protocol) -> Result<Socket> {
@@ -329,8 +329,8 @@ impl Socket {
     /// let endpoint = match socket.connect("ipc:///tmp/connect_doc.ipc") {
     ///     Ok(ep) => ep,
     ///     Err(err) => panic!("Failed to connect socket: {}", err)
-    /// };    
-    /// ```        
+    /// };
+    /// ```
     ///
     /// # Error
     ///
@@ -368,8 +368,8 @@ impl Socket {
     /// let mut buffer = [0u8; 1024];
     ///
     /// match socket.nb_read(&mut buffer) {
-    ///     Ok(count) => { 
-    ///         println!("Read {} bytes !", count); 
+    ///     Ok(count) => {
+    ///         println!("Read {} bytes !", count);
     ///         // here we can process the message stored in `buffer`
     ///     },
     ///     Err(Error::TryAgain) => {
@@ -378,7 +378,7 @@ impl Socket {
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
-    /// ```  
+    /// ```
     ///
     /// # Error
     ///
@@ -393,8 +393,8 @@ impl Socket {
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_len = buf_len as size_t;
         let c_buf_ptr = buf_ptr as *mut c_void;
-        let ret = unsafe { 
-            nanomsg_sys::nn_recv(self.socket, c_buf_ptr, c_buf_len, nanomsg_sys::NN_DONTWAIT) 
+        let ret = unsafe {
+            nanomsg_sys::nn_recv(self.socket, c_buf_ptr, c_buf_len, nanomsg_sys::NN_DONTWAIT)
         };
 
         error_guard!(ret);
@@ -416,8 +416,8 @@ impl Socket {
     ///
     /// let mut buffer = Vec::new();
     /// match socket.nb_read_to_end(&mut buffer) {
-    ///     Ok(_) => { 
-    ///         println!("Read message {} bytes !", buffer.len()); 
+    ///     Ok(_) => {
+    ///         println!("Read message {} bytes !", buffer.len());
     ///         // here we can process the message stored in `buffer`
     ///     },
     ///     Err(Error::TryAgain) => {
@@ -426,7 +426,7 @@ impl Socket {
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
     /// };
-    /// ```        
+    /// ```
     ///
     /// # Error
     ///
@@ -469,7 +469,7 @@ impl Socket {
     ///     },
     ///     Err(err) => panic!("Problem while writing: {}", err)
     /// };
-    /// ```        
+    /// ```
     ///
     /// # Error
     ///
@@ -482,8 +482,8 @@ impl Socket {
     pub fn nb_write(&mut self, buf: &[u8]) -> Result<usize> {
         let buf_ptr = buf.as_ptr() as *const c_void;
         let buf_len = buf.len() as size_t;
-        let ret = unsafe { 
-            nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT) 
+        let ret = unsafe {
+            nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, nanomsg_sys::NN_DONTWAIT)
         };
 
         error_guard!(ret);
@@ -519,7 +519,7 @@ impl Socket {
     ///     Ok(_) => { println!("Message received."); },
     ///     Err(err) => panic!("{}", err)
     /// }
-    /// ```        
+    /// ```
     ///
     /// # Error
     ///
@@ -540,8 +540,8 @@ impl Socket {
 
     /// Allocate a message of the specified size to be sent in zero-copy fashion.
     /// The content of the message is undefined after allocation and it should be filled in by the user.
-    /// While `write` functions allow to send arbitrary buffers, 
-    /// buffers allocated using `allocate_msg` can be more efficient for large messages 
+    /// While `write` functions allow to send arbitrary buffers,
+    /// buffers allocated using `allocate_msg` can be more efficient for large messages
     /// as they allow for using zero-copy techniques.
     ///
     /// # Error
@@ -549,7 +549,7 @@ impl Socket {
     /// - `InvalidArgument` : Supplied allocation type is invalid.
     /// - `Unknown` : Out of memory.
     pub fn allocate_msg<'a>(len: usize) -> Result<&'a mut [u8]> {
-        unsafe { 
+        unsafe {
             let ptr = nanomsg_sys::nn_allocmsg(len as size_t, 0) as *mut u8;
             let ptr_value = ptr as isize;
 
@@ -567,7 +567,7 @@ impl Socket {
     ///
     /// - `BadAddress` : The message pointer is invalid.
     pub fn free_msg<'a>(msg: &'a mut [u8]) -> Result<()> {
-        unsafe { 
+        unsafe {
             let ptr = msg.as_mut_ptr() as *mut c_void;
             let ret = nanomsg_sys::nn_freemsg(ptr);
 
@@ -588,8 +588,8 @@ impl Socket {
     }
 
     /// Checks a set of sockets and reports whether it’s possible to send a message to the socket and/or receive a message from each socket.
-    /// Upon successful completion, the number of `PollFd` structures with events signaled is returned. 
-    /// 
+    /// Upon successful completion, the number of `PollFd` structures with events signaled is returned.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -598,10 +598,10 @@ impl Socket {
     ///
     /// let mut left_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut left_ep = left_socket.bind("ipc:///tmp/poll_doc.ipc").unwrap();
-    /// 
+    ///
     /// let mut right_socket = Socket::new(Protocol::Pair).unwrap();
     /// let mut right_ep = right_socket.connect("ipc:///tmp/poll_doc.ipc").unwrap();
-    /// 
+    ///
     /// thread::sleep_ms(10);
     ///
     /// // Here some messages may have been sent ...
@@ -646,7 +646,7 @@ impl Socket {
     /// If both sockets are valid, `device` function loops
     /// and sends and messages received from s1 to s2 and vice versa.
     /// If only one socket is valid and the other is negative,
-    /// `device` works in a "loopback" mode — 
+    /// `device` works in a "loopback" mode —
     /// it loops and sends any messages received from the socket back to itself.
     /// To break the loop and make `device` function exit use `terminate` function.
     ///
@@ -664,10 +664,10 @@ impl Socket {
     }
 
     /// Notify all sockets about process termination.
-    /// To help with shutdown of multi-threaded programs nanomsg provides the `terminate` function 
+    /// To help with shutdown of multi-threaded programs nanomsg provides the `terminate` function
     /// which informs all the open sockets that process termination is underway.
     /// If a socket is blocked inside a blocking function, such as `read`,
-    /// it will be unblocked and `Terminating` error will be returned to the user. 
+    /// it will be unblocked and `Terminating` error will be returned to the user.
     /// Similarly, any subsequent attempt to invoke a socket function other than `drop` after `terminate` was called will result in `Terminating` error.
     /// If waiting inside a polling function, the call will unblock with both read and write signaled.
     /// The `terminate` function itself is non-blocking.
@@ -758,7 +758,7 @@ impl Socket {
                                       linger as c_int)
     }
 
-    /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer, 
+    /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer,
     /// exactly one message may be buffered in addition to the data in the send buffer.
     /// Default value is 128kB.
     pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
@@ -817,7 +817,7 @@ impl Socket {
                                       interval as c_int)
     }
 
-    /// Sets outbound priority for endpoints subsequently added to the socket. 
+    /// Sets outbound priority for endpoints subsequently added to the socket.
     /// This option has no effect on socket types that send messages to all the peers.
     /// However, if the socket type sends each message to a single peer (or a limited set of peers),
     /// peers with high priority take precedence over peers with low priority.
@@ -831,7 +831,7 @@ impl Socket {
     /// Sets inbound priority for endpoints subsequently added to the socket.
     /// This option has no effect on socket types that are not able to receive messages.
     /// When receiving a message, messages from peer with higher priority are received before messages
-    /// from peer with lower priority. 
+    /// from peer with lower priority.
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
     pub fn set_receive_priority(&mut self, priority: u8) -> Result<()> {
         self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
@@ -851,6 +851,7 @@ impl Socket {
     /// Socket name for error reporting and statistics.
     /// Default value is "socket.N" where N is socket integer.
     /// **This option is experimental, see `Socket::env` for details**
+    #[cfg(not(windows))]
     pub fn set_socket_name(&mut self, name: &str) -> Result<()> {
         self.set_socket_options_str(nanomsg_sys::NN_SOL_SOCKET,
                                     nanomsg_sys::NN_SOCKET_NAME,
@@ -905,6 +906,7 @@ impl Socket {
     /// Retrieve the name for this socket for error reporting and
     /// statistics.
     /// **This option is experimental, see `Socket::env` for details
+    #[cfg(not(windows))]
     pub fn get_socket_name(&mut self, len: usize) -> Result<String> {
         self.get_socket_option_str(nanomsg_sys::NN_SOL_SOCKET,
                                    nanomsg_sys::NN_SOCKET_NAME,
@@ -965,21 +967,21 @@ impl io::Read for Socket {
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_doc.ipc").unwrap();
-    /// 
+    ///
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
-    /// 
+    ///
     /// thread::sleep_ms(50);
-    /// 
+    ///
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
     /// }
     ///
     /// match pull_socket.read(&mut buffer) {
-    ///     Ok(count) => { 
-    ///         println!("Read {} bytes !", count); 
+    ///     Ok(count) => {
+    ///         println!("Read {} bytes !", count);
     ///         // here we can process the `count` bytes of the message stored in `buffer`
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
@@ -1017,12 +1019,12 @@ impl io::Read for Socket {
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
-    /// 
+    ///
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
-    /// 
+    ///
     /// thread::sleep_ms(50);
-    /// 
+    ///
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
@@ -1030,8 +1032,8 @@ impl io::Read for Socket {
     ///
     /// let mut msg = Vec::new();
     /// match pull_socket.read_to_end(&mut msg) {
-    ///     Ok(_) => { 
-    ///         println!("Read {} bytes !", msg.len()); 
+    ///     Ok(_) => {
+    ///         println!("Read {} bytes !", msg.len());
     ///         // here we can process the the message stored in `msg`
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
@@ -1070,13 +1072,13 @@ impl io::Read for Socket {
     /// use std::io::{Read, Write};
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
-    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_end_doc.ipc").unwrap();
-    /// 
+    /// let mut push_ep = push_socket.bind("ipc:///tmp/read_to_string_doc.ipc").unwrap();
+    ///
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
-    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_end_doc.ipc").unwrap();
-    /// 
+    /// let mut pull_ep = pull_socket.connect("ipc:///tmp/read_to_string_doc.ipc").unwrap();
+    ///
     /// thread::sleep_ms(50);
-    /// 
+    ///
     /// match push_socket.write(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
@@ -1084,8 +1086,8 @@ impl io::Read for Socket {
     ///
     /// let mut msg = String::new();
     /// match pull_socket.read_to_string(&mut msg) {
-    ///     Ok(_) => { 
-    ///         println!("Read {} bytes !", msg.len()); 
+    ///     Ok(_) => {
+    ///         println!("Read {} bytes !", msg.len());
     ///         // here we can process the the message stored in `msg`
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
@@ -1102,8 +1104,8 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
         let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { 
-            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) 
+        let ret = unsafe {
+            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0)
         };
 
         io_error_guard!(ret);
@@ -1128,7 +1130,7 @@ impl io::Read for Socket {
 }
 
 impl io::Write for Socket {
-    /// The function will send a message containing the data from the buf parameter to the socket. 
+    /// The function will send a message containing the data from the buf parameter to the socket.
     /// Which of the peers the message will be sent to is determined by the particular socket type.
     ///
     ///
@@ -1141,21 +1143,21 @@ impl io::Write for Socket {
     ///
     /// let mut push_socket = Socket::new(Protocol::Push).unwrap();
     /// let mut push_ep = push_socket.bind("ipc:///tmp/write_doc.ipc").unwrap();
-    /// 
+    ///
     /// let mut pull_socket = Socket::new(Protocol::Pull).unwrap();
     /// let mut pull_ep = pull_socket.connect("ipc:///tmp/write_doc.ipc").unwrap();
     /// let mut buffer = [0u8; 1024];
-    /// 
+    ///
     /// thread::sleep_ms(50);
-    /// 
+    ///
     /// match push_socket.write_all(b"foobar") {
     ///     Ok(..) => println!("Message sent !"),
     ///     Err(err) => panic!("Failed to write to the socket: {}", err)
     /// }
     ///
     /// match pull_socket.read(&mut buffer) {
-    ///     Ok(count) => { 
-    ///         println!("Read {} bytes !", count); 
+    ///     Ok(count) => {
+    ///         println!("Read {} bytes !", count);
     ///         // here we can process the `count` bytes of the message stored in `buffer`
     ///     },
     ///     Err(err) => panic!("Problem while reading: {}", err)
@@ -1185,9 +1187,9 @@ impl io::Write for Socket {
 }
 
 impl Drop for Socket {
-    /// Closes the socket. 
+    /// Closes the socket.
     /// Any buffered inbound messages that were not yet received by the application will be discarded.
-    /// The library will try to deliver any outstanding outbound messages for the time specified by `set_linger`. 
+    /// The library will try to deliver any outstanding outbound messages for the time specified by `set_linger`.
     /// The call will block in the meantime.
     fn drop(&mut self) {
         unsafe { nanomsg_sys::nn_close(self.socket); }
@@ -1316,7 +1318,7 @@ mod tests {
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
         let mut msg = Socket::allocate_msg(buf.len()).unwrap();
         for i in 0..buf.len() {
-           msg[i] = buf[i]; 
+           msg[i] = buf[i];
         }
         match socket.zc_write(msg) {
             Ok(..) => {},
@@ -1425,7 +1427,7 @@ mod tests {
 
         let push_thread = thread::spawn(move || {
             let mut push_socket = test_create_socket(Push);
-            
+
             test_bind(&mut push_socket, url);
             test_write(&mut push_socket, b"foobar");
 
@@ -1451,7 +1453,7 @@ mod tests {
     fn pipeline_mt1() {
         test_multithread_pipeline("ipc:///tmp/pipeline_mt1.ipc")
     }
-    
+
     #[test]
     fn pipeline_mt2() {
         test_multithread_pipeline("ipc:///tmp/pipeline_mt2.ipc")
@@ -1787,6 +1789,7 @@ mod tests {
         drop(socket)
     }
 
+    #[cfg(not(windows))]
     #[test]
     fn should_change_socket_name() {
 
@@ -1825,7 +1828,7 @@ mod tests {
 
         drop(socket)
     }
-    
+
     #[test]
     fn should_get_receive_fd() {
         let mut socket = test_create_socket(Pair);
@@ -1846,9 +1849,15 @@ mod tests {
         }
     }
 
+    #[cfg(not(windows))] // Crashes during appveyor build
     #[test]
     fn should_get_socket_name() {
         let mut socket = test_create_socket(Pair);
+
+        match socket.set_socket_name("bob") {
+            Ok(..) => {},
+            Err(err) => panic!("Failed to change the socket name: {}", err)
+        }
 
         match socket.get_socket_name(1024) {
             Ok(..) => {},

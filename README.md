@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.5.0](http://img.shields.io/badge/cargo-0.5.0-orange.svg?style=flat)
+![Cargo 0.6.0](http://img.shields.io/badge/cargo-0.6.0-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
@@ -15,7 +15,7 @@ Nanomsg is a modern messaging library that is the successor to ZeroMQ, written i
 
 ### Requirements
 
-* Nanomsg 0.8.0
+* Nanomsg 1.0.0
 
 Installing nanomsg:
 
@@ -27,7 +27,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "0.5.0"
+nanomsg = "0.6.0"
 ```
 
 Simply import the crate to use it:
@@ -112,6 +112,16 @@ fn pusher() -> Result<(), Error> {
 * Zachary Tong ([@polyfractal](https://github.com/polyfractal))
 * Dan Burkert ([@danburkert](https://github.com/danburkert))
 * Benoît Labaere ([@blabaere](https://github.com/blabaere))
+* Kevin Butler ([@Ryman](https://github.com/Ryman))
+* Andrew ([@GGist](https://github.com/GGist))
+* Chip Collier ([@photex](https://github.com/photex))
+* Zeke Foppa ([@bfops](https://github.com/bfops))
+* Philippe Delrieu ([@musitdev](https://github.com/musitdev))
+* Daniel Kozlowski ([@dkhenry](https://github.com/dkhenry))
+* Vinzent Steinberg ([@vks](https://github.com/vks))
+* Paul Woolcock ([@pwoolcoc](https://github.com/pwoolcoc))
+* Gabriel Martinez ([@mystal](https://github.com/mystal))
+* wdv4758h ([@wdv4758h](https://github.com/wdv4758h))
 
 ## License
 
@@ -119,7 +129,7 @@ The MIT License (MIT)
 
 * Copyright (c) 2013-2014 Jason E. Aten, Ph.D. [@glycerine](https://github.com/glycerine)
 * Copyright (c) 2014 Daniel Fagnan [@thehydroimpulse](https://github.com/thehydroimpulse)
-* Copyright (c) 2015 Benoît Labaere [@blabaere](https://github.com/blabaere)
+* Copyright (c) 2015-2016 Benoît Labaere [@blabaere](https://github.com/blabaere)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

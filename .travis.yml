@@ -1,21 +1,26 @@
 language: rust
-rust:
-  - stable
+rust: stable
+cache: cargo
+sudo: true
+os: linux
 env:
   global:
-    - secure: "hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ="
-    - secure: "SSe9EK+/yXgvij1L4kOc7r5Wcx14sbkBkwsk5B2ajiaeIBu5ePBmQ73WZEUw8wF7J7lGKYcHe7gdvbN/r6ag9aTJc1M7R11jjnyNvMI0Eay/8RmW32Zmwmvu7EDUm3kdWZ7EjzB1vd7AWUOeZr1Gt5vHZLiisxIOXVXQ4KUUnq0="
+  - secure: hdvu4EPy8iJMrvACGQNsHcBaAnRYp8NbxH6a+Q/H4af2kRAgjqFLGU9PzSuFvx+YARgg0guX1y0lFle6+cvRGveB1qqAftEtuEjdYOhVvipgjY6SzyyJhfJYNNTYcvLyyzWWU6lSIWMysVdPPNdQywkjCXeiI/peLBHCrc1CMyQ=
+  - secure: SSe9EK+/yXgvij1L4kOc7r5Wcx14sbkBkwsk5B2ajiaeIBu5ePBmQ73WZEUw8wF7J7lGKYcHe7gdvbN/r6ag9aTJc1M7R11jjnyNvMI0Eay/8RmW32Zmwmvu7EDUm3kdWZ7EjzB1vd7AWUOeZr1Gt5vHZLiisxIOXVXQ4KUUnq0=
 
+before_script:
+- rustc --version --verbose
+- pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 install:
-  - make deps
-
+- make deps
+- pkg-config --libs nanomsg
 script:
-  - rustc --version
-  - cargo test
-  - cd nanomsg_sys && cargo test
-  - cargo doc
-
+- cd nanomsg_sys && cargo test && cd ..
+- cargo test
+- cargo doc
 after_success:
-  - cp target/doc doc
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
-  - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash deploy.sh 
+- travis-cargo doc-upload
+addons:
+  apt:
+    packages:
+    - cmake

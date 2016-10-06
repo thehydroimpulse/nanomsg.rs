@@ -1,9 +1,12 @@
 #![allow(non_camel_case_types, non_snake_case)]
+<<<<<<< HEAD
 
 #[cfg_attr(target_os = "linux", link(name = "anl"))]
 extern "C" {}
 
 #[link(name = "nanomsg", kind = "static")]
+=======
+>>>>>>> 6a356eac77d60d0f4b23d3b1ffcebb49b1026829
 
 extern crate libc;
 
@@ -174,6 +177,9 @@ impl nn_pollfd {
     }
 }
 
+#[cfg_attr(all(target_os = "linux", feature = "bundled"), link(name = "anl"))]
+#[cfg_attr(not(feature = "bundled"), link(name = "nanomsg"))]
+#[cfg_attr(feature = "bundled", link(name = "nanomsg", kind = "static"))]
 extern {
     /// "Creates an SP socket with specified domain and protocol. Returns
     /// a file descriptor for the newly created socket."
@@ -310,6 +316,10 @@ mod tests {
     use std::ffi::CStr;
     use std::str;
 
+    fn sleep_ms(millis: u64) {
+        thread::sleep(::std::time::Duration::from_millis(millis));
+    }
+
     fn test_create_socket(domain: c_int, protocol: c_int) -> c_int {
         let sock = unsafe { nn_socket(domain, protocol) };
         assert!(sock >= 0);
@@ -419,7 +429,7 @@ mod tests {
         let sock3 = test_create_socket(AF_SP, NN_BUS);
         let sock3_read_endpoint = test_connect(sock3, url.as_ptr() as *const i8);
 
-        thread::sleep_ms(10);
+        sleep_ms(10);
 
         let msg = "foobar";
         test_send(sock1, msg);
@@ -454,7 +464,7 @@ mod tests {
         let topic2 = "bar";
         test_subscribe(sub_sock2, topic2);
 
-        thread::sleep_ms(100);
+        sleep_ms(100);
 
         let msg1 = "foobar";
         test_send(pub_sock, msg1);
@@ -488,7 +498,7 @@ mod tests {
         let resp_sock2 = test_create_socket(AF_SP, NN_RESPONDENT);
         let resp_endpoint2 = test_connect(resp_sock2, url.as_ptr() as *const i8);
 
-        thread::sleep_ms(10);
+        sleep_ms(10);
 
         let survey = "are_you_there";
         test_send(surv_sock, survey);
@@ -530,7 +540,7 @@ mod tests {
 
         test_bind(s1, url.as_ptr() as *const i8);
         test_connect(s2, url.as_ptr() as *const i8);
-        thread::sleep_ms(10);
+        sleep_ms(10);
 
         let poll_result2 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result2);
@@ -539,7 +549,7 @@ mod tests {
 
         let msg = "foobar";
         test_send(s2, msg);
-        thread::sleep_ms(10);
+        sleep_ms(10);
 
         let poll_result3 = unsafe { nn_poll(fd_ptr, 2, 10) as usize };
         assert_eq!(2, poll_result3);
