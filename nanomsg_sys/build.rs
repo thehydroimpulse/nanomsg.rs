@@ -80,7 +80,6 @@ fn main() {
 	base_config.file("nanomsg/src/core/symbol.c");
 
 	base_config.file("nanomsg/src/devices/device.c");
-	base_config.file("nanomsg/src/devices/tcpmuxd.c");
 
 	base_config.file("nanomsg/src/aio/ctx.c");
 	base_config.file("nanomsg/src/aio/fsm.c");
@@ -96,14 +95,15 @@ fn main() {
 	base_config.file("nanomsg/src/utils/chunk.c");
 	base_config.file("nanomsg/src/utils/chunkref.c");
 	base_config.file("nanomsg/src/utils/clock.c");
+	base_config.file("nanomsg/src/utils/condvar.c");
 	base_config.file("nanomsg/src/utils/closefd.c");
 	base_config.file("nanomsg/src/utils/efd.c");
 	base_config.file("nanomsg/src/utils/err.c");
-	base_config.file("nanomsg/src/utils/glock.c");
 	base_config.file("nanomsg/src/utils/hash.c");
 	base_config.file("nanomsg/src/utils/list.c");
 	base_config.file("nanomsg/src/utils/msg.c");
 	base_config.file("nanomsg/src/utils/mutex.c");
+	base_config.file("nanomsg/src/utils/once.c");
 	base_config.file("nanomsg/src/utils/queue.c");
 	base_config.file("nanomsg/src/utils/random.c");
 	base_config.file("nanomsg/src/utils/sem.c");
@@ -181,11 +181,6 @@ fn main() {
 	base_config.file("nanomsg/src/transports/ws/ws_handshake.c");
 	base_config.file("nanomsg/src/transports/ws/sha1.c");
 
-	base_config.file("nanomsg/src/transports/tcpmux/atcpmux.c");
-	base_config.file("nanomsg/src/transports/tcpmux/btcpmux.c");
-	base_config.file("nanomsg/src/transports/tcpmux/ctcpmux.c");
-	base_config.file("nanomsg/src/transports/tcpmux/stcpmux.c");
-	base_config.file("nanomsg/src/transports/tcpmux/tcpmux.c");
 
 	base_config.compile("libnanomsg.a");
 }
