@@ -1598,11 +1598,13 @@ mod tests {
         test_subscribe(&mut sock3, "bar");
         test_connect(&mut sock3, url);
 
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(150));
 
         let msg1 = b"foobar";
         test_write(&mut sock1, msg1);
         test_read(&mut sock2, msg1);
+
+        thread::sleep(Duration::from_millis(100));
 
         let msg2 = b"barfoo";
         test_write(&mut sock1, msg2);
