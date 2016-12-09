@@ -97,14 +97,6 @@ pub mod posix_consts {
     pub const EISCONN:         c_int = NN_HAUSNUMERO + 27;
     pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
     
-    pub const EINTR:           c_int = 4;
-    pub const EBADF:           c_int = 9;
-    pub const EAGAIN:          c_int = 11;
-    pub const EFAULT:          c_int = 14;
-    pub const ENODEV:          c_int = 19;
-    pub const EINVAL:          c_int = 22;
-    pub const EMFILE:          c_int = 24;
-    pub const ENAMETOOLONG:    c_int = 38;
     pub const EADDRINUSE:      c_int = 100;
     pub const EADDRNOTAVAIL:   c_int = 101;
     pub const EAFNOSUPPORT:    c_int = 102;
