@@ -3,9 +3,6 @@ extern crate gcc;
 extern crate pkg_config;
 
 use std::env;
-use std::path::Path;
-use std::process::Command;
-
 
 #[cfg(feature = "bundled")]
 fn main() {
@@ -13,9 +10,9 @@ fn main() {
 
     // TODO: Determine whether we'd rather always do a fresh clone.
     // TODO: Determine whether we wouldn't rather use a submodule.
-    if !Path::new("nanomsg/.git").exists() {
+    if !::std::path::Path::new("nanomsg/.git").exists() {
         // Panic if we can't clone nanomsg
-        let _ = Command::new("git")
+        let _ = ::std::process::Command::new("git")
             .args(&["clone", "-b", "1.0.0", "--depth", "1", "https://github.com/nanomsg/nanomsg.git"])
             .status().unwrap();
     }
