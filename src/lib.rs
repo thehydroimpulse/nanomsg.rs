@@ -708,6 +708,21 @@ impl Socket {
         Ok(())
     }
 
+    fn set_socket_options_buf(&self, level: c_int, option: c_int, val: &[u8]) -> Result<()> {
+        let buf_ptr = val.as_ptr() as *const c_void;
+        let buf_len = val.len() as size_t;
+        let ret = unsafe {
+            nanomsg_sys::nn_setsockopt(self.socket,
+                                      level,
+                                      option,
+                                      buf_ptr,
+                                      buf_len)
+        };
+
+        error_guard!(ret);
+        Ok(())
+    }
+
     fn get_socket_option_c_int(&self, level: c_int, option: c_int) -> Result<c_int> {
         let mut val: c_int = 0;
         let mut sz: size_t = size_of::<c_int>();
@@ -917,17 +932,16 @@ impl Socket {
 
     /// Defined on full `Sub` socket.
     /// Subscribes for a particular topic.
-    /// Type of the option is string.
     /// A single `Sub` socket can handle multiple subscriptions.
-    pub fn subscribe(&mut self, topic: &str) -> Result<()> {
-        self.set_socket_options_str(nanomsg_sys::NN_SUB,
+    pub fn subscribe(&mut self, topic: &[u8]) -> Result<()> {
+        self.set_socket_options_buf(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_SUBSCRIBE,
                                     topic)
     }
 
     /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
-    pub fn unsubscribe(&mut self, topic: &str) -> Result<()> {
-        self.set_socket_options_str(nanomsg_sys::NN_SUB,
+    pub fn unsubscribe(&mut self, topic: &[u8]) -> Result<()> {
+        self.set_socket_options_buf(nanomsg_sys::NN_SUB,
                                     nanomsg_sys::NN_SUB_UNSUBSCRIBE,
                                     topic)
     }
@@ -1345,7 +1359,7 @@ mod tests {
         }
     }
 
-    fn test_subscribe(socket: &mut Socket, topic: &str) {
+    fn test_subscribe(socket: &mut Socket, topic: &[u8]) {
         match socket.subscribe(topic) {
             Ok(_) => {},
             Err(err) => panic!("{}", err)
@@ -1591,11 +1605,11 @@ mod tests {
         test_bind(&mut sock1, url);
 
         let mut sock2 = test_create_socket(Sub);
-        test_subscribe(&mut sock2, "foo");
+        test_subscribe(&mut sock2, b"foo");
         test_connect(&mut sock2, url);
 
         let mut sock3 = test_create_socket(Sub);
-        test_subscribe(&mut sock3, "bar");
+        test_subscribe(&mut sock3, b"bar");
         test_connect(&mut sock3, url);
 
         thread::sleep(Duration::from_millis(150));
@@ -1604,7 +1618,7 @@ mod tests {
         test_write(&mut sock1, msg1);
         test_read(&mut sock2, msg1);
 
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(15));
 
         let msg2 = b"barfoo";
         test_write(&mut sock1, msg2);

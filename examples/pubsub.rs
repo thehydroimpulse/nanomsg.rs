@@ -12,13 +12,13 @@ use std::io::{Read, Write};
 const CLIENT_DEVICE_URL: &'static str = "ipc:///tmp/pubsub_example_front.ipc";
 const SERVER_DEVICE_URL: &'static str = "ipc:///tmp/pubsub_example_back.ipc";
 
-fn client(topic: &str) {
+fn client(topic: &[u8]) {
     let mut socket = Socket::new(Protocol::Sub).unwrap();
     let setopt = socket.subscribe(topic);
     let mut endpoint = socket.connect(CLIENT_DEVICE_URL).unwrap();
 
     match setopt {
-        Ok(_) => println!("Subscribed to '{}'.", topic),
+        Ok(_) => println!("Subscribed to '{:?}'.", topic),
         Err(err) => println!("Client failed to subscribe '{}'.", err)
     }
 
@@ -39,7 +39,7 @@ fn client(topic: &str) {
     endpoint.shutdown();
 }
 
-fn server(topic: &str) {
+fn server(topic: &[u8]) {
     let mut socket = Socket::new(Protocol::Pub).unwrap();
     let mut endpoint = socket.connect(SERVER_DEVICE_URL).unwrap();
     let mut count = 1u32;
@@ -47,7 +47,7 @@ fn server(topic: &str) {
     println!("Server is ready.");
 
     loop {
-        let msg = format!("{} #{}", topic,  count);
+        let msg = format!("{:?} #{}", topic,  count);
         match socket.write_all(msg.as_bytes()) {
             Ok(..) => println!("Published '{}'.", msg),
             Err(err) => {
@@ -62,7 +62,7 @@ fn server(topic: &str) {
     endpoint.shutdown();
 }
 
-fn device(topic: &str) {
+fn device(topic: &[u8]) {
     let mut front_socket = Socket::new_for_device(Protocol::Pub).unwrap();
     let mut front_endpoint = front_socket.bind(CLIENT_DEVICE_URL).unwrap();
     let mut back_socket = Socket::new_for_device(Protocol::Sub).unwrap();
@@ -70,7 +70,7 @@ fn device(topic: &str) {
     let mut back_endpoint = back_socket.bind(SERVER_DEVICE_URL).unwrap();
 
     match setopt {
-        Ok(_) => println!("Subscribed to '{}'.", topic),
+        Ok(_) => println!("Subscribed to '{:?}'.", topic),
         Err(err) => println!("Device failed to subscribe '{}'.", err)
     }
 
