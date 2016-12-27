@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.7.0"
+version = "0.6.1"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
@@ -25,7 +25,7 @@ bundled = ["nanomsg-sys/bundled"]
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
-version = "0.7.0"
+version = "0.6.1"
 
 [dependencies]
 libc = "0.2.18"
