@@ -50,6 +50,7 @@ pub const NN_DOMAIN: c_int = 12;
 pub const NN_PROTOCOL: c_int = 13;
 pub const NN_IPV4ONLY: c_int = 14;
 pub const NN_SOCKET_NAME: c_int = 15;
+pub const NN_RCVMAXSIZE: c_int = 16;
 
 pub const NN_DONTWAIT: c_int = 1;
 
@@ -664,6 +665,7 @@ mod tests {
             "NN_PROTOCOL" => Some(NN_PROTOCOL),
             "NN_IPV4ONLY" => Some(NN_IPV4ONLY),
             "NN_SOCKET_NAME" => Some(NN_SOCKET_NAME),
+            "NN_RCVMAXSIZE" => Some(NN_RCVMAXSIZE),
             "NN_DONTWAIT" => Some(NN_DONTWAIT),
             "NN_INPROC" => Some(NN_INPROC),
             "NN_IPC" => Some(NN_IPC),
