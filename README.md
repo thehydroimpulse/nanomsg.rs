@@ -122,6 +122,7 @@ fn pusher() -> Result<(), Error> {
 * Paul Woolcock ([@pwoolcoc](https://github.com/pwoolcoc))
 * Gabriel Martinez ([@mystal](https://github.com/mystal))
 * wdv4758h ([@wdv4758h](https://github.com/wdv4758h))
+* Alexander Morozov ([@alexandermorozov](https://github.com/alexandermorozov))
 
 ## License
 
