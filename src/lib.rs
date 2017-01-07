@@ -791,6 +791,15 @@ impl Socket {
                                       size_in_bytes as c_int)
     }
 
+    /// Maximum message size that can be received, in bytes. Negative value means that the received size
+    /// is limited only by available addressable memory.
+    /// Default is 1024kB.
+    pub fn set_receive_max_size(&mut self, size_in_bytes: isize) -> Result<()> {
+        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
+                                      nanomsg_sys::NN_RCVMAXSIZE,
+                                      size_in_bytes as c_int)
+    }
+
     /// The timeout for send operation on the socket.
     /// If message cannot be sent within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
