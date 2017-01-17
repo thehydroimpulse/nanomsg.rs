@@ -21,7 +21,10 @@ keywords = ["nanomsg", "binding", "network", "pub", "sub"]
 license = "MIT"
 
 [features]
+default = ["getaddrinfo_a"]
+
 bundled = ["nanomsg-sys/bundled"]
+getaddrinfo_a = ["nanomsg-sys/getaddrinfo_a"]
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"

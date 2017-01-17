@@ -17,9 +17,16 @@ fn main() {
             .status().unwrap();
     }
 
+    let getaddrinfo_a_flag = if cfg!(feature = "getaddrinfo_a") {
+      "ON"
+    } else {
+      "OFF"
+    };
+
     let dst = cmake::Config::new("nanomsg")
         .define("NN_STATIC_LIB", "ON")
         .define("NN_ENABLE_DOC", "OFF")
+        .define("NN_ENABLE_GETADDRINFO_A", getaddrinfo_a_flag)
         .define("NN_TESTS", "OFF")
         .build();
 
