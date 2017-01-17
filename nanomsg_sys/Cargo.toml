@@ -18,9 +18,8 @@ links = "nanomsg"
 build = "build.rs"
 
 [features]
-default = ["getaddrinfo_a"]
 bundled = []
-getaddrinfo_a = []
+no_anl = []
 
 [dependencies]
 libc = "0.2.18"

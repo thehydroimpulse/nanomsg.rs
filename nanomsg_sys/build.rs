@@ -17,10 +17,10 @@ fn main() {
             .status().unwrap();
     }
 
-    let getaddrinfo_a_flag = if cfg!(feature = "getaddrinfo_a") {
-      "ON"
-    } else {
+    let getaddrinfo_a_flag = if cfg!(feature = "no_anl") {
       "OFF"
+    } else {
+      "ON"
     };
 
     let dst = cmake::Config::new("nanomsg")

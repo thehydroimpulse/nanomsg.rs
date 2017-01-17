@@ -159,7 +159,7 @@ impl nn_pollfd {
     }
 }
 
-#[cfg_attr(all(target_os = "linux", feature = "bundled", feature = "getaddrinfo_a"), link(name = "anl"))]
+#[cfg_attr(all(target_os = "linux", feature = "bundled", not(feature = "no_anl")), link(name = "anl"))]
 #[cfg_attr(not(feature = "bundled"), link(name = "nanomsg"))]
 #[cfg_attr(feature = "bundled", link(name = "nanomsg", kind = "static"))]
 extern {
