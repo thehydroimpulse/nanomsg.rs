@@ -89,7 +89,7 @@ pub mod posix_consts {
 #[cfg(windows)]
 pub mod posix_consts {
     use libc::c_int;
-    
+
     pub const NN_HAUSNUMERO: c_int = 156384712;
 
     pub const ENOTSUP:         c_int = NN_HAUSNUMERO + 1;
@@ -97,7 +97,7 @@ pub mod posix_consts {
     pub const EACCESS:         c_int = NN_HAUSNUMERO + 17;
     pub const EISCONN:         c_int = NN_HAUSNUMERO + 27;
     pub const ESOCKTNOSUPPORT: c_int = NN_HAUSNUMERO + 28;
-    
+
     pub const EADDRINUSE:      c_int = 100;
     pub const EADDRNOTAVAIL:   c_int = 101;
     pub const EAFNOSUPPORT:    c_int = 102;
@@ -159,7 +159,7 @@ impl nn_pollfd {
     }
 }
 
-#[cfg_attr(all(target_os = "linux", feature = "bundled"), link(name = "anl"))]
+#[cfg_attr(all(target_os = "linux", feature = "bundled", not(feature = "no_anl")), link(name = "anl"))]
 #[cfg_attr(not(feature = "bundled"), link(name = "nanomsg"))]
 #[cfg_attr(feature = "bundled", link(name = "nanomsg", kind = "static"))]
 extern {

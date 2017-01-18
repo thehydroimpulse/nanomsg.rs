@@ -22,6 +22,7 @@ license = "MIT"
 
 [features]
 bundled = ["nanomsg-sys/bundled"]
+no_anl = ["nanomsg-sys/no_anl"]
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"

@@ -19,6 +19,7 @@ build = "build.rs"
 
 [features]
 bundled = []
+no_anl = []
 
 [dependencies]
 libc = "0.2.18"
