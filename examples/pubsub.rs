@@ -46,10 +46,14 @@ fn server(topic: &[u8]) {
 
     println!("Server is ready.");
 
+    let mut msg = Vec::with_capacity(topic.len() + 16);
     loop {
-        let msg = format!("{:?} #{}", topic,  count);
-        match socket.write_all(msg.as_bytes()) {
-            Ok(..) => println!("Published '{}'.", msg),
+        let postfix = format!(" #{}", count);
+        msg.clear();
+        msg.extend_from_slice(topic);
+        msg.extend_from_slice(postfix.as_bytes());
+        match socket.write_all(&msg) {
+            Ok(..) => println!("Published '{:?}'.", msg),
             Err(err) => {
                 println!("Server failed to publish '{}'.", err);
                 break
