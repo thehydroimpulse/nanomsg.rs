@@ -26,7 +26,10 @@ pub enum Error {
     OperationNowInProgress     = nanomsg_sys::EINPROGRESS      as isize,
     NotSocket                  = nanomsg_sys::ENOTSOCK         as isize,
     AddressFamilyNotSupported  = nanomsg_sys::EAFNOSUPPORT     as isize,
+    #[cfg(not(target_os = "openbsd"))]
     WrongProtocol              = nanomsg_sys::EPROTO           as isize,
+    #[cfg(target_os = "openbsd")]
+    WrongProtocol              = nanomsg_sys::EPROTOTYPE       as isize,
     TryAgain                   = nanomsg_sys::EAGAIN           as isize,
     BadFileDescriptor          = nanomsg_sys::EBADF            as isize,
     InvalidInput               = nanomsg_sys::EINVAL           as isize,
@@ -68,7 +71,10 @@ impl Error {
             nanomsg_sys::EINPROGRESS     => Error::OperationNowInProgress   ,
             nanomsg_sys::ENOTSOCK        => Error::NotSocket                ,
             nanomsg_sys::EAFNOSUPPORT    => Error::AddressFamilyNotSupported,
+            #[cfg(not(target_os = "openbsd"))]
             nanomsg_sys::EPROTO          => Error::WrongProtocol            ,
+            #[cfg(target_os = "openbsd")]
+            nanomsg_sys::EPROTOTYPE      => Error::WrongProtocol            ,
             nanomsg_sys::EAGAIN          => Error::TryAgain                 ,
             nanomsg_sys::EBADF           => Error::BadFileDescriptor        ,
             nanomsg_sys::EINVAL          => Error::InvalidInput             ,
