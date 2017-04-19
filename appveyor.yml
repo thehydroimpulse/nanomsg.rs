@@ -3,9 +3,9 @@ environment:
 
   matrix:
     - channel: stable
-    - target: x86_64-pc-windows-msvc
+      target: x86_64-pc-windows-msvc
     - channel: stable
-    - target: i686-pc-windows-msvc
+      target: i686-pc-windows-msvc
  
 install:
   # Go To libnanomsg Destination Directory
