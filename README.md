@@ -6,7 +6,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
 
 
-[Documentation](http://thehydroimpulse.github.io/nanomsg.rs/nanomsg)
+[Documentation](https://docs.rs/nanomsg)
 
 Nanomsg is a modern messaging library that is the successor to ZeroMQ, written in C by Martin Sustrik and colleagues. The nanomsg library is licensed under MIT/X11 license. "nanomsg" is a trademark of 250bpm s.r.o.
 
