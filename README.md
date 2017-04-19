@@ -123,7 +123,7 @@ fn pusher() -> Result<(), Error> {
 * Gabriel Martinez ([@mystal](https://github.com/mystal))
 * wdv4758h ([@wdv4758h](https://github.com/wdv4758h))
 * Alexander Morozov ([@alexandermorozov](https://github.com/alexandermorozov))
-* Jan S ([@jan-schreib]https://github.com/jan-schreib)
+* Jan S ([@jan-schreib](https://github.com/jan-schreib))
 
 ## License
 
