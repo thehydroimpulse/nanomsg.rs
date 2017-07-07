@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.6.1"
+version = "0.6.2"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
@@ -18,7 +18,12 @@ documentation = "https://github.com/thehydroimpulse/nanomsg.rs"
 repository = "https://github.com/thehydroimpulse/nanomsg.rs"
 readme = "./README.md"
 keywords = ["nanomsg", "binding", "network", "pub", "sub"]
+categories = ["network-programming"]
 license = "MIT"
+
+[badges]
+travis-ci = { repository = "blabaere/nanomsg.rs" }
+appveyor = { repository = "blabaere/nanomsg.rs" }
 
 [features]
 bundled = ["nanomsg-sys/bundled"]
@@ -26,7 +31,7 @@ no_anl = ["nanomsg-sys/no_anl"]
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
-version = "0.6.1"
+version = "0.6.2"
 
 [dependencies]
 libc = "0.2.18"
