@@ -744,29 +744,24 @@ impl Socket {
     }
 
     fn get_socket_option_str(&self, level: c_int, option: c_int, len: size_t) -> Result<CString> {
-        let val: Vec<u8> = Vec::with_capacity(len);
+        // preallocate buffer
+        let mut val: Vec<u8> = Vec::with_capacity(len);
         let mut sz: size_t = len; // Copy len so that we don't mutate paramater
-
-        let c_val = CString::new(val);
-        if c_val.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
-        }
-
-        let val_ptr = c_val.unwrap().into_raw();
-        let sz_ptr = &mut sz as *mut size_t;
 
         let ret = unsafe {
             nanomsg_sys::nn_getsockopt(
                 self.socket,
                 level,
                 option,
-                val_ptr as *mut c_void,
-                sz_ptr)
+                val.as_mut_ptr() as *mut c_void,
+                &mut sz as *mut size_t)
         };
         error_guard!(ret);
-        unsafe {
-            Ok(CString::from_raw(val_ptr))
-        }
+
+        // update buffer len
+        unsafe { val.set_len(sz as usize); }
+
+        CString::new(val).map_err(|_| Error::from_raw(nanomsg_sys::EINVAL))
     }
 
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
