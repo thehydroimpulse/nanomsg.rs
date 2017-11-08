@@ -51,6 +51,7 @@ pub const NN_PROTOCOL: c_int = 13;
 pub const NN_IPV4ONLY: c_int = 14;
 pub const NN_SOCKET_NAME: c_int = 15;
 pub const NN_RCVMAXSIZE: c_int = 16;
+pub const NN_MAXTTL: c_int = 17;
 
 pub const NN_DONTWAIT: c_int = 1;
 
