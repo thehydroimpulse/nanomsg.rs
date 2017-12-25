@@ -1639,6 +1639,30 @@ mod tests {
     }
 
     #[test]
+    fn reqrep() {
+
+        let url = "ipc:///tmp/reqrep.ipc";
+
+        let mut server = test_create_socket(Rep);
+        test_bind(&mut server, url);
+
+        let mut client = test_create_socket(Req);
+        test_connect(&mut client, url);
+
+        thread::sleep(Duration::from_millis(150));
+
+        let msg1 = b"I WANT";
+        test_write(&mut client, msg1);
+        test_read(&mut server, msg1);
+
+        thread::sleep(Duration::from_millis(15));
+
+        let msg2 = b"I GIVE";
+        test_write(&mut server, msg2);
+        test_read(&mut client, msg2);
+    }
+
+    #[test]
     fn survey() {
 
         let url = "ipc:///tmp/survey.ipc";
