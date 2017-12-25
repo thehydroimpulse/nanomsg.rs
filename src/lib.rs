@@ -1651,15 +1651,13 @@ mod tests {
 
         thread::sleep(Duration::from_millis(150));
 
-        let msg1 = b"I WANT";
-        test_write(&mut client, msg1);
-        test_read(&mut server, msg1);
+        let request = b"I WANT";
+        test_write(&mut client, request);
+        test_read(&mut server, request);
 
-        thread::sleep(Duration::from_millis(15));
-
-        let msg2 = b"I GIVE";
-        test_write(&mut server, msg2);
-        test_read(&mut client, msg2);
+        let reply = b"I GIVE";
+        test_write(&mut server, reply);
+        test_read(&mut client, reply);
     }
 
     #[test]
