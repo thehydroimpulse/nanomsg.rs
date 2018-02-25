@@ -3,27 +3,63 @@ extern crate gcc;
 extern crate pkg_config;
 
 use std::env;
+#[cfg(feature = "bundled")]
+use std::path::Path;
+
+#[cfg(feature = "bundled")]
+const NANOMSG_VERSION: &'static str = "1.1.2";
 
 #[cfg(feature = "bundled")]
 fn main() {
+    let out_dir = env::var("OUT_DIR").unwrap();
     let target = env::var("TARGET").unwrap();
+
+    let clone_path = Path::new(&out_dir).join("nanomsg_upstream");
 
     // TODO: Determine whether we'd rather always do a fresh clone.
     // TODO: Determine whether we wouldn't rather use a submodule.
-    if !::std::path::Path::new("nanomsg/.git").exists() {
+    if !clone_path.join(".git").exists() {
         // Panic if we can't clone nanomsg
-        let _ = ::std::process::Command::new("git")
-            .args(&["clone", "-b", "1.0.0", "--depth", "1", "https://github.com/nanomsg/nanomsg.git"])
-            .status().unwrap();
+        let status = ::std::process::Command::new("git")
+            .args(
+                &[
+                    "clone",
+                    "-b",
+                    NANOMSG_VERSION,
+                    "--depth",
+                    "1",
+                    "https://github.com/nanomsg/nanomsg.git",
+                    clone_path.to_str().unwrap(),
+                ],
+            )
+            .status()
+            .unwrap();
+
+        if !status.success() {
+            panic!("git clone of nanomsg was not successful");
+        }
+    } else {
+        let status = ::std::process::Command::new("git")
+            .current_dir(clone_path.clone())
+            .args(&["checkout", NANOMSG_VERSION])
+            .status()
+            .unwrap();
+
+        if !status.success() {
+            panic!(
+                "git checkout of nanomsg {} was not successful",
+                NANOMSG_VERSION
+            );
+        }
     }
 
     let getaddrinfo_a_flag = if cfg!(feature = "no_anl") {
-      "OFF"
+        "OFF"
     } else {
-      "ON"
+        "ON"
     };
 
-    let dst = cmake::Config::new("nanomsg")
+    let dst = cmake::Config::new(clone_path)
         .define("NN_STATIC_LIB", "ON")
         .define("NN_ENABLE_DOC", "OFF")
         .define("NN_ENABLE_GETADDRINFO_A", getaddrinfo_a_flag)
