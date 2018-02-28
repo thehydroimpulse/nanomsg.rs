@@ -125,6 +125,7 @@ fn pusher() -> Result<(), Error> {
 * Alexander Morozov ([@alexandermorozov](https://github.com/alexandermorozov))
 * Jan S ([@jan-schreib](https://github.com/jan-schreib))
 * Thayne McCombs ([@tmccombs](https://github.com/tmccombs))
+* Anders Bennehag ([@PureW](https://github.com/PureW))
 
 ## License
 
