@@ -64,6 +64,7 @@ fn main() {
         .define("NN_ENABLE_DOC", "OFF")
         .define("NN_ENABLE_GETADDRINFO_A", getaddrinfo_a_flag)
         .define("NN_TESTS", "OFF")
+        .define("CMAKE_SKIP_INSTALL_RPATH", "ON")
         .build();
 
     if target.contains("windows") {
