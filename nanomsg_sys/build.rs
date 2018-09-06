@@ -59,13 +59,18 @@ fn main() {
         "ON"
     };
 
-    let dst = cmake::Config::new(clone_path)
+    let mut config = cmake::Config::new(clone_path);
+    config
         .define("NN_STATIC_LIB", "ON")
         .define("NN_ENABLE_DOC", "OFF")
         .define("NN_ENABLE_GETADDRINFO_A", getaddrinfo_a_flag)
-        .define("NN_TESTS", "OFF")
-        .define("CMAKE_SKIP_INSTALL_RPATH", "ON")
-        .build();
+        .define("NN_TESTS", "OFF");
+
+    if env::var("CARGO_CFG_TARGET_ENV").unwrap() == "musl" {
+        config.define("CMAKE_SKIP_INSTALL_RPATH", "ON");
+    }
+
+    let dst = config.build();
 
     if target.contains("windows") {
         println!("cargo:rustc-link-lib=mswsock");
