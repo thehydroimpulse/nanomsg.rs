@@ -7,7 +7,7 @@ use std::env;
 use std::path::Path;
 
 #[cfg(feature = "bundled")]
-const NANOMSG_VERSION: &'static str = "1.1.2";
+const NANOMSG_VERSION: &'static str = "1.1.4";
 
 #[cfg(feature = "bundled")]
 fn main() {

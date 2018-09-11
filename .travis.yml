@@ -12,7 +12,7 @@ before_script:
 - rustc --version --verbose
 - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 install:
-- make deps
+- make clean deps
 - pkg-config --libs nanomsg
 script:
 - cd nanomsg_sys && cargo test && cd ..
