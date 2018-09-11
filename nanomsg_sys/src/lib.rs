@@ -296,7 +296,12 @@ mod tests {
     use std::sync::{Arc, Barrier};
     use std::thread;
     use std::ffi::CStr;
+    use std::ffi::CString;
     use std::str;
+
+    fn get_url(addr: &str) -> CString {
+        CString::new(addr).unwrap()
+    }
 
     fn sleep_ms(millis: u64) {
         thread::sleep(::std::time::Duration::from_millis(millis));
@@ -351,7 +356,7 @@ mod tests {
     #[test]
     fn should_create_a_pipeline() {
 
-        let url = "ipc:///tmp/should_create_a_pipeline.ipc";
+        let url = get_url("ipc:///tmp/should_create_a_pipeline.ipc");
 
         let push_sock = test_create_socket(AF_SP, NN_PUSH);
         let push_endpoint = test_bind(push_sock, url.as_ptr() as *const i8);
@@ -374,7 +379,7 @@ mod tests {
     #[test]
     fn should_create_a_pair() {
 
-        let url = "ipc:///tmp/should_create_a_pair.ipc";
+        let url = get_url("ipc:///tmp/should_create_a_pair.ipc");
         let left_sock = test_create_socket(AF_SP, NN_PAIR);
         let left_endpoint = test_bind(left_sock, url.as_ptr() as *const i8);
 
@@ -400,7 +405,7 @@ mod tests {
     #[test]
     fn should_create_a_bus() {
 
-        let url = "ipc:///tmp/should_create_a_bus.ipc";
+        let url = get_url("ipc:///tmp/should_create_a_bus.ipc");
 
         let sock1 = test_create_socket(AF_SP, NN_BUS);
         let sock1_write_endpoint = test_bind(sock1, url.as_ptr() as *const i8);
@@ -432,7 +437,7 @@ mod tests {
     #[test]
     fn should_create_a_pubsub() {
 
-        let url = "ipc:///tmp/should_create_a_pubsub.ipc";
+        let url = get_url("ipc:///tmp/should_create_a_pubsub.ipc");
         let pub_sock = test_create_socket(AF_SP, NN_PUB);
         let pub_endpoint = test_bind(pub_sock, url.as_ptr() as *const i8);
 
@@ -470,7 +475,7 @@ mod tests {
     #[test]
     fn should_create_a_survey() {
 
-        let url = "ipc:///tmp/should_create_a_survey.ipc";
+        let url = get_url("ipc:///tmp/should_create_a_survey.ipc");
         let surv_sock = test_create_socket(AF_SP, NN_SURVEYOR);
         let surv_endpoint = test_bind(surv_sock, url.as_ptr() as *const i8);
 
@@ -506,7 +511,7 @@ mod tests {
 
     #[test]
     fn poll_should_work() {
-        let url = "ipc:///tmp/poll_should_work.ipc";
+        let url = get_url("ipc:///tmp/poll_should_work.ipc");
         let s1 = test_create_socket(AF_SP, NN_PAIR);
         let s2 = test_create_socket(AF_SP, NN_PAIR);
         let pollfd1 = nn_pollfd { fd: s1, events: 3i16, revents: 0i16 };
@@ -554,17 +559,19 @@ mod tests {
         }
     }
 
-    fn test_multithread_pipeline(url: &'static str) {
+    fn test_multithread_pipeline(url: String) {
 
         // this is required to prevent the sender from being closed before the receiver gets the message
         let drop_after_use = Arc::new(Barrier::new(2));
         let drop_after_use_pull = drop_after_use.clone();
         let drop_after_use_push = drop_after_use.clone();
+        let push_url = get_url(&url);
+        let pull_url = get_url(&url);
 
         let push_thread = thread::spawn(move || {
             let push_msg = "foobar";
             let push_sock = test_create_socket(AF_SP, NN_PUSH);
-            let push_endpoint = test_bind(push_sock, url.as_ptr() as *const i8);
+            let push_endpoint = test_bind(push_sock, push_url.as_ptr() as *const i8);
 
             test_send(push_sock, push_msg);
 
@@ -574,7 +581,7 @@ mod tests {
         let pull_thread = thread::spawn(move || {
             let pull_msg = "foobar";
             let pull_sock = test_create_socket(AF_SP, NN_PULL);
-            let pull_endpoint = test_connect(pull_sock, url.as_ptr() as *const i8);
+            let pull_endpoint = test_connect(pull_sock, pull_url.as_ptr() as *const i8);
 
             test_receive(pull_sock, pull_msg);
 
@@ -587,12 +594,12 @@ mod tests {
 
     #[test]
     fn should_create_a_pipeline_mt1() {
-        test_multithread_pipeline("ipc:///tmp/should_create_a_pipeline_mt1.ipc")
+        test_multithread_pipeline(String::from("ipc:///tmp/should_create_a_pipeline_mt1.ipc"))
     }
 
     #[test]
     fn should_create_a_pipeline_mt2() {
-        test_multithread_pipeline("ipc:///tmp/should_create_a_pipeline_mt2.ipc")
+        test_multithread_pipeline(String::from("ipc:///tmp/should_create_a_pipeline_mt2.ipc"))
     }
 
     #[test]
