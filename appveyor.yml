@@ -9,9 +9,9 @@ install:
   # Go To libnanomsg Destination Directory
   - cd ..
   # Download And Compile libnanomsg
-  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/1.0.0.zip'
-  - 7z x 1.0.0.zip
-  - cd nanomsg-1.0.0
+  - ps: Start-FileDownload 'https://github.com/nanomsg/nanomsg/archive/1.1.4.zip'
+  - 7z x 1.1.4.zip
+  - cd nanomsg-1.1.4
   - mkdir build
   - cd build
   - cmake -G"Visual Studio 14 Win64" -DNN_ENABLE_DOC=OFF ..
@@ -37,5 +37,5 @@ test_script:
   - set PATH=%PATH%;C:\Program Files\nanomsg\bin
   - cargo test
   # Move libnanomsg To Test nanomsg_sys
-  - mv ..\nanomsg-1.0.0 .\nanomsg-1.0.0 && cd nanomsg_sys
+  - mv ..\nanomsg-1.1.4 .\nanomsg-1.1.4 && cd nanomsg_sys
   - cargo test

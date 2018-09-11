@@ -697,11 +697,12 @@ impl Socket {
         }
         let ptr = c_val.unwrap().as_ptr() as *const c_void;
         let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(self.socket,
-                                      level,
-                                      option,
-                                      ptr,
-                                      val.len() as size_t)
+            nanomsg_sys::nn_setsockopt(
+                self.socket,
+                level,
+                option,
+                ptr,
+                val.len() as size_t)
         };
 
         error_guard!(ret);
@@ -712,11 +713,12 @@ impl Socket {
         let buf_ptr = val.as_ptr() as *const c_void;
         let buf_len = val.len() as size_t;
         let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(self.socket,
-                                      level,
-                                      option,
-                                      buf_ptr,
-                                      buf_len)
+            nanomsg_sys::nn_setsockopt(
+                self.socket,
+                level,
+                option,
+                buf_ptr,
+                buf_len)
         };
 
         error_guard!(ret);
@@ -730,11 +732,12 @@ impl Socket {
         let sz_ptr = &mut sz as *mut size_t;
 
         let ret = unsafe {
-            nanomsg_sys::nn_getsockopt(self.socket,
-                                      level,
-                                      option,
-                                      val_ptr,
-                                      sz_ptr)
+            nanomsg_sys::nn_getsockopt(
+                self.socket,
+                level,
+                option,
+                val_ptr,
+                sz_ptr)
         };
         error_guard!(ret);
         Ok(val)
@@ -753,11 +756,12 @@ impl Socket {
         let sz_ptr = &mut sz as *mut size_t;
 
         let ret = unsafe {
-            nanomsg_sys::nn_getsockopt(self.socket,
-                                       level,
-                                       option,
-                                       val_ptr as *mut c_void,
-                                       sz_ptr)
+            nanomsg_sys::nn_getsockopt(
+                self.socket,
+                level,
+                option,
+                val_ptr as *mut c_void,
+                sz_ptr)
         };
         error_guard!(ret);
         unsafe {
