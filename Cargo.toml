@@ -1,6 +1,6 @@
 [project]
 name = "nanomsg"
-version = "0.7.0"
+version = "0.7.1"
 authors = [
   "Daniel Fagnan <dnfagnan@gmail.com>",
   "Jason E. Aten",
@@ -31,7 +31,7 @@ no_anl = ["nanomsg-sys/no_anl"]
 
 [dependencies.nanomsg-sys]
 path = "./nanomsg_sys"
-version = "0.7.0"
+version = "0.7.1"
 
 [dependencies]
 libc = "0.2.*"
