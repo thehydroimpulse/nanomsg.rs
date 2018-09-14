@@ -1,6 +1,6 @@
 # Nanomsg 
 
-![Cargo 0.7.1   ](http://img.shields.io/badge/cargo-0.7.1-orange.svg?style=flat)
+![Cargo 0.7.2](http://img.shields.io/badge/cargo-0.7.2-orange.svg?style=flat)
 ![MIT License](http://img.shields.io/npm/l/express.svg?style=flat)
 [![Build Status](https://travis-ci.org/thehydroimpulse/nanomsg.rs.svg?branch=master)](https://travis-ci.org/thehydroimpulse/nanomsg.rs) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hwfjigfwyomc56u1?svg=true)](https://ci.appveyor.com/project/thehydroimpulse/nanomsg-rs)
@@ -27,7 +27,7 @@ make deps
 
 ```toml
 [dependencies]
-nanomsg = "0.7.1"
+nanomsg = "0.7.2"
 ```
 
 Simply import the crate to use it:
@@ -127,6 +127,7 @@ fn pusher() -> Result<(), Error> {
 * Thayne McCombs ([@tmccombs](https://github.com/tmccombs))
 * Anders Bennehag ([@PureW](https://github.com/PureW))
 * Peter Parkanyi ([@rsdy](https://github.com/rsdy))
+* Jacek ([@forgerpl](https://github.com/forgerpl))
 
 
 ## License
