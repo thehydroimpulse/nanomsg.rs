@@ -1243,9 +1243,9 @@ impl Drop for Socket {
 mod tests {
     #![allow(unused_must_use)]
     use super::Protocol::*;
+    use crate::{Endpoint, Error, PollFd, PollInOut, PollRequest, Protocol, Socket};
     use libc::c_int;
     use nanomsg_sys;
-    use crate::{Endpoint, Error, PollFd, PollInOut, PollRequest, Protocol, Socket};
 
     use std::io::{Read, Write};
 
