@@ -1,22 +1,22 @@
-extern crate nanomsg_sys;
 extern crate libc;
+extern crate nanomsg_sys;
 
-pub use result::{Result, Error};
 pub use endpoint::Endpoint;
+pub use result::{Error, Result};
 
 use nanomsg_sys::nn_pollfd;
 
 use libc::{c_int, c_void, size_t};
-use std::ffi::CString;
-use std::cmp;
-use std::mem;
-use std::str;
-use std::ptr;
 use result::last_nano_error;
-use std::io;
-use std::mem::size_of;
-use std::slice;
+use std::cmp;
 use std::convert::From;
+use std::ffi::CString;
+use std::io;
+use std::mem;
+use std::mem::size_of;
+use std::ptr;
+use std::slice;
+use std::str;
 
 #[cfg(unix)]
 use std::os::unix::io::RawFd;
@@ -24,8 +24,8 @@ use std::os::unix::io::RawFd;
 #[cfg(windows)]
 use std::os::windows::raw::SOCKET;
 
-pub mod result;
 pub mod endpoint;
+pub mod result;
 
 /// Type-safe protocols that Nanomsg uses. Each socket
 /// is bound to a single protocol that has specific behaviour
@@ -81,7 +81,7 @@ pub enum Protocol {
     /// Use to respond to the survey.
     /// Survey is received using receive function, response is sent using send function
     /// This socket can be connected to at most one peer.
-    Respondent = (nanomsg_sys::NN_RESPONDENT) as isize
+    Respondent = (nanomsg_sys::NN_RESPONDENT) as isize,
 }
 
 impl Protocol {
@@ -97,7 +97,7 @@ pub enum Transport {
     /// Inter-process transport
     Ipc = (nanomsg_sys::NN_IPC) as isize,
     /// TCP transport
-    Tcp = (nanomsg_sys::NN_TCP) as isize
+    Tcp = (nanomsg_sys::NN_TCP) as isize,
 }
 
 impl Transport {
@@ -110,7 +110,7 @@ impl Transport {
 /// provides a safe interface for dealing with initializing the sockets, sending
 /// and receiving messages.
 pub struct Socket {
-    socket: c_int
+    socket: c_int,
 }
 
 #[derive(Clone, Copy)]
@@ -131,16 +131,15 @@ pub struct PollFd {
     socket: c_int,
     check_pollinout: PollInOut,
     check_pollin_result: bool,
-    check_pollout_result: bool
+    check_pollout_result: bool,
 }
 
 impl PollFd {
-
     fn convert(&self) -> nn_pollfd {
         let (pollin, pollout) = match self.check_pollinout {
-            PollInOut::In    => (true,  false),
-            PollInOut::Out   => (false, true),
-            PollInOut::InOut => (true,  true),
+            PollInOut::In => (true, false),
+            PollInOut::Out => (false, true),
+            PollInOut::InOut => (true, true),
         };
         nn_pollfd::new(self.socket, pollin, pollout)
     }
@@ -154,14 +153,13 @@ impl PollFd {
     pub fn can_write(&self) -> bool {
         self.check_pollout_result
     }
-
 }
 
 /// A request for polling a set of sockets and the poll results.
 /// To create the request, see `PollRequest::new`.
 pub struct PollRequest<'a> {
     fds: &'a mut [PollFd],
-    nn_fds: Vec<nn_pollfd>
+    nn_fds: Vec<nn_pollfd>,
 }
 
 impl<'a> PollRequest<'a> {
@@ -169,7 +167,7 @@ impl<'a> PollRequest<'a> {
     pub fn new(fds: &'a mut [PollFd]) -> PollRequest<'a> {
         let nn_fds = fds.iter().map(|fd| fd.convert()).collect();
 
-        PollRequest { fds: fds, nn_fds: nn_fds }
+        PollRequest { fds, nn_fds }
     }
 
     fn len(&self) -> usize {
@@ -186,7 +184,6 @@ impl<'a> PollRequest<'a> {
     }
 
     fn copy_poll_result(&mut self) {
-
         for x in 0..self.fds.len() {
             self.fds[x].check_pollin_result = self.nn_fds[x].pollin_result();
             self.fds[x].check_pollout_result = self.nn_fds[x].pollout_result();
@@ -213,7 +210,6 @@ macro_rules! io_error_guard(
 );
 
 impl Socket {
-
     /// Allocate and initialize a new Nanomsg socket which returns
     /// a new file descriptor behind the scene. The safe interface doesn't
     /// expose any of the underlying file descriptors and such.
@@ -261,7 +257,7 @@ impl Socket {
         let socket = unsafe { nanomsg_sys::nn_socket(domain, protocol.to_raw()) };
 
         error_guard!(socket);
-        Ok(Socket {socket: socket})
+        Ok(Socket { socket })
     }
 
     /// Creating a new socket through `Socket::new` does **not**
@@ -303,14 +299,15 @@ impl Socket {
     /// - `AddressInUse` : The requested local endpoint is already in use.
     /// - `Terminating` : The library is terminating.
     pub fn bind(&mut self, addr: &str) -> Result<Endpoint> {
-        let c_addr = CString::new(addr.as_bytes());
-        if c_addr.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
-        }
-        let ret = unsafe { nanomsg_sys::nn_bind(self.socket, c_addr.unwrap().as_ptr()) };
+        match CString::new(addr.as_bytes()) {
+            Err(_) => Err(Error::from_raw(nanomsg_sys::EINVAL)),
+            Ok(c_addr) => {
+                let ret = unsafe { nanomsg_sys::nn_bind(self.socket, c_addr.as_ptr()) };
 
-        error_guard!(ret);
-        Ok(Endpoint::new(ret, self.socket))
+                error_guard!(ret);
+                Ok(Endpoint::new(ret, self.socket))
+            }
+        }
     }
 
     /// Connects the socket to a remote endpoint.
@@ -342,14 +339,14 @@ impl Socket {
     /// - `NoDevice` : Address specifies a nonexistent interface.
     /// - `Terminating` : The library is terminating.
     pub fn connect(&mut self, addr: &str) -> Result<Endpoint> {
-        let c_addr = CString::new(addr.as_bytes());
-        if c_addr.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
+        match CString::new(addr.as_bytes()) {
+            Err(_) => Err(Error::from_raw(nanomsg_sys::EINVAL)),
+            Ok(c_addr) => {
+                let ret = unsafe { nanomsg_sys::nn_connect(self.socket, c_addr.as_ptr()) };
+                error_guard!(ret);
+                Ok(Endpoint::new(ret, self.socket))
+            }
         }
-        let ret = unsafe { nanomsg_sys::nn_connect(self.socket, c_addr.unwrap().as_ptr()) };
-
-        error_guard!(ret);
-        Ok(Endpoint::new(ret, self.socket))
     }
 
     /// Non-blocking version of the `read` function.
@@ -437,9 +434,14 @@ impl Socket {
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
     pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
-        let mut msg : *mut u8 = ptr::null_mut();
+        let mut msg: *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, nanomsg_sys::NN_DONTWAIT)
+            nanomsg_sys::nn_recv(
+                self.socket,
+                mem::transmute(&mut msg),
+                nanomsg_sys::NN_MSG,
+                nanomsg_sys::NN_DONTWAIT,
+            )
         };
 
         error_guard!(ret);
@@ -566,7 +568,7 @@ impl Socket {
     /// # Error
     ///
     /// - `BadAddress` : The message pointer is invalid.
-    pub fn free_msg<'a>(msg: &'a mut [u8]) -> Result<()> {
+    pub fn free_msg(msg: &mut [u8]) -> Result<()> {
         unsafe {
             let ptr = msg.as_mut_ptr() as *mut c_void;
             let ret = nanomsg_sys::nn_freemsg(ptr);
@@ -583,7 +585,7 @@ impl Socket {
             socket: self.socket,
             check_pollinout: pollinout,
             check_pollin_result: false,
-            check_pollout_result: false
+            check_pollout_result: false,
         }
     }
 
@@ -679,11 +681,13 @@ impl Socket {
         let val_ptr = &val as *const _ as *const c_void;
 
         let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(self.socket,
-                                      level,
-                                      option,
-                                      val_ptr,
-                                      size_of::<c_int>() as size_t)
+            nanomsg_sys::nn_setsockopt(
+                self.socket,
+                level,
+                option,
+                val_ptr,
+                size_of::<c_int>() as size_t,
+            )
         };
 
         error_guard!(ret);
@@ -691,35 +695,25 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> Result<()> {
-        let c_val = CString::new(val.as_bytes());
-        if c_val.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
-        }
-        let ptr = c_val.unwrap().as_ptr() as *const c_void;
-        let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(
-                self.socket,
-                level,
-                option,
-                ptr,
-                val.len() as size_t)
-        };
+        match CString::new(val.as_bytes()) {
+            Err(_) => Err(Error::from_raw(nanomsg_sys::EINVAL)),
+            Ok(c_val) => {
+                let ptr = c_val.as_ptr() as *const c_void;
+                let ret = unsafe {
+                    nanomsg_sys::nn_setsockopt(self.socket, level, option, ptr, val.len() as size_t)
+                };
 
-        error_guard!(ret);
-        Ok(())
+                error_guard!(ret);
+                Ok(())
+            }
+        }
     }
 
     fn set_socket_options_buf(&self, level: c_int, option: c_int, val: &[u8]) -> Result<()> {
         let buf_ptr = val.as_ptr() as *const c_void;
         let buf_len = val.len() as size_t;
-        let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(
-                self.socket,
-                level,
-                option,
-                buf_ptr,
-                buf_len)
-        };
+        let ret =
+            unsafe { nanomsg_sys::nn_setsockopt(self.socket, level, option, buf_ptr, buf_len) };
 
         error_guard!(ret);
         Ok(())
@@ -731,14 +725,8 @@ impl Socket {
         let val_ptr = &mut val as *mut _ as *mut c_void;
         let sz_ptr = &mut sz as *mut size_t;
 
-        let ret = unsafe {
-            nanomsg_sys::nn_getsockopt(
-                self.socket,
-                level,
-                option,
-                val_ptr,
-                sz_ptr)
-        };
+        let ret =
+            unsafe { nanomsg_sys::nn_getsockopt(self.socket, level, option, val_ptr, sz_ptr) };
         error_guard!(ret);
         Ok(val)
     }
@@ -754,12 +742,15 @@ impl Socket {
                 level,
                 option,
                 val.as_mut_ptr() as *mut c_void,
-                &mut sz as *mut size_t)
+                &mut sz as *mut size_t,
+            )
         };
         error_guard!(ret);
 
         // update buffer len
-        unsafe { val.set_len(sz as usize); }
+        unsafe {
+            val.set_len(sz as usize);
+        }
 
         CString::new(val).map_err(|_| Error::from_raw(nanomsg_sys::EINVAL))
     }
@@ -767,54 +758,66 @@ impl Socket {
     /// Specifies how long the socket should try to send pending outbound messages after `drop` have been called.
     /// Negative value means infinite linger. Default value is 1000 (1 second).
     pub fn set_linger(&mut self, linger: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_LINGER,
-                                      linger as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_LINGER,
+            linger as c_int,
+        )
     }
 
     /// Size of the send buffer, in bytes. To prevent blocking for messages larger than the buffer,
     /// exactly one message may be buffered in addition to the data in the send buffer.
     /// Default value is 128kB.
     pub fn set_send_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_SNDBUF,
-                                      size_in_bytes as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_SNDBUF,
+            size_in_bytes as c_int,
+        )
     }
 
     /// Size of the receive buffer, in bytes. To prevent blocking for messages larger than the buffer,
     /// exactly one message may be buffered in addition to the data in the receive buffer.
     /// Default value is 128kB.
     pub fn set_receive_buffer_size(&mut self, size_in_bytes: usize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RCVBUF,
-                                      size_in_bytes as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RCVBUF,
+            size_in_bytes as c_int,
+        )
     }
 
     /// Maximum message size that can be received, in bytes. Negative value means that the received size
     /// is limited only by available addressable memory.
     /// Default is 1024kB.
     pub fn set_receive_max_size(&mut self, size_in_bytes: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RCVMAXSIZE,
-                                      size_in_bytes as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RCVMAXSIZE,
+            size_in_bytes as c_int,
+        )
     }
 
     /// The timeout for send operation on the socket.
     /// If message cannot be sent within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
     pub fn set_send_timeout(&mut self, timeout: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_SNDTIMEO,
-                                      timeout as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_SNDTIMEO,
+            timeout as c_int,
+        )
     }
 
     /// The timeout for recv operation on the socket.
     /// If message cannot be received within the specified timeout, TryAgain error is returned.
     /// Negative value means infinite timeout. Default value is infinite timeout.
     pub fn set_receive_timeout(&mut self, timeout: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RCVTIMEO,
-                                      timeout as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RCVTIMEO,
+            timeout as c_int,
+        )
     }
 
     /// For connection-based transports such as TCP, this option specifies how long to wait,
@@ -822,9 +825,11 @@ impl Socket {
     /// Note that actual reconnect interval may be randomised to some extent to prevent severe reconnection storms.
     /// Default value is 100 milliseconds.
     pub fn set_reconnect_interval(&mut self, interval: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RECONNECT_IVL,
-                                      interval as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RECONNECT_IVL,
+            interval as c_int,
+        )
     }
 
     /// This option is to be used only in addition to `set_reconnect_interval` option.
@@ -835,9 +840,11 @@ impl Socket {
     /// If `max_reconnect_interval` is less than `reconnect_interval`, it is ignored.
     /// Default value is 0.
     pub fn set_max_reconnect_interval(&mut self, interval: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RECONNECT_IVL_MAX,
-                                      interval as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RECONNECT_IVL_MAX,
+            interval as c_int,
+        )
     }
 
     /// Sets outbound priority for endpoints subsequently added to the socket.
@@ -846,9 +853,11 @@ impl Socket {
     /// peers with high priority take precedence over peers with low priority.
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
     pub fn set_send_priority(&mut self, priority: u8) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_SNDPRIO,
-                                      priority as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_SNDPRIO,
+            priority as c_int,
+        )
     }
 
     /// Sets inbound priority for endpoints subsequently added to the socket.
@@ -857,18 +866,22 @@ impl Socket {
     /// from peer with lower priority.
     /// Highest priority is 1, lowest priority is 16. Default value is 8.
     pub fn set_receive_priority(&mut self, priority: u8) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_RCVPRIO,
-                                      priority as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_RCVPRIO,
+            priority as c_int,
+        )
     }
 
     /// If set to true, only IPv4 addresses are used.
     /// If set to false, both IPv4 and IPv6 addresses are used.
     /// Default value is true.
     pub fn set_ipv4_only(&mut self, ipv4_only: bool) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SOL_SOCKET,
-                                      nanomsg_sys::NN_IPV4ONLY,
-                                      ipv4_only as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_IPV4ONLY,
+            ipv4_only as c_int,
+        )
     }
 
     /// Socket name for error reporting and statistics.
@@ -876,102 +889,94 @@ impl Socket {
     /// **This option is experimental, see `Socket::env` for details**
     #[cfg(not(windows))]
     pub fn set_socket_name(&mut self, name: &str) -> Result<()> {
-        self.set_socket_options_str(nanomsg_sys::NN_SOL_SOCKET,
-                                    nanomsg_sys::NN_SOCKET_NAME,
-                                    name)
+        self.set_socket_options_str(
+            nanomsg_sys::NN_SOL_SOCKET,
+            nanomsg_sys::NN_SOCKET_NAME,
+            name,
+        )
     }
 
     /// This option, when set to `true`, disables Nagle’s algorithm.
     /// It also disables delaying of TCP acknowledgments.
     /// Using this option improves latency at the expense of throughput.
     pub fn set_tcp_nodelay(&mut self, tcp_nodelay: bool) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_TCP,
-                                      nanomsg_sys::NN_TCP_NODELAY,
-                                      tcp_nodelay as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_TCP,
+            nanomsg_sys::NN_TCP_NODELAY,
+            tcp_nodelay as c_int,
+        )
     }
 
     /// Retrieve a file descriptor that is readable when a message can
-	/// be received on the unerlying socket
-	#[cfg(unix)]
-	pub fn get_receive_fd(&mut self) -> Result<RawFd> {
-		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
-										 v as RawFd
-									 })
-	}
+    /// be received on the unerlying socket
+    #[cfg(unix)]
+    pub fn get_receive_fd(&mut self) -> Result<RawFd> {
+        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET, nanomsg_sys::NN_RCVFD)
+            .map(|v: c_int| v as RawFd)
+    }
 
-	#[cfg(windows)]
-	pub fn get_receive_fd(&mut self) -> Result<SOCKET> {
-		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-									 nanomsg_sys::NN_RCVFD).map(|v: c_int| {
-										 v as SOCKET
-									 })
-	}
+    #[cfg(windows)]
+    pub fn get_receive_fd(&mut self) -> Result<SOCKET> {
+        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET, nanomsg_sys::NN_RCVFD)
+            .map(|v: c_int| v as SOCKET)
+    }
 
     /// Retrieve a file descriptor that is writeable when a message
-	/// can be sent on the underlying socket
-	#[cfg(unix)]
-	pub fn get_send_fd(&mut self) -> Result<RawFd> {
-		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
-										 v as RawFd
-									 })
-	}
+    /// can be sent on the underlying socket
+    #[cfg(unix)]
+    pub fn get_send_fd(&mut self) -> Result<RawFd> {
+        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET, nanomsg_sys::NN_SNDFD)
+            .map(|v: c_int| v as RawFd)
+    }
 
-	#[cfg(windows)]
-	pub fn get_send_fd(&mut self) -> Result<SOCKET> {
-		self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET,
-									 nanomsg_sys::NN_SNDFD).map(|v: c_int| {
-										 v as SOCKET
-									 })
-	}
+    #[cfg(windows)]
+    pub fn get_send_fd(&mut self) -> Result<SOCKET> {
+        self.get_socket_option_c_int(nanomsg_sys::NN_SOL_SOCKET, nanomsg_sys::NN_SNDFD)
+            .map(|v: c_int| v as SOCKET)
+    }
 
     /// Retrieve the name for this socket for error reporting and
     /// statistics.
     /// **This option is experimental, see `Socket::env` for details
     #[cfg(not(windows))]
     pub fn get_socket_name(&mut self, len: usize) -> Result<String> {
-        self.get_socket_option_str(nanomsg_sys::NN_SOL_SOCKET,
-                                   nanomsg_sys::NN_SOCKET_NAME,
-                                   len).map(|v: CString| {
-                                       v.to_string_lossy().into_owned()
-                                   })
+        self.get_socket_option_str(nanomsg_sys::NN_SOL_SOCKET, nanomsg_sys::NN_SOCKET_NAME, len)
+            .map(|v: CString| v.to_string_lossy().into_owned())
     }
 
     /// Defined on full `Sub` socket.
     /// Subscribes for a particular topic.
     /// A single `Sub` socket can handle multiple subscriptions.
     pub fn subscribe(&mut self, topic: &[u8]) -> Result<()> {
-        self.set_socket_options_buf(nanomsg_sys::NN_SUB,
-                                    nanomsg_sys::NN_SUB_SUBSCRIBE,
-                                    topic)
+        self.set_socket_options_buf(nanomsg_sys::NN_SUB, nanomsg_sys::NN_SUB_SUBSCRIBE, topic)
     }
 
     /// Defined on full `Sub` socket. Unsubscribes from a particular topic.
     pub fn unsubscribe(&mut self, topic: &[u8]) -> Result<()> {
-        self.set_socket_options_buf(nanomsg_sys::NN_SUB,
-                                    nanomsg_sys::NN_SUB_UNSUBSCRIBE,
-                                    topic)
+        self.set_socket_options_buf(nanomsg_sys::NN_SUB, nanomsg_sys::NN_SUB_UNSUBSCRIBE, topic)
     }
 
     /// Specifies how long to wait for responses to the survey.
     /// Once the deadline expires, receive function will return `Timeout` error and all subsequent responses to the survey will be silently dropped.
     /// The deadline is measured in milliseconds. Default value is 1 second.
     pub fn set_survey_deadline(&mut self, deadline: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_SURVEYOR,
-                                      nanomsg_sys::NN_SURVEYOR_DEADLINE,
-                                      deadline as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_SURVEYOR,
+            nanomsg_sys::NN_SURVEYOR_DEADLINE,
+            deadline as c_int,
+        )
     }
 
     /// This option is defined on the full `Req` socket.
     /// If reply is not received in specified amount of milliseconds, the request will be automatically resent.
     /// The type of this option is int. Default value is 1 minute.
     pub fn set_request_resend_interval(&mut self, interval: isize) -> Result<()> {
-        self.set_socket_options_c_int(nanomsg_sys::NN_REQ,
-                                      nanomsg_sys::NN_REQ_RESEND_IVL,
-                                      interval as c_int)
+        self.set_socket_options_c_int(
+            nanomsg_sys::NN_REQ,
+            nanomsg_sys::NN_REQ_RESEND_IVL,
+            interval as c_int,
+        )
     }
-
 }
 
 impl io::Read for Socket {
@@ -1071,8 +1076,15 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating.
     fn read_to_end(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
-        let mut msg : *mut u8 = ptr::null_mut();
-        let ret = unsafe { nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0) };
+        let mut msg: *mut u8 = ptr::null_mut();
+        let ret = unsafe {
+            nanomsg_sys::nn_recv(
+                self.socket,
+                mem::transmute(&mut msg),
+                nanomsg_sys::NN_MSG,
+                0,
+            )
+        };
 
         io_error_guard!(ret);
 
@@ -1125,9 +1137,14 @@ impl io::Read for Socket {
     /// - `io::ErrorKind::Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `io::ErrorKind::Other` : The library is terminating, or the message is not a valid UTF-8 string.
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
-        let mut msg : *mut u8 = ptr::null_mut();
+        let mut msg: *mut u8 = ptr::null_mut();
         let ret = unsafe {
-            nanomsg_sys::nn_recv(self.socket, mem::transmute(&mut msg), nanomsg_sys::NN_MSG, 0)
+            nanomsg_sys::nn_recv(
+                self.socket,
+                mem::transmute(&mut msg),
+                nanomsg_sys::NN_MSG,
+                0,
+            )
         };
 
         io_error_guard!(ret);
@@ -1140,15 +1157,17 @@ impl io::Read for Socket {
                     buf.push_str(text);
                     nanomsg_sys::nn_freemsg(msg as *mut c_void);
                     Ok(ret)
-                },
+                }
                 Err(_) => {
                     nanomsg_sys::nn_freemsg(msg as *mut c_void);
-                    Err(io::Error::new(io::ErrorKind::Other, "UTF8 conversion failed !"))
-                },
+                    Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        "UTF8 conversion failed !",
+                    ))
+                }
             }
         }
     }
-
 }
 
 impl io::Write for Socket {
@@ -1197,7 +1216,7 @@ impl io::Write for Socket {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let buf_len = buf.len() as size_t;
         let buf_ptr = buf.as_ptr() as *const c_void;
-        let ret = unsafe { nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len , 0) };
+        let ret = unsafe { nanomsg_sys::nn_send(self.socket, buf_ptr, buf_len, 0) };
 
         io_error_guard!(ret);
         Ok(buf_len as usize)
@@ -1214,17 +1233,19 @@ impl Drop for Socket {
     /// The library will try to deliver any outstanding outbound messages for the time specified by `set_linger`.
     /// The call will block in the meantime.
     fn drop(&mut self) {
-        unsafe { nanomsg_sys::nn_close(self.socket); }
+        unsafe {
+            nanomsg_sys::nn_close(self.socket);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     #![allow(unused_must_use)]
-    use {Socket, Protocol, PollRequest, PollFd, Endpoint, PollInOut, Error};
+    use super::Protocol::*;
+    use crate::{Endpoint, Error, PollFd, PollInOut, PollRequest, Protocol, Socket};
     use libc::c_int;
     use nanomsg_sys;
-    use super::Protocol::*;
 
     use std::io::{Read, Write};
 
@@ -1252,7 +1273,7 @@ mod tests {
     fn initialize_socket() {
         let socket = match Socket::new(Pull) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         assert!(socket.socket >= 0);
@@ -1264,12 +1285,12 @@ mod tests {
     fn bind_socket() {
         let mut socket = match Socket::new(Pull) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         match socket.bind("ipc:///tmp/bind_socket.ipc") {
-            Ok(_) => {},
-            Err(err) => panic!("{}", err)
+            Ok(_) => {}
+            Err(err) => panic!("{}", err),
         }
 
         drop(socket);
@@ -1279,12 +1300,12 @@ mod tests {
     fn bind_and_shutdown() {
         let mut socket = match Socket::new(Pull) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         let mut endpoint = match socket.bind("ipc:///tmp/bind_and_shutdown.ipc") {
             Ok(endpoint) => endpoint,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         endpoint.shutdown();
@@ -1296,12 +1317,12 @@ mod tests {
     fn connect_and_shutdown() {
         let mut socket = match Socket::new(Push) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         let mut endpoint = match socket.connect("ipc:///tmp/bind_and_shutdown.ipc") {
             Ok(endpoint) => endpoint,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         endpoint.shutdown();
@@ -1312,39 +1333,39 @@ mod tests {
     fn test_create_socket(protocol: Protocol) -> Socket {
         match Socket::new(protocol) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         }
     }
 
     fn test_bind(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.bind(addr) {
             Ok(endpoint) => endpoint,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         }
     }
 
     fn test_connect(socket: &mut Socket, addr: &str) -> Endpoint {
         match socket.connect(addr) {
             Ok(endpoint) => endpoint,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         }
     }
 
     fn test_write(socket: &mut Socket, buf: &[u8]) {
         match socket.write_all(buf) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to write to the socket: {}", err),
         }
     }
 
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
-        let mut msg = Socket::allocate_msg(buf.len()).unwrap();
+        let msg = Socket::allocate_msg(buf.len()).unwrap();
         for i in 0..buf.len() {
-           msg[i] = buf[i];
+            msg[i] = buf[i];
         }
         match socket.zc_write(msg) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to write to the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to write to the socket: {}", err),
         }
     }
 
@@ -1354,8 +1375,8 @@ mod tests {
             Ok(len) => {
                 assert_eq!(len, 6);
                 assert_eq!(buf.as_ref(), expected)
-            },
-            Err(err) => panic!("{}", err)
+            }
+            Err(err) => panic!("{}", err),
         }
     }
 
@@ -1363,20 +1384,19 @@ mod tests {
         let mut text = String::new();
         match socket.read_to_string(&mut text) {
             Ok(_) => assert_eq!(text, expected),
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         }
     }
 
     fn test_subscribe(socket: &mut Socket, topic: &[u8]) {
         match socket.subscribe(topic) {
-            Ok(_) => {},
-            Err(err) => panic!("{}", err)
+            Ok(_) => {}
+            Err(err) => panic!("{}", err),
         }
     }
 
     #[test]
     fn pipeline() {
-
         let url = "ipc:///tmp/pipeline.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -1398,7 +1418,6 @@ mod tests {
 
     #[test]
     fn read_when_buffer_is_smaller_than_msg_return_buffer_size() {
-
         let url = "ipc:///tmp/pipeline_truncate.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -1420,7 +1439,6 @@ mod tests {
 
     #[test]
     fn zero_copy_works() {
-
         let url = "ipc:///tmp/zero_copy_works.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -1441,7 +1459,6 @@ mod tests {
     }
 
     fn test_multithread_pipeline(url: &'static str) {
-
         // this is required to prevent the sender from being dropped too early
         let finish_line = Arc::new(Barrier::new(3));
         let finish_line_pull = finish_line.clone();
@@ -1456,7 +1473,7 @@ mod tests {
             finish_line_push.wait();
         });
 
-        let pull_thread = thread::spawn(move|| {
+        let pull_thread = thread::spawn(move || {
             let mut pull_socket = test_create_socket(Pull);
 
             test_connect(&mut pull_socket, url);
@@ -1483,7 +1500,6 @@ mod tests {
 
     #[test]
     fn pair() {
-
         let url = "ipc:///tmp/pair.ipc";
 
         let mut left_socket = test_create_socket(Pair);
@@ -1506,7 +1522,6 @@ mod tests {
 
     #[test]
     fn connect_push_to_multi_ep() {
-
         let url1 = "ipc:///tmp/connect_push_to_multi_ep_1.ipc";
         let url2 = "ipc:///tmp/connect_push_to_multi_ep_2.ipc";
 
@@ -1532,7 +1547,7 @@ mod tests {
             Ok(count) => {
                 assert_eq!(count, 6);
                 read_count = read_count + 1;
-            },
+            }
             Err(err) => {
                 assert_eq!(err, Error::TryAgain);
                 block_count = block_count + 1;
@@ -1542,7 +1557,7 @@ mod tests {
             Ok(count) => {
                 assert_eq!(count, 6);
                 read_count = read_count + 1;
-            },
+            }
             Err(err) => {
                 assert_eq!(err, Error::TryAgain);
                 block_count = block_count + 1;
@@ -1554,7 +1569,6 @@ mod tests {
 
     #[test]
     fn bind_pull_to_multi_ep() {
-
         let url1 = "ipc:///tmp/bind_pull_to_multi_ep_1.ipc";
         let url2 = "ipc:///tmp/bind_pull_to_multi_ep_2.ipc";
 
@@ -1580,7 +1594,6 @@ mod tests {
 
     #[test]
     fn bus() {
-
         let url = "ipc:///tmp/bus.ipc";
 
         let mut sock1 = test_create_socket(Bus);
@@ -1606,7 +1619,6 @@ mod tests {
 
     #[test]
     fn pubsub() {
-
         let url = "ipc:///tmp/pubsub.ipc";
 
         let mut sock1 = test_create_socket(Pub);
@@ -1639,7 +1651,6 @@ mod tests {
 
     #[test]
     fn reqrep() {
-
         let url = "ipc:///tmp/reqrep.ipc";
 
         let mut server = test_create_socket(Rep);
@@ -1661,7 +1672,6 @@ mod tests {
 
     #[test]
     fn survey() {
-
         let url = "ipc:///tmp/survey.ipc";
 
         let mut sock1 = test_create_socket(Surveyor);
@@ -1684,7 +1694,7 @@ mod tests {
 
         match sock1.set_survey_deadline(500) {
             Ok(socket) => socket,
-            Err(err) => panic!("{}", err)
+            Err(err) => panic!("{}", err),
         };
 
         let question = b"yesno?";
@@ -1705,12 +1715,11 @@ mod tests {
 
     #[test]
     fn should_change_linger() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_linger(1024) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change linger on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change linger on the socket: {}", err),
         }
 
         drop(socket)
@@ -1718,13 +1727,12 @@ mod tests {
 
     #[test]
     fn should_change_send_buffer_size() {
-
         let mut socket = test_create_socket(Pair);
 
         let size = 64 * 1024;
         match socket.set_send_buffer_size(size) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change send buffer size on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change send buffer size on the socket: {}", err),
         }
 
         drop(socket)
@@ -1732,13 +1740,15 @@ mod tests {
 
     #[test]
     fn should_change_receive_buffer_size() {
-
         let mut socket = test_create_socket(Pair);
 
         let size = 64 * 1024;
         match socket.set_receive_buffer_size(size) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change receive buffer size on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!(
+                "Failed to change receive buffer size on the socket: {}",
+                err
+            ),
         }
 
         drop(socket)
@@ -1746,12 +1756,11 @@ mod tests {
 
     #[test]
     fn should_change_send_timeout() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_send_timeout(-2) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change send timeout on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change send timeout on the socket: {}", err),
         }
 
         drop(socket)
@@ -1759,12 +1768,11 @@ mod tests {
 
     #[test]
     fn should_change_receive_timeout() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_receive_timeout(200) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change receive timeout on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change receive timeout on the socket: {}", err),
         }
 
         drop(socket)
@@ -1772,12 +1780,11 @@ mod tests {
 
     #[test]
     fn should_change_reconnect_interval() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_reconnect_interval(142) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err),
         }
 
         drop(socket)
@@ -1785,12 +1792,11 @@ mod tests {
 
     #[test]
     fn should_change_max_reconnect_interval() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_max_reconnect_interval(666) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change reconnect interval on the socket: {}", err),
         }
 
         drop(socket)
@@ -1798,12 +1804,11 @@ mod tests {
 
     #[test]
     fn should_change_send_priority() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_send_priority(15u8) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change send priority on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change send priority on the socket: {}", err),
         }
 
         drop(socket)
@@ -1811,12 +1816,11 @@ mod tests {
 
     #[test]
     fn should_change_receive_priority() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_receive_priority(2u8) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change receive priority on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change receive priority on the socket: {}", err),
         }
 
         drop(socket)
@@ -1824,12 +1828,11 @@ mod tests {
 
     #[test]
     fn should_change_ipv4_only() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_ipv4_only(true) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change ipv4 only on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change ipv4 only on the socket: {}", err),
         }
 
         drop(socket)
@@ -1838,12 +1841,11 @@ mod tests {
     #[cfg(not(windows))]
     #[test]
     fn should_change_socket_name() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_socket_name("bob") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change the socket name: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change the socket name: {}", err),
         }
 
         drop(socket)
@@ -1851,12 +1853,14 @@ mod tests {
 
     #[test]
     fn should_change_request_resend_interval() {
-
         let mut socket = test_create_socket(Req);
 
         match socket.set_request_resend_interval(60042) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change request resend interval on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!(
+                "Failed to change request resend interval on the socket: {}",
+                err
+            ),
         }
 
         drop(socket)
@@ -1864,12 +1868,11 @@ mod tests {
 
     #[test]
     fn should_change_tcp_nodelay() {
-
         let mut socket = test_create_socket(Pair);
 
         match socket.set_tcp_nodelay(true) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change tcp nodelay only on the socket: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change tcp nodelay only on the socket: {}", err),
         }
 
         drop(socket)
@@ -1880,8 +1883,8 @@ mod tests {
         let mut socket = test_create_socket(Pair);
 
         match socket.get_receive_fd() {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to get receive file descriptor: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to get receive file descriptor: {}", err),
         }
     }
 
@@ -1890,8 +1893,8 @@ mod tests {
         let mut socket = test_create_socket(Pair);
 
         match socket.get_send_fd() {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to get send file descriptor: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to get send file descriptor: {}", err),
         }
     }
 
@@ -1901,33 +1904,32 @@ mod tests {
         let mut socket = test_create_socket(Pair);
 
         match socket.set_socket_name("bob") {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to change the socket name: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to change the socket name: {}", err),
         }
 
         match socket.get_socket_name(1024) {
-            Ok(..) => {},
-            Err(err) => panic!("Failed to get socket name: {}", err)
+            Ok(..) => {}
+            Err(err) => panic!("Failed to get socket name: {}", err),
         }
     }
 
     #[test]
     fn protocol_matches_raw() {
-         assert_eq!(nanomsg_sys::NN_REQ, Req.to_raw());
-         assert_eq!(nanomsg_sys::NN_REP, Rep.to_raw());
-         assert_eq!(nanomsg_sys::NN_PUSH, Push.to_raw());
-         assert_eq!(nanomsg_sys::NN_PULL, Pull.to_raw());
-         assert_eq!(nanomsg_sys::NN_PAIR, Pair.to_raw());
-         assert_eq!(nanomsg_sys::NN_BUS, Bus.to_raw());
-         assert_eq!(nanomsg_sys::NN_PUB, Pub.to_raw());
-         assert_eq!(nanomsg_sys::NN_SUB, Sub.to_raw());
-         assert_eq!(nanomsg_sys::NN_SURVEYOR, Surveyor.to_raw());
-         assert_eq!(nanomsg_sys::NN_RESPONDENT, Respondent.to_raw());
+        assert_eq!(nanomsg_sys::NN_REQ, Req.to_raw());
+        assert_eq!(nanomsg_sys::NN_REP, Rep.to_raw());
+        assert_eq!(nanomsg_sys::NN_PUSH, Push.to_raw());
+        assert_eq!(nanomsg_sys::NN_PULL, Pull.to_raw());
+        assert_eq!(nanomsg_sys::NN_PAIR, Pair.to_raw());
+        assert_eq!(nanomsg_sys::NN_BUS, Bus.to_raw());
+        assert_eq!(nanomsg_sys::NN_PUB, Pub.to_raw());
+        assert_eq!(nanomsg_sys::NN_SUB, Sub.to_raw());
+        assert_eq!(nanomsg_sys::NN_SURVEYOR, Surveyor.to_raw());
+        assert_eq!(nanomsg_sys::NN_RESPONDENT, Respondent.to_raw());
     }
 
     #[test]
     fn test_read_to_end() {
-
         let url = "ipc:///tmp/read_to_end.ipc";
 
         let mut left_socket = test_create_socket(Pair);
@@ -1950,7 +1952,6 @@ mod tests {
 
     #[test]
     fn nb_read_works_in_both_cases() {
-
         let url = "ipc:///tmp/nb_read_works_in_both_cases.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -1963,7 +1964,7 @@ mod tests {
         let mut buf = [0u8; 6];
         match pull_socket.nb_read(&mut buf) {
             Ok(_) => panic!("Nothing should have been received !"),
-            Err(err) => assert_eq!(err, Error::TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain),
         }
 
         test_write(&mut push_socket, b"foobar");
@@ -1974,8 +1975,8 @@ mod tests {
             Ok(len) => {
                 assert_eq!(len, 6);
                 assert_eq!(buf.as_ref(), b"foobar")
-            },
-            Err(err) => panic!("{}", err)
+            }
+            Err(err) => panic!("{}", err),
         }
 
         drop(pull_socket);
@@ -1984,7 +1985,6 @@ mod tests {
 
     #[test]
     fn nb_read_to_end_works_in_both_cases() {
-
         let url = "ipc:///tmp/nb_read_to_end_works_in_both_cases.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -1997,7 +1997,7 @@ mod tests {
         let mut buffer = Vec::new();
         match pull_socket.nb_read_to_end(&mut buffer) {
             Ok(_) => panic!("Nothing should have been received !"),
-            Err(err) => assert_eq!(err, Error::TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain),
         }
 
         test_write(&mut push_socket, b"foobar");
@@ -2010,8 +2010,8 @@ mod tests {
                 //let buffer = &buffer as &AsRef<[u8]>;
                 //assert_eq!(buffer.as_ref(), b"foobar")
                 assert_eq!(AsRef::<[u8]>::as_ref(&buffer), b"foobar")
-            },
-            Err(err) => panic!("{}", err)
+            }
+            Err(err) => panic!("{}", err),
         }
 
         drop(pull_socket);
@@ -2020,7 +2020,6 @@ mod tests {
 
     #[test]
     fn nb_write_works_in_both_cases() {
-
         let url = "ipc:///tmp/nb_write_works_in_both_cases.ipc";
 
         let mut push_socket = test_create_socket(Push);
@@ -2029,7 +2028,7 @@ mod tests {
 
         match push_socket.nb_write(b"barfoo") {
             Ok(_) => panic!("Nothing should have been sent !"),
-            Err(err) => assert_eq!(err, Error::TryAgain)
+            Err(err) => assert_eq!(err, Error::TryAgain),
         }
 
         drop(push_socket);
@@ -2052,7 +2051,7 @@ mod tests {
 
         // TODO : find some simpler/shorter/better way to intialize a poll request
         let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
-        let mut pollreq_slice = &mut pollreq_vector[..];
+        let pollreq_slice = &mut pollreq_vector[..];
         let mut request = PollRequest::new(pollreq_slice);
         let timeout = 10;
         {
@@ -2060,7 +2059,7 @@ mod tests {
 
             match poll_result {
                 Ok(count) => assert_eq!(2, count),
-                Err(err) => panic!("Failed to poll: {}", err)
+                Err(err) => panic!("Failed to poll: {}", err),
             }
 
             let fds = request.get_fds();
@@ -2077,7 +2076,7 @@ mod tests {
 
             match poll_result {
                 Ok(count) => assert_eq!(2, count),
-                Err(err) => panic!("Failed to poll: {}", err)
+                Err(err) => panic!("Failed to poll: {}", err),
             }
 
             let fds = request.get_fds();

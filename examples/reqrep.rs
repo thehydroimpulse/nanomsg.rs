@@ -2,7 +2,7 @@
 
 extern crate nanomsg;
 
-use nanomsg::{Socket, Protocol};
+use nanomsg::{Protocol, Socket};
 
 use std::thread;
 use std::time::Duration;
@@ -26,7 +26,7 @@ fn client() {
             Ok(..) => println!("Send '{}'.", request),
             Err(err) => {
                 println!("Client failed to send request '{}'.", err);
-                break
+                break;
             }
         }
 
@@ -34,10 +34,10 @@ fn client() {
             Ok(_) => {
                 println!("Recv '{}'.", reply);
                 reply.clear()
-            },
+            }
             Err(err) => {
                 println!("Client failed to receive reply '{}'.", err);
-                break
+                break;
             }
         }
         thread::sleep(Duration::from_millis(100));
@@ -57,7 +57,6 @@ fn server() {
     println!("Server is ready.");
 
     loop {
-
         match socket.read_to_string(&mut request) {
             Ok(_) => {
                 println!("Recv '{}'.", request);
@@ -67,16 +66,16 @@ fn server() {
                     Ok(..) => println!("Sent '{}'.", reply),
                     Err(err) => {
                         println!("Server failed to send reply '{}'.", err);
-                        break
+                        break;
                     }
                 }
                 request.clear();
                 thread::sleep(Duration::from_millis(400));
                 count += 1;
-            },
+            }
             Err(err) => {
                 println!("Server failed to receive request '{}'.", err);
-                break
+                break;
             }
         }
     }
@@ -109,13 +108,13 @@ fn main() {
     let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 2 {
-        return usage()
+        return usage();
     }
 
     match args[1].as_ref() {
         "client" => client(),
         "server" => server(),
         "device" => device(),
-        _ => usage()
+        _ => usage(),
     }
 }

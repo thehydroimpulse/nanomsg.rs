@@ -1,12 +1,11 @@
 extern crate nanomsg;
 
-use nanomsg::{Socket, Protocol};
+use nanomsg::{Protocol, Socket};
 use std::thread;
 
 use std::io::{Read, Write};
 
 fn main() {
-
     let srv = thread::spawn(move || {
         println!("server: create socket");
         let mut s = Socket::new(Protocol::Pull).unwrap();
@@ -15,7 +14,7 @@ fn main() {
         s.bind(&"tcp://127.0.0.1:5456").unwrap();
 
         println!("server: sleep 500");
-        thread::sleep_ms(500);
+        thread::sleep(std::time::Duration::from_millis(500));
 
         let mut msg = String::new();
         println!("server: recv");
@@ -25,7 +24,7 @@ fn main() {
 
     println!("client: sleep 100");
     // let the server start
-    thread::sleep_ms(100);
+    thread::sleep(std::time::Duration::from_millis(100));
 
     println!("client: create socket");
     let mut s = Socket::new(Protocol::Push).unwrap();
@@ -40,5 +39,5 @@ fn main() {
     ep.shutdown().expect("cannot shutdown");
     println!("client: wait server");
 
-    srv.join();
+    srv.join().expect("Can't join thread");
 }

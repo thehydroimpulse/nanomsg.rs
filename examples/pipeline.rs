@@ -2,11 +2,11 @@
 
 extern crate nanomsg;
 
-use nanomsg::{Socket, Protocol};
+use nanomsg::{Protocol, Socket};
 
+use std::string::String;
 use std::thread;
 use std::time::Duration;
-use std::string::String;
 
 use std::io::{Read, Write};
 
@@ -20,7 +20,7 @@ fn collector() {
             Ok(_) => println!("Collected work result for '{}'.", text),
             Err(err) => {
                 println!("Collector failed '{}'.", err);
-                break
+                break;
             }
         }
         text.clear();
@@ -43,7 +43,7 @@ fn worker() {
                 thread::sleep(Duration::from_millis(300)); // fake some work ...
                 output.write_all(msg.as_bytes());
                 msg.clear();
-            },
+            }
             Err(err) => {
                 println!("Worker failed '{}'.", err);
                 break;
@@ -67,7 +67,7 @@ fn feeder() {
             }
             Err(err) => {
                 println!("Feeder failed '{}'.", err);
-                break
+                break;
             }
         }
     }
@@ -85,13 +85,13 @@ fn main() {
     let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 2 {
-        return usage()
+        return usage();
     }
 
     match args[1].as_ref() {
         "worker" => worker(),
         "feeder" => feeder(),
         "collector" => collector(),
-        _ => usage()
+        _ => usage(),
     }
 }

@@ -2,7 +2,7 @@
 
 extern crate nanomsg;
 
-use nanomsg::{Socket, Protocol};
+use nanomsg::{Protocol, Socket};
 
 use std::thread;
 use std::time::Duration;
@@ -19,7 +19,7 @@ fn client(topic: &[u8]) {
 
     match setopt {
         Ok(_) => println!("Subscribed to '{:?}'.", topic),
-        Err(err) => println!("Client failed to subscribe '{}'.", err)
+        Err(err) => println!("Client failed to subscribe '{}'.", err),
     }
 
     let mut msg = String::new();
@@ -28,10 +28,10 @@ fn client(topic: &[u8]) {
             Ok(_) => {
                 println!("Recv '{}'.", msg);
                 msg.clear()
-            },
+            }
             Err(err) => {
                 println!("Client failed to receive msg '{}'.", err);
-                break
+                break;
             }
         }
     }
@@ -56,7 +56,7 @@ fn server(topic: &[u8]) {
             Ok(..) => println!("Published '{:?}'.", msg),
             Err(err) => {
                 println!("Server failed to publish '{}'.", err);
-                break
+                break;
             }
         }
         thread::sleep(Duration::from_millis(400));
@@ -75,7 +75,7 @@ fn device(topic: &[u8]) {
 
     match setopt {
         Ok(_) => println!("Subscribed to '{:?}'.", topic),
-        Err(err) => println!("Device failed to subscribe '{}'.", err)
+        Err(err) => println!("Device failed to subscribe '{}'.", err),
     }
 
     println!("Device is ready.");
@@ -97,13 +97,13 @@ fn main() {
     let args: Vec<_> = std::env::args().collect();
 
     if args.len() < 3 {
-        return usage()
+        return usage();
     }
 
     match args[1].as_ref() {
         "client" => client(args[2].as_ref()),
         "server" => server(args[2].as_ref()),
         "device" => device(args[2].as_ref()),
-        _ => usage()
+        _ => usage(),
     }
 }
