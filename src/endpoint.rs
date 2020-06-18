@@ -1,5 +1,5 @@
 use libc::c_int;
-use nanomsg_sys;
+
 use crate::result::{Result,last_nano_error};
 
 /// An endpoint created for a specific socket. Each endpoint is identified
@@ -12,7 +12,7 @@ pub struct Endpoint {
 
 impl Endpoint {
     pub fn new(value: c_int, socket: c_int) -> Endpoint {
-        Endpoint { value: value, socket: socket }
+        Endpoint { value, socket }
     }
 
     /// Removes an endpoint from the socket that created it (via `bind` or `connect`).

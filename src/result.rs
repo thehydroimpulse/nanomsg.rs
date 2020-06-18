@@ -1,7 +1,7 @@
 extern crate libc;
 
 use libc::c_int;
-use nanomsg_sys;
+
 
 use std::str;
 use std::fmt;
