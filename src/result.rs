@@ -1,6 +1,6 @@
 extern crate libc;
 
-use libc::{c_int};
+use libc::c_int;
 use nanomsg_sys;
 
 use std::str;
@@ -138,8 +138,8 @@ impl From<io::Error> for Error {
 
 impl From<Error> for io::Error {
     fn from(err: Error) -> io::Error {
-        let as_std_error: &error::Error = &err;
-        let description = as_std_error.description();
+        let as_std_error: &dyn error::Error = &err;
+        let description = as_std_error.to_string();
         match err {
             Error::PermissionDenied      => io::Error::new(io::ErrorKind::PermissionDenied,  description ),
             Error::ConnectionRefused     => io::Error::new(io::ErrorKind::ConnectionRefused, description ),
@@ -160,16 +160,16 @@ impl From<Error> for io::Error {
 
 impl fmt::Debug for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        let as_std_error: &error::Error = self;
-        let description = as_std_error.description();
+        let as_std_error: &dyn error::Error = self;
+        let description = as_std_error.to_string();
         write!(formatter, "{}", description)
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        let as_std_error: &error::Error = self;
-        let description = as_std_error.description();
+        let as_std_error: &dyn error::Error = self;
+        let description = as_std_error.to_string();
         write!(formatter, "{}", description)
     }
 }

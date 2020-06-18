@@ -1,6 +1,6 @@
 use libc::c_int;
 use nanomsg_sys;
-use result::{Result,last_nano_error};
+use crate::result::{Result,last_nano_error};
 
 /// An endpoint created for a specific socket. Each endpoint is identified
 /// by a unique return value that can be further passed to a shutdown
