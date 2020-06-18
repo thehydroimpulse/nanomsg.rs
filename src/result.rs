@@ -109,9 +109,7 @@ impl error::Error for Error {
             let c_ptr: *const libc::c_char = nanomsg_sys::nn_strerror(nn_errno);
             let c_str = CStr::from_ptr(c_ptr);
             let bytes = c_str.to_bytes();
-            let desc = str::from_utf8(bytes).unwrap_or("Error");
-
-            desc
+            str::from_utf8(bytes).unwrap_or("Error")
         }
     }
 }
