@@ -128,7 +128,7 @@ fn pusher() -> Result<(), Error> {
 * Anders Bennehag ([@PureW](https://github.com/PureW))
 * Peter Parkanyi ([@rsdy](https://github.com/rsdy))
 * Jacek ([@forgerpl](https://github.com/forgerpl))
-
+* Gal Schlezinger ([@Schniz](https://github.com/Schniz))
 
 ## License
 
