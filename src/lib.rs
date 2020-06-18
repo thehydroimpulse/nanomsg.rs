@@ -299,14 +299,15 @@ impl Socket {
     /// - `AddressInUse` : The requested local endpoint is already in use.
     /// - `Terminating` : The library is terminating.
     pub fn bind(&mut self, addr: &str) -> Result<Endpoint> {
-        let c_addr = CString::new(addr.as_bytes());
-        if c_addr.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
-        }
-        let ret = unsafe { nanomsg_sys::nn_bind(self.socket, c_addr.unwrap().as_ptr()) };
+        match CString::new(addr.as_bytes()) {
+            Err(_) => Err(Error::from_raw(nanomsg_sys::EINVAL)),
+            Ok(c_addr) => {
+                let ret = unsafe { nanomsg_sys::nn_bind(self.socket, c_addr.as_ptr()) };
 
-        error_guard!(ret);
-        Ok(Endpoint::new(ret, self.socket))
+                error_guard!(ret);
+                Ok(Endpoint::new(ret, self.socket))
+            }
+        }
     }
 
     /// Connects the socket to a remote endpoint.
@@ -567,7 +568,7 @@ impl Socket {
     /// # Error
     ///
     /// - `BadAddress` : The message pointer is invalid.
-    pub fn free_msg<'a>(msg: &'a mut [u8]) -> Result<()> {
+    pub fn free_msg(msg: &mut [u8]) -> Result<()> {
         unsafe {
             let ptr = msg.as_mut_ptr() as *mut c_void;
             let ret = nanomsg_sys::nn_freemsg(ptr);
@@ -694,17 +695,18 @@ impl Socket {
     }
 
     fn set_socket_options_str(&self, level: c_int, option: c_int, val: &str) -> Result<()> {
-        let c_val = CString::new(val.as_bytes());
-        if c_val.is_err() {
-            return Err(Error::from_raw(nanomsg_sys::EINVAL));
-        }
-        let ptr = c_val.unwrap().as_ptr() as *const c_void;
-        let ret = unsafe {
-            nanomsg_sys::nn_setsockopt(self.socket, level, option, ptr, val.len() as size_t)
-        };
+        match CString::new(val.as_bytes()) {
+            Err(_) => Err(Error::from_raw(nanomsg_sys::EINVAL)),
+            Ok(c_val) => {
+                let ptr = c_val.as_ptr() as *const c_void;
+                let ret = unsafe {
+                    nanomsg_sys::nn_setsockopt(self.socket, level, option, ptr, val.len() as size_t)
+                };
 
-        error_guard!(ret);
-        Ok(())
+                error_guard!(ret);
+                Ok(())
+            }
+        }
     }
 
     fn set_socket_options_buf(&self, level: c_int, option: c_int, val: &[u8]) -> Result<()> {
