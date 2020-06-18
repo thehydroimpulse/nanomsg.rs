@@ -1245,7 +1245,7 @@ mod tests {
     use super::Protocol::*;
     use libc::c_int;
     use nanomsg_sys;
-    use {Endpoint, Error, PollFd, PollInOut, PollRequest, Protocol, Socket};
+    use crate::{Endpoint, Error, PollFd, PollInOut, PollRequest, Protocol, Socket};
 
     use std::io::{Read, Write};
 
@@ -1359,7 +1359,7 @@ mod tests {
     }
 
     fn test_zc_write(socket: &mut Socket, buf: &[u8]) {
-        let mut msg = Socket::allocate_msg(buf.len()).unwrap();
+        let msg = Socket::allocate_msg(buf.len()).unwrap();
         for i in 0..buf.len() {
             msg[i] = buf[i];
         }
@@ -2051,7 +2051,7 @@ mod tests {
 
         // TODO : find some simpler/shorter/better way to intialize a poll request
         let mut pollreq_vector: Vec<PollFd> = vec![pollfd1, pollfd2];
-        let mut pollreq_slice = &mut pollreq_vector[..];
+        let pollreq_slice = &mut pollreq_vector[..];
         let mut request = PollRequest::new(pollreq_slice);
         let timeout = 10;
         {

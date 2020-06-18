@@ -19,7 +19,7 @@ fn puller(url: &str) {
             Ok(_) => {
                 println!("Puller received '{}'.", msg);
 
-                thread::sleep_ms(1000); // fake some work ...
+                thread::sleep(std::time::Duration::from_secs(1)); // fake some work ...
                 msg.clear();
             },
             Err(err) => {
