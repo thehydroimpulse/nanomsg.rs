@@ -129,6 +129,7 @@ fn pusher() -> Result<(), Error> {
 * Peter Parkanyi ([@rsdy](https://github.com/rsdy))
 * Jacek ([@forgerpl](https://github.com/forgerpl))
 * Gal Schlezinger ([@Schniz](https://github.com/Schniz))
+* Gilad Naaman ([Gilnaa](https://github.com/Gilnaa))
 
 ## License
 
