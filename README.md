@@ -33,7 +33,7 @@ nanomsg = "0.7.2"
 Simply import the crate to use it:
 
 ```rust
-extern crate nanomsg;
+use nanomsg;
 ```
 
 ## Creating a Socket
@@ -46,13 +46,13 @@ use nanomsg::{Socket, Protocol, Error};
 /// Creating a new `Pull` socket type. Pull sockets can only receive messages
 /// from a `Push` socket type.
 fn create_socket() -> Result<(), Error> {
-    let mut socket = try!(Socket::new(Protocol::Pull));
+    let mut socket = Socket::new(Protocol::Pull)?;
     Ok(())
 }
 ```
 
 Now, each socket that is created can be bound to *multiple* endpoints. Each binding can return an error, so
-we'll take advantage of the `try!` macro.
+we'll take advantage of the `?` (try) operator.
 
 ```rust
 use nanomsg::{Socket, Protocol, Error};
@@ -60,11 +60,11 @@ use nanomsg::{Socket, Protocol, Error};
 /// Creating a new `Pull` socket type. Pull sockets can only receive messages
 /// from a `Push` socket type.
 fn create_socket() -> Result<(), Error> {
-    let mut socket = try!(Socket::new(Protocol::Pull));
+    let mut socket = Socket::new(Protocol::Pull)?;
     
     // Create a new endpoint bound to the following protocol string. This returns
     // a new `Endpoint` that lives at-most the lifetime of the original socket.
-    let mut endpoint = try!(socket.bind("ipc:///tmp/pipeline.ipc"));
+    let mut endpoint = socket.bind("ipc:///tmp/pipeline.ipc")?;
 
     Ok(())
 }
@@ -78,7 +78,7 @@ Because this is a `Pull` socket, we'll implement reading any messages we receive
 // ... After the endpoint we created, we'll start reading some data.
 let mut msg = String::new();
 loop {
-    try!(socket.read_to_string(&mut msg));
+    socket.read_to_string(&mut msg)?;
     println!("We got a message: {}", &*msg);
     msg.clear();
 }
@@ -91,8 +91,8 @@ That's awesome! But... we have no packets being sent to the socket, so we'll rea
 use nanomsg::{Socket, Protocol, Error};
 
 fn pusher() -> Result<(), Error> {
-    let mut socket = try!(Socket::new(Protocol::Push));
-    let mut endpoint = try!(socket.connect("ipc:///tmp/pipeline.ipc"));
+    let mut socket = Socket::new(Protocol::Push)?;
+    let mut endpoint = socket.connect("ipc:///tmp/pipeline.ipc")?;
 
     socket.write(b"message in a bottle");
 
