@@ -385,7 +385,7 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    pub fn nb_read(&mut self, buf: &mut [u8]) -> Result<usize> {
+    pub fn nb_read(&self, buf: &mut [u8]) -> Result<usize> {
         let buf_len = buf.len();
         let buf_ptr = buf.as_mut_ptr();
         let c_buf_len = buf_len as size_t;
@@ -433,7 +433,7 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    pub fn nb_read_to_end(&mut self, buf: &mut Vec<u8>) -> Result<usize> {
+    pub fn nb_read_to_end(&self, buf: &mut Vec<u8>) -> Result<usize> {
         let mut msg: *mut u8 = ptr::null_mut();
         let ret = unsafe {
             nanomsg_sys::nn_recv(
@@ -481,7 +481,7 @@ impl Socket {
     /// - `TryAgain` : Non-blocking mode was requested and there’s no message to receive at the moment.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    pub fn nb_write(&mut self, buf: &[u8]) -> Result<usize> {
+    pub fn nb_write(&self, buf: &[u8]) -> Result<usize> {
         let buf_ptr = buf.as_ptr() as *const c_void;
         let buf_len = buf.len() as size_t;
         let ret = unsafe {
@@ -530,7 +530,7 @@ impl Socket {
     /// - `FileStateMismatch` : The operation cannot be performed on this socket at the moment because socket is not in the appropriate state. This error may occur with socket types that switch between several states.
     /// - `Interrupted` : The operation was interrupted by delivery of a signal before the message was received.
     /// - `Terminating` : The library is terminating.
-    pub fn zc_write(&mut self, buf: &[u8]) -> Result<usize> {
+    pub fn zc_write(&self, buf: &[u8]) -> Result<usize> {
         let ptr = buf.as_ptr() as *const c_void;
         let ptr_addr = &ptr as *const _ as *const c_void;
         let len = buf.len();
