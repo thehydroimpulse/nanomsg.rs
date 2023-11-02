@@ -2,7 +2,11 @@
 
 extern crate libc;
 
+#[cfg(not(windows))]
 pub use libc::*;
+
+#[cfg(windows)]
+pub use libc::{c_int, size_t, c_void, c_char, c_short, EINVAL, EBADF, EINTR, ENAMETOOLONG, EFAULT, EMFILE, EAGAIN, ENODEV};
 
 pub use posix_consts::*;
 
